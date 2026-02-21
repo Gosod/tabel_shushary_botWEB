@@ -1,0 +1,15 @@
+[Unit]
+Description=Telegram Time Tracking Bot
+After=network.target
+
+[Service]
+Type=simple
+User=kostik
+WorkingDirectory=/home/kostik
+Environment="TELEGRAM_BOT_TOKEN=YOUR_PRODUCTION_TOKEN_HERE"
+ExecStart=/usr/bin/python3 /home/kostik/telegram_bot.py
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
