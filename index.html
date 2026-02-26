@@ -593,18 +593,18 @@ textarea:focus, input:focus {
     <div class="info-card">💡 Аббревиатура — 2-5 символов, отображается на кнопке</div>
     <div class="form-group">
       <div class="form-label">🔤 Аббревиатура</div>
-      <input type="text" id="newAbbr" placeholder="Например: РС" maxlength="5">
-      <div class="error-msg" id="abbrErr">Заполните поле (мин. 2 символа)</div>
+      <input type="text" id="modalAbbr" placeholder="Например: РС" maxlength="5">
+      <div class="error-msg" id="modalAbbrErr">Заполните поле (мин. 2 символа)</div>
     </div>
     <div class="form-group">
       <div class="form-label">📝 Полное название</div>
-      <input type="text" id="newFull" placeholder="Например: Разработка сайта" maxlength="50">
-      <div class="error-msg" id="fullErr">Заполните поле (мин. 3 символа)</div>
+      <input type="text" id="modalFull" placeholder="Например: Разработка сайта" maxlength="50">
+      <div class="error-msg" id="modalFullErr">Заполните поле (мин. 3 символа)</div>
     </div>
-    <div id="projPreview" style="display:none;margin-bottom:16px">
+    <div id="modalProjPreview" style="display:none;margin-bottom:16px">
       <div class="proj-preview-box">
-        <div class="proj-preview-abbr" id="previewAbbr">РС</div>
-        <div class="proj-preview-name" id="previewFull">Разработка сайта</div>
+        <div class="proj-preview-abbr" id="modalPreviewAbbr">РС</div>
+        <div class="proj-preview-name" id="modalPreviewFull">Разработка сайта</div>
       </div>
     </div>
     <button class="btn btn-primary" onclick="submitAddProject()">✅ Добавить проект</button>
@@ -614,15 +614,6 @@ textarea:focus, input:focus {
 <script>
 const tg = window.Telegram.WebApp;
 tg.expand();
-
-// Безопасный вызов HapticFeedback — не крашится в браузере
-function haptic(type, style = 'light') {
-  try {
-    if (!tg.HapticFeedback) return;
-    if (type === 'impact') haptic("impact", style);
-    else if (type === 'notify') haptic("notify", style);
-  } catch(e) {}
-}
 
 // ── STATE ──
 // Версия приложения
@@ -780,7 +771,7 @@ function nav(pageId, addToHistory = true) {
   if (APP.navHistory.length > 0) tg.BackButton.show();
   else tg.BackButton.hide();
 
-  haptic("impact", 'light');
+  if (tg.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
 }
 
 function goBack() {
@@ -840,7 +831,7 @@ function selectProject(proj, card) {
   document.getElementById('hoursLabel').textContent = `⏱️ Часов для «${proj.full}»`;
   updateSummary();
 
-  haptic("impact", 'light');
+  if (tg.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
 
   // Скроллим к слайдеру
   setTimeout(() => document.getElementById('hoursWrap').scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 100);
@@ -965,7 +956,7 @@ function initHoursSlider() {
       document.getElementById('hoursDisplay').value = APP.currentHours;
       updateQuickBtns(APP.currentHours);
       updateSummary(); updateTotalHours();
-      haptic("impact", 'light');
+      if (tg.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
     });
   });
   updateQuickBtns(4);
@@ -1052,7 +1043,7 @@ async function submitReport() {
   }
   if (!APP.reportItems.length) {
     document.getElementById('projError').classList.add('show');
-    haptic("notify", 'error');
+    if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('error');
     return;
   }
 
@@ -1107,7 +1098,7 @@ async function submitReport() {
   renderMyStats();
 
     showToast('✅ Отчёт сохранён!');
-    haptic("notify", 'success');
+    if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
 
     // Обновляем статистику
     await loadDataFromAPI();
@@ -1120,47 +1111,50 @@ async function submitReport() {
 
 // ── ADD PROJECT FORM ──
 function initAddProjectForm() {
-  document.getElementById('newAbbr').addEventListener('input', e => {
+  const abbrEl = document.getElementById('modalAbbr');
+  const fullEl = document.getElementById('modalFull');
+  if (abbrEl) abbrEl.addEventListener('input', e => {
     e.target.value = e.target.value.toUpperCase();
     updateProjPreview();
   });
-  document.getElementById('newFull').addEventListener('input', updateProjPreview);
+  if (fullEl) fullEl.addEventListener('input', updateProjPreview);
 }
 
 function updateProjPreview() {
-  const a = document.getElementById('newAbbr').value.trim();
-  const f = document.getElementById('newFull').value.trim();
-  const preview = document.getElementById('projPreview');
+  const a = (document.getElementById('modalAbbr') || {}).value?.trim() || '';
+  const f = (document.getElementById('modalFull') || {}).value?.trim() || '';
+  const preview = document.getElementById('modalProjPreview');
+  if (!preview) return;
   if (a || f) {
     preview.style.display = 'block';
-    document.getElementById('previewAbbr').textContent = a || 'АБВ';
-    document.getElementById('previewFull').textContent = f || 'Название';
+    document.getElementById('modalPreviewAbbr').textContent = a || 'АБВ';
+    document.getElementById('modalPreviewFull').textContent = f || 'Название';
   } else {
     preview.style.display = 'none';
   }
 }
 
 async function submitAddProject() {
-  const abbr = document.getElementById('newAbbr').value.trim().toUpperCase();
-  const full = document.getElementById('newFull').value.trim();
+  const abbr = document.getElementById('modalAbbr').value.trim().toUpperCase();
+  const full = document.getElementById('modalFull').value.trim();
   let ok = true;
 
   if (abbr.length < 2) {
-    document.getElementById('abbrErr').textContent = 'Минимум 2 символа';
-    document.getElementById('abbrErr').classList.add('show'); ok = false;
-  } else document.getElementById('abbrErr').classList.remove('show');
+    document.getElementById('modalAbbrErr').textContent = 'Минимум 2 символа';
+    document.getElementById('modalAbbrErr').classList.add('show'); ok = false;
+  } else document.getElementById('modalAbbrErr').classList.remove('show');
 
   if (full.length < 3) {
-    document.getElementById('fullErr').textContent = 'Минимум 3 символа';
-    document.getElementById('fullErr').classList.add('show'); ok = false;
-  } else document.getElementById('fullErr').classList.remove('show');
+    document.getElementById('modalFullErr').textContent = 'Минимум 3 символа';
+    document.getElementById('modalFullErr').classList.add('show'); ok = false;
+  } else document.getElementById('modalFullErr').classList.remove('show');
 
   if (APP.allProjects.find(p => p.abbr === abbr)) {
-    document.getElementById('abbrErr').textContent = 'Аббревиатура уже используется';
-    document.getElementById('abbrErr').classList.add('show'); ok = false;
+    document.getElementById('modalAbbrErr').textContent = 'Аббревиатура уже используется';
+    document.getElementById('modalAbbrErr').classList.add('show'); ok = false;
   }
 
-  if (!ok) { haptic("notify", 'error'); return; }
+  if (!ok) { if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('error'); return; }
 
   // Отправляем боту БЕЗ закрытия (sendData не закрывает если не вызван tg.close)
   tg.sendData(JSON.stringify({ type: 'add_project', abbr, full }));
@@ -1171,18 +1165,18 @@ async function submitAddProject() {
   APP.projects.push(newProj);
 
   // Сбрасываем форму
-  document.getElementById('newAbbr').value = '';
-  document.getElementById('newFull').value = '';
-  document.getElementById('projPreview').style.display = 'none';
-  document.getElementById('abbrErr').classList.remove('show');
-  document.getElementById('fullErr').classList.remove('show');
+  document.getElementById('modalAbbr').value = '';
+  document.getElementById('modalFull').value = '';
+  document.getElementById('modalProjPreview').style.display = 'none';
+  document.getElementById('modalAbbrErr').classList.remove('show');
+  document.getElementById('modalFullErr').classList.remove('show');
 
   // Обновляем UI
   buildProjectsGrid();
   renderAdminManage();
 
   showToast(`✅ Проект ${abbr} добавлен!`);
-  haptic("notify", 'success');
+  if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
 
   // Закрываем модальное окно
   closeModal();
@@ -1371,7 +1365,7 @@ async function submitAssign() {
 
   // Запоминаем в pendingActions — отправится боту вместе со следующим отчётом
   showToast(`✅ Проекты назначены для ${uname}`, 'success');
-  haptic("notify", 'success');
+  if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
 
   // Сбрасываем форму
   document.getElementById('assignUser').value = '';
@@ -1381,11 +1375,11 @@ async function submitAssign() {
 
 // ── MODAL ──
 function openModal() {
-  document.getElementById('newAbbr').value = '';
-  document.getElementById('newFull').value = '';
-  document.getElementById('projPreview').style.display = 'none';
-  document.getElementById('abbrErr').classList.remove('show');
-  document.getElementById('fullErr').classList.remove('show');
+  document.getElementById('modalAbbr').value = '';
+  document.getElementById('modalFull').value = '';
+  document.getElementById('modalProjPreview').style.display = 'none';
+  document.getElementById('modalAbbrErr').classList.remove('show');
+  document.getElementById('modalFullErr').classList.remove('show');
   document.getElementById('addProjModal').classList.add('open');
 }
 
@@ -1468,7 +1462,7 @@ function showVersionToast(type, oldVersion = null) {
   }, 8000);
 
   if (tg.HapticFeedback) {
-    haptic("notify", 'success');
+    tg.HapticFeedback.notificationOccurred('success');
   }
 }
 
