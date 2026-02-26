@@ -708,29 +708,39 @@ async function loadDataFromAPI() {
     return false;
   }
 }
+
+async function loadAdminStats() {
+  if (!APP.admin || !APP.userId) return;
+  try {
+    APP.adminStats = await apiCall('/admin-stats', 'POST', { user_id: APP.userId });
+  } catch(e) {
+    console.error('Admin stats failed:', e);
+  }
+}
+
 // ── INIT ──
 async function init() {
   const params = new URLSearchParams(window.location.search);
   const raw = params.get('data');
-  
-  // Получаем минимальные данные из URL
+
   if (raw) {
     try {
       const d = JSON.parse(decodeURIComponent(raw));
-      APP.userId = d.user_id || 0;
-      APP.admin = !!d.admin;
-    } catch(e) { 
+      APP.userId      = d.user_id      || 0;
+      APP.admin       = !!d.admin;
+      APP.username    = d.username     || '';
+      APP.projects    = d.projects     || [];
+      APP.allProjects = d.all_projects || d.projects || [];
+      APP.allUsers    = d.all_users    || [];
+      APP.userStats   = d.user_stats   || {};
+    } catch(e) {
       console.error('Init error', e);
       APP.userId = 0;
     }
   }
 
-  // Загружаем полные данные через API
-  if (APP.userId) {
-    await loadDataFromAPI();
-  } else {
-    // Demo data для локального тестирования
-    APP.projects = [{abbr:'DEMO',full:'Demo проект'}];
+  if (!APP.userId) {
+    APP.projects = [{abbr:'DEMO', full:'Demo проект'}];
   }
 
   if (APP.admin) {
@@ -772,6 +782,11 @@ function nav(pageId, addToHistory = true) {
   else tg.BackButton.hide();
 
   if (tg.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
+
+  // При переходе в админ-панель — грузим статистику если ещё нет
+  if (pageId === 'admin-panel' && APP.admin && !APP.adminStats) {
+    loadAdminStats().then(() => renderAdminTab(currentAdminTab));
+  }
 }
 
 function goBack() {
@@ -1099,10 +1114,6 @@ async function submitReport() {
 
     showToast('✅ Отчёт сохранён!');
     if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
-
-    // Обновляем статистику
-    await loadDataFromAPI();
-
     setTimeout(() => nav('home'), 1500);
   } catch (error) {
     console.error('Submit report failed:', error);
@@ -1153,30 +1164,28 @@ async function submitAddProject() {
 
   if (!ok) { if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('error'); return; }
 
-  // Отправляем боту БЕЗ закрытия (sendData не закрывает если не вызван tg.close)
-  tg.sendData(JSON.stringify({ type: 'add_project', abbr, full }));
+  try {
+    await apiCall('/project', 'POST', { user_id: APP.userId, abbr, full });
 
-  // Добавляем локально сразу
-  const newProj = { abbr, full };
-  APP.allProjects.push(newProj);
-  APP.projects.push(newProj);
+    const newProj = { abbr, full };
+    APP.allProjects.push(newProj);
+    APP.projects.push(newProj);
 
-  // Сбрасываем форму
-  document.getElementById('newAbbr').value = '';
-  document.getElementById('newFull').value = '';
-  document.getElementById('projPreview').style.display = 'none';
-  document.getElementById('abbrErr').classList.remove('show');
-  document.getElementById('fullErr').classList.remove('show');
+    document.getElementById('newAbbr').value = '';
+    document.getElementById('newFull').value = '';
+    document.getElementById('projPreview').style.display = 'none';
+    document.getElementById('abbrErr').classList.remove('show');
+    document.getElementById('fullErr').classList.remove('show');
 
-  // Обновляем UI
-  buildProjectsGrid();
-  renderAdminManage();
+    buildProjectsGrid();
+    renderAdminManage();
 
-  showToast(`✅ Проект ${abbr} добавлен!`);
-  if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
-
-  // Закрываем модальное окно
-  closeModal();
+    showToast(`✅ Проект ${abbr} добавлен!`);
+    if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
+    closeModal();
+  } catch(e) {
+    console.error('Add project failed:', e);
+  }
 }
 
 // ── MY STATS ──
