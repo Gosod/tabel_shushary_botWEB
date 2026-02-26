@@ -615,6 +615,14 @@ textarea:focus, input:focus {
 const tg = window.Telegram.WebApp;
 tg.expand();
 
+function haptic(type, style = 'light') {
+  try {
+    if (!tg.HapticFeedback) return;
+    if (type === 'impact') tg.HapticFeedback.impactOccurred(style);
+    else if (type === 'notify') tg.HapticFeedback.notificationOccurred(style);
+  } catch(e) {}
+}
+
 // ── STATE ──
 // Версия приложения
 const APP_VERSION = '1.1.0';
@@ -771,7 +779,7 @@ function nav(pageId, addToHistory = true) {
   if (APP.navHistory.length > 0) tg.BackButton.show();
   else tg.BackButton.hide();
 
-  if (tg.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
+  haptic("impact", 'light');
 }
 
 function goBack() {
@@ -831,7 +839,7 @@ function selectProject(proj, card) {
   document.getElementById('hoursLabel').textContent = `⏱️ Часов для «${proj.full}»`;
   updateSummary();
 
-  if (tg.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
+  haptic("impact", 'light');
 
   // Скроллим к слайдеру
   setTimeout(() => document.getElementById('hoursWrap').scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 100);
@@ -956,7 +964,7 @@ function initHoursSlider() {
       document.getElementById('hoursDisplay').value = APP.currentHours;
       updateQuickBtns(APP.currentHours);
       updateSummary(); updateTotalHours();
-      if (tg.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
+      haptic("impact", 'light');
     });
   });
   updateQuickBtns(4);
@@ -1043,7 +1051,7 @@ async function submitReport() {
   }
   if (!APP.reportItems.length) {
     document.getElementById('projError').classList.add('show');
-    if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('error');
+    haptic("notify", 'error');
     return;
   }
 
@@ -1098,7 +1106,7 @@ async function submitReport() {
   renderMyStats();
 
     showToast('✅ Отчёт сохранён!');
-    if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
+    haptic("notify", 'success');
 
     // Обновляем статистику
     await loadDataFromAPI();
@@ -1154,32 +1162,29 @@ async function submitAddProject() {
     document.getElementById('modalAbbrErr').classList.add('show'); ok = false;
   }
 
-  if (!ok) { if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('error'); return; }
+  if (!ok) { haptic('notify', 'error'); return; }
 
-  // Отправляем боту БЕЗ закрытия (sendData не закрывает если не вызван tg.close)
-  tg.sendData(JSON.stringify({ type: 'add_project', abbr, full }));
+  try {
+    await apiCall('/project', 'POST', { user_id: APP.userId, abbr, full });
 
-  // Добавляем локально сразу
-  const newProj = { abbr, full };
-  APP.allProjects.push(newProj);
-  APP.projects.push(newProj);
+    const newProj = { abbr, full };
+    APP.allProjects.push(newProj);
+    APP.projects.push(newProj);
 
-  // Сбрасываем форму
-  document.getElementById('modalAbbr').value = '';
-  document.getElementById('modalFull').value = '';
-  document.getElementById('modalProjPreview').style.display = 'none';
-  document.getElementById('modalAbbrErr').classList.remove('show');
-  document.getElementById('modalFullErr').classList.remove('show');
+    document.getElementById('modalAbbr').value = '';
+    document.getElementById('modalFull').value = '';
+    document.getElementById('modalProjPreview').style.display = 'none';
+    document.getElementById('modalAbbrErr').classList.remove('show');
+    document.getElementById('modalFullErr').classList.remove('show');
 
-  // Обновляем UI
-  buildProjectsGrid();
-  renderAdminManage();
-
-  showToast(`✅ Проект ${abbr} добавлен!`);
-  if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
-
-  // Закрываем модальное окно
-  closeModal();
+    buildProjectsGrid();
+    renderAdminManage();
+    showToast(`✅ Проект ${abbr} добавлен!`);
+    haptic('notify', 'success');
+    closeModal();
+  } catch(e) {
+    console.error('Add project failed:', e);
+  }
 }
 
 // ── MY STATS ──
@@ -1240,7 +1245,7 @@ function renderAdminOverview() {
     APP.adminChart = new Chart(ctx, {
       type: 'bar',
       data: {
-        labels: s.employees.map(e=>e.name),
+        labels: s.employees.map(e=>e.name || e.username || '?'),
         datasets: [{ label:'Часы', data: s.employees.map(e=>e.hours), backgroundColor: 'rgba(37,99,235,0.7)', borderRadius: 6 }]
       },
       options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true}} }
@@ -1255,7 +1260,7 @@ function renderAdminEmployees() {
   content.innerHTML = [...s.employees].sort((a,b)=>b.hours-a.hours).map(emp => `
     <div class="emp-card">
       <div class="emp-header">
-        <div class="emp-name">👤 ${emp.name}</div>
+        <div class="emp-name">👤 ${emp.name || emp.username || '?'}</div>
         <div class="emp-hours">${emp.hours} ч</div>
       </div>
       <div style="font-size:13px;color:var(--hint);margin-bottom:8px">📝 Отчётов: ${emp.reports}</div>
@@ -1365,7 +1370,7 @@ async function submitAssign() {
 
   // Запоминаем в pendingActions — отправится боту вместе со следующим отчётом
   showToast(`✅ Проекты назначены для ${uname}`, 'success');
-  if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
+  haptic("notify", 'success');
 
   // Сбрасываем форму
   document.getElementById('assignUser').value = '';
