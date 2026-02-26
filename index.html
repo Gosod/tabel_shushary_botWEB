@@ -615,6 +615,15 @@ textarea:focus, input:focus {
 const tg = window.Telegram.WebApp;
 tg.expand();
 
+// Безопасный вызов HapticFeedback — не крашится в браузере
+function haptic(type, style = 'light') {
+  try {
+    if (!tg.HapticFeedback) return;
+    if (type === 'impact') haptic("impact", style);
+    else if (type === 'notify') haptic("notify", style);
+  } catch(e) {}
+}
+
 // ── STATE ──
 // Версия приложения
 const APP_VERSION = '1.1.0';
@@ -729,14 +738,8 @@ async function init() {
   if (APP.userId) {
     await loadDataFromAPI();
   } else {
-    // Demo-режим для тестирования в браузере (без Telegram)
-    APP.userId      = 699229724;
-    APP.admin       = true;
-    APP.username    = 'demo_admin';
-    APP.projects    = [{abbr:'DEMO', full:'Demo проект'}];
-    APP.allProjects = [{abbr:'DEMO', full:'Demo проект'}];
-    APP.allUsers    = [{id: 699229724, username: 'demo_admin'}];
-    APP.userStats   = {total_hours: 42, total_reports: 7, by_project: {'DEMO': 42}};
+    // Demo data для локального тестирования
+    APP.projects = [{abbr:'DEMO',full:'Demo проект'}];
   }
 
   if (APP.admin) {
@@ -777,7 +780,7 @@ function nav(pageId, addToHistory = true) {
   if (APP.navHistory.length > 0) tg.BackButton.show();
   else tg.BackButton.hide();
 
-  if (tg.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
+  haptic("impact", 'light');
 }
 
 function goBack() {
@@ -837,7 +840,7 @@ function selectProject(proj, card) {
   document.getElementById('hoursLabel').textContent = `⏱️ Часов для «${proj.full}»`;
   updateSummary();
 
-  if (tg.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
+  haptic("impact", 'light');
 
   // Скроллим к слайдеру
   setTimeout(() => document.getElementById('hoursWrap').scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 100);
@@ -962,7 +965,7 @@ function initHoursSlider() {
       document.getElementById('hoursDisplay').value = APP.currentHours;
       updateQuickBtns(APP.currentHours);
       updateSummary(); updateTotalHours();
-      if (tg.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
+      haptic("impact", 'light');
     });
   });
   updateQuickBtns(4);
@@ -1049,7 +1052,7 @@ async function submitReport() {
   }
   if (!APP.reportItems.length) {
     document.getElementById('projError').classList.add('show');
-    if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('error');
+    haptic("notify", 'error');
     return;
   }
 
@@ -1104,7 +1107,7 @@ async function submitReport() {
   renderMyStats();
 
     showToast('✅ Отчёт сохранён!');
-    if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
+    haptic("notify", 'success');
 
     // Обновляем статистику
     await loadDataFromAPI();
@@ -1157,7 +1160,7 @@ async function submitAddProject() {
     document.getElementById('abbrErr').classList.add('show'); ok = false;
   }
 
-  if (!ok) { if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('error'); return; }
+  if (!ok) { haptic("notify", 'error'); return; }
 
   // Отправляем боту БЕЗ закрытия (sendData не закрывает если не вызван tg.close)
   tg.sendData(JSON.stringify({ type: 'add_project', abbr, full }));
@@ -1179,7 +1182,7 @@ async function submitAddProject() {
   renderAdminManage();
 
   showToast(`✅ Проект ${abbr} добавлен!`);
-  if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
+  haptic("notify", 'success');
 
   // Закрываем модальное окно
   closeModal();
@@ -1368,7 +1371,7 @@ async function submitAssign() {
 
   // Запоминаем в pendingActions — отправится боту вместе со следующим отчётом
   showToast(`✅ Проекты назначены для ${uname}`, 'success');
-  if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
+  haptic("notify", 'success');
 
   // Сбрасываем форму
   document.getElementById('assignUser').value = '';
@@ -1465,7 +1468,7 @@ function showVersionToast(type, oldVersion = null) {
   }, 8000);
 
   if (tg.HapticFeedback) {
-    tg.HapticFeedback.notificationOccurred('success');
+    haptic("notify", 'success');
   }
 }
 
