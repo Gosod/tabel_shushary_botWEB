@@ -536,7 +536,7 @@ textarea:focus, input:focus {
   <div class="page-sub" id="myStatsSubtitle">Загрузка...</div>
   <div id="myStatsContent"></div>
   <div class="info-card" style="margin-top:8px;font-size:12px">
-    💡 Данные актуальны на момент открытия приложения. Для обновления нажмите /start в боте
+    💡 Данные актуальны на момент открытия. Для обновления нажмите /start в боте
   </div>
   <button class="btn btn-secondary" onclick="nav('home')">⬅️ На главную</button>
 </div>
@@ -708,12 +708,21 @@ async function loadDataFromAPI() {
     return false;
   }
 }
+
+async function loadAdminStats() {
+  if (!APP.admin || !APP.userId) return;
+  try {
+    APP.adminStats = await apiCall('/admin-stats', 'POST', { user_id: APP.userId });
+  } catch(e) {
+    console.error('Admin stats failed:', e);
+  }
+}
 // ── INIT ──
 async function init() {
   const params = new URLSearchParams(window.location.search);
   const raw = params.get('data');
 
-  // Читаем все данные из URL — без обращения к API при открытии
+  // Читаем все данные из URL — проекты, статистика, список пользователей
   if (raw) {
     try {
       const d = JSON.parse(decodeURIComponent(raw));
@@ -724,14 +733,14 @@ async function init() {
       APP.allProjects = d.all_projects || d.projects || [];
       APP.allUsers    = d.all_users    || [];
       APP.userStats   = d.user_stats   || {};
-      APP.adminStats  = d.admin_stats  || null;
+      // admin_stats грузится отдельно при открытии Админ-панели
     } catch(e) {
       console.error('Init error', e);
       APP.userId = 0;
     }
   }
 
-  // Если нет userId — demo режим (локальное тестирование)
+  // Demo-режим если нет userId (локальное тестирование)
   if (!APP.userId) {
     APP.projects = [{abbr:'DEMO', full:'Demo проект'}];
   }
@@ -775,6 +784,14 @@ function nav(pageId, addToHistory = true) {
   else tg.BackButton.hide();
 
   if (tg.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
+
+  // При открытии Админ-панели грузим статистику
+  if (pageId === 'admin-panel' && APP.admin && !APP.adminStats) {
+    loadAdminStats().then(() => {
+      renderAdminOverview();
+      renderAdminTab(currentAdminTab);
+    });
+  }
 }
 
 function goBack() {
@@ -1102,7 +1119,6 @@ async function submitReport() {
 
     showToast('✅ Отчёт сохранён!');
     if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
-
     setTimeout(() => nav('home'), 1500);
   } catch (error) {
     console.error('Submit report failed:', error);
