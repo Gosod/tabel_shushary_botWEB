@@ -729,8 +729,14 @@ async function init() {
   if (APP.userId) {
     await loadDataFromAPI();
   } else {
-    // Demo data для локального тестирования
-    APP.projects = [{abbr:'DEMO',full:'Demo проект'}];
+    // Demo-режим для тестирования в браузере (без Telegram)
+    APP.userId      = 699229724;
+    APP.admin       = true;
+    APP.username    = 'demo_admin';
+    APP.projects    = [{abbr:'DEMO', full:'Demo проект'}];
+    APP.allProjects = [{abbr:'DEMO', full:'Demo проект'}];
+    APP.allUsers    = [{id: 699229724, username: 'demo_admin'}];
+    APP.userStats   = {total_hours: 42, total_reports: 7, by_project: {'DEMO': 42}};
   }
 
   if (APP.admin) {
@@ -1153,34 +1159,30 @@ async function submitAddProject() {
 
   if (!ok) { if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('error'); return; }
 
-  try {
-    // Сохраняем через API
-    await apiCall('/project', 'POST', { user_id: APP.userId, abbr, full });
+  // Отправляем боту БЕЗ закрытия (sendData не закрывает если не вызван tg.close)
+  tg.sendData(JSON.stringify({ type: 'add_project', abbr, full }));
 
-    // Добавляем локально сразу
-    const newProj = { abbr, full };
-    APP.allProjects.push(newProj);
-    APP.projects.push(newProj);
+  // Добавляем локально сразу
+  const newProj = { abbr, full };
+  APP.allProjects.push(newProj);
+  APP.projects.push(newProj);
 
-    // Сбрасываем форму
-    document.getElementById('newAbbr').value = '';
-    document.getElementById('newFull').value = '';
-    document.getElementById('projPreview').style.display = 'none';
-    document.getElementById('abbrErr').classList.remove('show');
-    document.getElementById('fullErr').classList.remove('show');
+  // Сбрасываем форму
+  document.getElementById('newAbbr').value = '';
+  document.getElementById('newFull').value = '';
+  document.getElementById('projPreview').style.display = 'none';
+  document.getElementById('abbrErr').classList.remove('show');
+  document.getElementById('fullErr').classList.remove('show');
 
-    // Обновляем UI
-    buildProjectsGrid();
-    renderAdminManage();
+  // Обновляем UI
+  buildProjectsGrid();
+  renderAdminManage();
 
-    showToast(`✅ Проект ${abbr} добавлен!`);
-    if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
+  showToast(`✅ Проект ${abbr} добавлен!`);
+  if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
 
-    // Закрываем модальное окно
-    closeModal();
-  } catch(e) {
-    console.error('Add project failed:', e);
-  }
+  // Закрываем модальное окно
+  closeModal();
 }
 
 // ── MY STATS ──
