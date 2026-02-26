@@ -556,33 +556,6 @@ textarea:focus, input:focus {
   <button class="btn btn-secondary" onclick="nav('home')">⬅️ На главную</button>
 </div>
 
-<!-- ADD PROJECT -->
-<div class="page" id="add-project">
-  <div class="page-title">➕ Добавить проект</div>
-  <div class="page-sub">Создайте новый проект</div>
-  <div class="info-card">💡 Аббревиатура — короткое название (2-5 символов), которое отображается на кнопке</div>
-  <div class="form-group">
-    <div class="form-label">🔤 Аббревиатура</div>
-    <input type="text" id="newAbbr" placeholder="Например: РС" maxlength="5">
-    <div class="input-hint">2-5 символов, автоматически CAPS</div>
-    <div class="error-msg" id="abbrErr">Заполните поле (мин. 2 символа)</div>
-  </div>
-  <div class="form-group">
-    <div class="form-label">📝 Полное название</div>
-    <input type="text" id="newFull" placeholder="Например: Разработка сайта" maxlength="50">
-    <div class="input-hint">До 50 символов</div>
-    <div class="error-msg" id="fullErr">Заполните поле (мин. 3 символа)</div>
-    <div id="projPreview" style="display:none">
-      <div class="proj-preview-box">
-        <div class="proj-preview-abbr" id="previewAbbr">РС</div>
-        <div class="proj-preview-name" id="previewFull">Разработка сайта</div>
-      </div>
-    </div>
-  </div>
-  <button class="btn btn-primary" onclick="submitAddProject()">✅ Добавить проект</button>
-  <button class="btn btn-secondary" onclick="goBack()">⬅️ Назад</button>
-</div>
-
 <!-- ADD PROJECT MODAL -->
 <div class="modal-overlay" id="addProjModal">
   <div class="modal-box">
@@ -593,18 +566,18 @@ textarea:focus, input:focus {
     <div class="info-card">💡 Аббревиатура — 2-5 символов, отображается на кнопке</div>
     <div class="form-group">
       <div class="form-label">🔤 Аббревиатура</div>
-      <input type="text" id="newAbbr" placeholder="Например: РС" maxlength="5">
-      <div class="error-msg" id="abbrErr">Заполните поле (мин. 2 символа)</div>
+      <input type="text" id="modalAbbr" placeholder="Например: РС" maxlength="5">
+      <div class="error-msg" id="modalAbbrErr">Заполните поле (мин. 2 символа)</div>
     </div>
     <div class="form-group">
       <div class="form-label">📝 Полное название</div>
-      <input type="text" id="newFull" placeholder="Например: Разработка сайта" maxlength="50">
-      <div class="error-msg" id="fullErr">Заполните поле (мин. 3 символа)</div>
+      <input type="text" id="modalFull" placeholder="Например: Разработка сайта" maxlength="50">
+      <div class="error-msg" id="modalFullErr">Заполните поле (мин. 3 символа)</div>
     </div>
-    <div id="projPreview" style="display:none;margin-bottom:16px">
+    <div id="modalProjPreview" style="display:none;margin-bottom:16px">
       <div class="proj-preview-box">
-        <div class="proj-preview-abbr" id="previewAbbr">РС</div>
-        <div class="proj-preview-name" id="previewFull">Разработка сайта</div>
+        <div class="proj-preview-abbr" id="modalPreviewAbbr">РС</div>
+        <div class="proj-preview-name" id="modalPreviewFull">Разработка сайта</div>
       </div>
     </div>
     <button class="btn btn-primary" onclick="submitAddProject()">✅ Добавить проект</button>
@@ -708,39 +681,29 @@ async function loadDataFromAPI() {
     return false;
   }
 }
-
-async function loadAdminStats() {
-  if (!APP.admin || !APP.userId) return;
-  try {
-    APP.adminStats = await apiCall('/admin-stats', 'POST', { user_id: APP.userId });
-  } catch(e) {
-    console.error('Admin stats failed:', e);
-  }
-}
-
 // ── INIT ──
 async function init() {
   const params = new URLSearchParams(window.location.search);
   const raw = params.get('data');
-
+  
+  // Получаем минимальные данные из URL
   if (raw) {
     try {
       const d = JSON.parse(decodeURIComponent(raw));
-      APP.userId      = d.user_id      || 0;
-      APP.admin       = !!d.admin;
-      APP.username    = d.username     || '';
-      APP.projects    = d.projects     || [];
-      APP.allProjects = d.all_projects || d.projects || [];
-      APP.allUsers    = d.all_users    || [];
-      APP.userStats   = d.user_stats   || {};
-    } catch(e) {
+      APP.userId = d.user_id || 0;
+      APP.admin = !!d.admin;
+    } catch(e) { 
       console.error('Init error', e);
       APP.userId = 0;
     }
   }
 
-  if (!APP.userId) {
-    APP.projects = [{abbr:'DEMO', full:'Demo проект'}];
+  // Загружаем полные данные через API
+  if (APP.userId) {
+    await loadDataFromAPI();
+  } else {
+    // Demo data для локального тестирования
+    APP.projects = [{abbr:'DEMO',full:'Demo проект'}];
   }
 
   if (APP.admin) {
@@ -782,11 +745,6 @@ function nav(pageId, addToHistory = true) {
   else tg.BackButton.hide();
 
   if (tg.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
-
-  // При переходе в админ-панель — грузим статистику если ещё нет
-  if (pageId === 'admin-panel' && APP.admin && !APP.adminStats) {
-    loadAdminStats().then(() => renderAdminTab(currentAdminTab));
-  }
 }
 
 function goBack() {
@@ -1114,6 +1072,10 @@ async function submitReport() {
 
     showToast('✅ Отчёт сохранён!');
     if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
+
+    // Обновляем статистику
+    await loadDataFromAPI();
+
     setTimeout(() => nav('home'), 1500);
   } catch (error) {
     console.error('Submit report failed:', error);
@@ -1122,44 +1084,44 @@ async function submitReport() {
 
 // ── ADD PROJECT FORM ──
 function initAddProjectForm() {
-  document.getElementById('newAbbr').addEventListener('input', e => {
+  document.getElementById('modalAbbr').addEventListener('input', e => {
     e.target.value = e.target.value.toUpperCase();
     updateProjPreview();
   });
-  document.getElementById('newFull').addEventListener('input', updateProjPreview);
+  document.getElementById('modalFull').addEventListener('input', updateProjPreview);
 }
 
 function updateProjPreview() {
-  const a = document.getElementById('newAbbr').value.trim();
-  const f = document.getElementById('newFull').value.trim();
-  const preview = document.getElementById('projPreview');
+  const a = document.getElementById('modalAbbr').value.trim();
+  const f = document.getElementById('modalFull').value.trim();
+  const preview = document.getElementById('modalProjPreview');
   if (a || f) {
     preview.style.display = 'block';
-    document.getElementById('previewAbbr').textContent = a || 'АБВ';
-    document.getElementById('previewFull').textContent = f || 'Название';
+    document.getElementById('modalPreviewAbbr').textContent = a || 'АБВ';
+    document.getElementById('modalPreviewFull').textContent = f || 'Название';
   } else {
     preview.style.display = 'none';
   }
 }
 
 async function submitAddProject() {
-  const abbr = document.getElementById('newAbbr').value.trim().toUpperCase();
-  const full = document.getElementById('newFull').value.trim();
+  const abbr = document.getElementById('modalAbbr').value.trim().toUpperCase();
+  const full = document.getElementById('modalFull').value.trim();
   let ok = true;
 
   if (abbr.length < 2) {
-    document.getElementById('abbrErr').textContent = 'Минимум 2 символа';
-    document.getElementById('abbrErr').classList.add('show'); ok = false;
-  } else document.getElementById('abbrErr').classList.remove('show');
+    document.getElementById('modalAbbrErr').textContent = 'Минимум 2 символа';
+    document.getElementById('modalAbbrErr').classList.add('show'); ok = false;
+  } else document.getElementById('modalAbbrErr').classList.remove('show');
 
   if (full.length < 3) {
-    document.getElementById('fullErr').textContent = 'Минимум 3 символа';
-    document.getElementById('fullErr').classList.add('show'); ok = false;
-  } else document.getElementById('fullErr').classList.remove('show');
+    document.getElementById('modalFullErr').textContent = 'Минимум 3 символа';
+    document.getElementById('modalFullErr').classList.add('show'); ok = false;
+  } else document.getElementById('modalFullErr').classList.remove('show');
 
   if (APP.allProjects.find(p => p.abbr === abbr)) {
-    document.getElementById('abbrErr').textContent = 'Аббревиатура уже используется';
-    document.getElementById('abbrErr').classList.add('show'); ok = false;
+    document.getElementById('modalAbbrErr').textContent = 'Аббревиатура уже используется';
+    document.getElementById('modalAbbrErr').classList.add('show'); ok = false;
   }
 
   if (!ok) { if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('error'); return; }
@@ -1171,11 +1133,11 @@ async function submitAddProject() {
     APP.allProjects.push(newProj);
     APP.projects.push(newProj);
 
-    document.getElementById('newAbbr').value = '';
-    document.getElementById('newFull').value = '';
-    document.getElementById('projPreview').style.display = 'none';
-    document.getElementById('abbrErr').classList.remove('show');
-    document.getElementById('fullErr').classList.remove('show');
+    document.getElementById('modalAbbr').value = '';
+    document.getElementById('modalFull').value = '';
+    document.getElementById('modalProjPreview').style.display = 'none';
+    document.getElementById('modalAbbrErr').classList.remove('show');
+    document.getElementById('modalFullErr').classList.remove('show');
 
     buildProjectsGrid();
     renderAdminManage();
@@ -1188,147 +1150,6 @@ async function submitAddProject() {
   }
 }
 
-// ── MY STATS ──
-function renderMyStats() {
-  const content = document.getElementById('myStatsContent');
-  const s = APP.userStats;
-  if (!s || !s.total_reports) {
-    document.getElementById('myStatsSubtitle').textContent = 'Ещё нет отчётов';
-    content.innerHTML = `<div class="empty"><div class="empty-icon">📭</div><div>Создайте первый отчёт!</div></div>`;
-    return;
-  }
-  document.getElementById('myStatsSubtitle').textContent = `Всего за всё время`;
-  let html = `
-    <div class="card"><div class="card-row"><div class="card-label">⏱️ Всего часов</div><div class="card-value">${s.total_hours}</div></div></div>
-    <div class="card"><div class="card-row"><div class="card-label">📝 Отчётов</div><div class="card-value">${s.total_reports}</div></div></div>
-    <div class="form-label" style="margin-top:4px">📁 По проектам</div>
-  `;
-  Object.entries(s.by_project || {}).sort((a,b)=>b[1]-a[1]).forEach(([proj, h]) => {
-    html += `<div class="card"><div class="card-row"><span>${proj}</span><span style="font-weight:700;color:var(--accent)">${h} ч</span></div></div>`;
-  });
-  content.innerHTML = html;
-}
-
-// ── ADMIN TABS ──
-let currentAdminTab = 'overview';
-function adminTab(tab, btn) {
-  document.querySelectorAll('.stat-tab').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  currentAdminTab = tab;
-  renderAdminTab(tab);
-}
-
-function renderAdminTab(tab) {
-  if (tab === 'overview') renderAdminOverview();
-  else if (tab === 'employees') renderAdminEmployees();
-  else if (tab === 'projects-stat') renderAdminProjects();
-  else if (tab === 'reports-list') renderAdminReports();
-  else if (tab === 'manage') renderAdminManage();
-}
-
-function renderAdminOverview() {
-  if (!document.getElementById('admin-panel').classList.contains('active') && currentAdminTab !== 'overview') return;
-  const s = APP.adminStats;
-  const content = document.getElementById('adminContent');
-  if (!s) {
-    content.innerHTML = `<div class="empty"><div class="empty-icon">📊</div><div>Нет данных</div></div>`;
-    return;
-  }
-  content.innerHTML = `
-    <div class="card"><div class="card-row"><div class="card-label">⏱️ Всего часов</div><div class="card-value">${s.total_hours}</div></div></div>
-    <div class="card"><div class="card-row"><div class="card-label">📝 Отчётов</div><div class="card-value">${s.total_reports}</div></div></div>
-    <div class="card"><div class="card-row"><div class="card-label">👥 Сотрудников</div><div class="card-value">${s.employees?.length||0}</div></div></div>
-    <div class="chart-wrap"><canvas id="overviewChart"></canvas></div>
-  `;
-  if (s.employees?.length && typeof Chart !== 'undefined') {
-    if (APP.adminChart) APP.adminChart.destroy();
-    const ctx = document.getElementById('overviewChart');
-    APP.adminChart = new Chart(ctx, {
-      type: 'bar',
-      data: {
-        labels: s.employees.map(e=>e.name),
-        datasets: [{ label:'Часы', data: s.employees.map(e=>e.hours), backgroundColor: 'rgba(37,99,235,0.7)', borderRadius: 6 }]
-      },
-      options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true}} }
-    });
-  }
-}
-
-function renderAdminEmployees() {
-  const s = APP.adminStats;
-  const content = document.getElementById('adminContent');
-  if (!s?.employees?.length) { content.innerHTML = `<div class="empty"><div class="empty-icon">👥</div><div>Нет данных</div></div>`; return; }
-  content.innerHTML = [...s.employees].sort((a,b)=>b.hours-a.hours).map(emp => `
-    <div class="emp-card">
-      <div class="emp-header">
-        <div class="emp-name">👤 ${emp.name}</div>
-        <div class="emp-hours">${emp.hours} ч</div>
-      </div>
-      <div style="font-size:13px;color:var(--hint);margin-bottom:8px">📝 Отчётов: ${emp.reports}</div>
-      ${Object.entries(emp.projects||{}).map(([p,h])=>`<div class="emp-proj"><span class="emp-proj-name">${p}</span><span>${h} ч</span></div>`).join('')}
-    </div>
-  `).join('');
-}
-
-function renderAdminProjects() {
-  const s = APP.adminStats;
-  const content = document.getElementById('adminContent');
-  if (!s?.projects) { content.innerHTML = `<div class="empty"><div class="empty-icon">📁</div><div>Нет данных</div></div>`; return; }
-  const sorted = Object.entries(s.projects).sort((a,b)=>b[1]-a[1]);
-  content.innerHTML = sorted.map(([p,h])=>`<div class="card"><div class="card-row"><span>${p}</span><span style="font-weight:700;color:var(--accent)">${h} ч</span></div></div>`).join('')
-    + `<div class="chart-wrap"><canvas id="projChart"></canvas></div>`;
-  if (sorted.length && typeof Chart !== 'undefined') {
-    if (APP.projChart) APP.projChart.destroy();
-    APP.projChart = new Chart(document.getElementById('projChart'), {
-      type: 'doughnut',
-      data: {
-        labels: sorted.map(([p])=>p),
-        datasets: [{ data: sorted.map(([,h])=>h), backgroundColor: ['#2563eb','#16a34a','#d97706','#9333ea','#ef4444','#0891b2'], borderWidth:0 }]
-      },
-      options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{position:'bottom',labels:{font:{size:12}}}} }
-    });
-  }
-}
-
-function renderAdminReports() {
-  const s = APP.adminStats;
-  const content = document.getElementById('adminContent');
-  if (!s?.recent_reports?.length) { content.innerHTML = `<div class="empty"><div class="empty-icon">📝</div><div>Нет отчётов</div></div>`; return; }
-  content.innerHTML = s.recent_reports.map(r=>`
-    <div class="report-item">
-      <div class="report-header">
-        <span class="report-emp">👤 ${r.employee}</span>
-        <span class="report-date">${r.date} ${r.time}</span>
-      </div>
-      <div class="report-proj">📁 ${r.project} — ${r.hours} ч</div>
-      ${r.comment && r.comment !== '-' ? `<div class="report-comment">💬 ${r.comment}</div>` : ''}
-    </div>
-  `).join('');
-}
-
-function renderAdminManage() {
-  const content = document.getElementById('adminContent');
-  const projs = APP.allProjects;
-  const users = APP.allUsers;
-
-  content.innerHTML = `
-    <div class="form-label">📁 Проекты (${projs.length})</div>
-    ${projs.map(p=>`
-      <div class="project-list-item">
-        <span class="proj-list-name">${p.abbr} — ${p.full}</span>
-        <button class="remove-btn" onclick="removeProject('${p.abbr}')">✕</button>
-      </div>`).join('')}
-    <button class="btn btn-primary" onclick="openModal()">➕ Добавить проект</button>
-
-    <div class="form-label" style="margin-top:24px">👥 Назначить проекты сотруднику</div>
-    <select class="user-select" id="assignUser" onchange="renderAssignProjects()">
-      <option value="">— Выберите сотрудника —</option>
-      ${users.map(u=>`<option value="${u.id}">${u.username}</option>`).join('')}
-    </select>
-    <div id="assignProjectsList" class="checkbox-list"></div>
-    <button class="btn btn-primary" id="assignBtn" style="display:none" onclick="submitAssign()">✅ Сохранить назначение</button>
-  `;
-}
 
 async function removeProject(abbr) {
   if (confirm(`Удалить проект ${abbr}?`)) {
@@ -1388,7 +1209,7 @@ async function submitAssign() {
     });
 
     showToast(`✅ Проекты назначены для ${uname}`, 'success');
-    haptic('notify', 'success');
+    if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
 
     // Сбрасываем форму
     document.getElementById('assignUser').value = '';
@@ -1401,11 +1222,11 @@ async function submitAssign() {
 
 // ── MODAL ──
 function openModal() {
-  document.getElementById('newAbbr').value = '';
-  document.getElementById('newFull').value = '';
-  document.getElementById('projPreview').style.display = 'none';
-  document.getElementById('abbrErr').classList.remove('show');
-  document.getElementById('fullErr').classList.remove('show');
+  document.getElementById('modalAbbr').value = '';
+  document.getElementById('modalFull').value = '';
+  document.getElementById('modalProjPreview').style.display = 'none';
+  document.getElementById('modalAbbrErr').classList.remove('show');
+  document.getElementById('modalFullErr').classList.remove('show');
   document.getElementById('addProjModal').classList.add('open');
 }
 
