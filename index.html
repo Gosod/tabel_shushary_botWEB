@@ -536,7 +536,7 @@ textarea:focus, input:focus {
   <div class="page-sub" id="myStatsSubtitle">Загрузка...</div>
   <div id="myStatsContent"></div>
   <div class="info-card" style="margin-top:8px;font-size:12px">
-    💡 Данные обновляются при каждом открытии приложения через /start
+    💡 Данные актуальны на момент открытия приложения. Для обновления нажмите /start в боте
   </div>
   <button class="btn btn-secondary" onclick="nav('home')">⬅️ На главную</button>
 </div>
@@ -712,25 +712,28 @@ async function loadDataFromAPI() {
 async function init() {
   const params = new URLSearchParams(window.location.search);
   const raw = params.get('data');
-  
-  // Получаем минимальные данные из URL
+
+  // Читаем все данные из URL — без обращения к API при открытии
   if (raw) {
     try {
       const d = JSON.parse(decodeURIComponent(raw));
-      APP.userId = d.user_id || 0;
-      APP.admin = !!d.admin;
-    } catch(e) { 
+      APP.userId      = d.user_id      || 0;
+      APP.admin       = !!d.admin;
+      APP.username    = d.username     || '';
+      APP.projects    = d.projects     || [];
+      APP.allProjects = d.all_projects || d.projects || [];
+      APP.allUsers    = d.all_users    || [];
+      APP.userStats   = d.user_stats   || {};
+      APP.adminStats  = d.admin_stats  || null;
+    } catch(e) {
       console.error('Init error', e);
       APP.userId = 0;
     }
   }
 
-  // Загружаем полные данные через API
-  if (APP.userId) {
-    await loadDataFromAPI();
-  } else {
-    // Demo data для локального тестирования
-    APP.projects = [{abbr:'DEMO',full:'Demo проект'}];
+  // Если нет userId — demo режим (локальное тестирование)
+  if (!APP.userId) {
+    APP.projects = [{abbr:'DEMO', full:'Demo проект'}];
   }
 
   if (APP.admin) {
@@ -1099,9 +1102,6 @@ async function submitReport() {
 
     showToast('✅ Отчёт сохранён!');
     if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
-
-    // Обновляем статистику
-    await loadDataFromAPI();
 
     setTimeout(() => nav('home'), 1500);
   } catch (error) {
