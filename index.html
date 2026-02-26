@@ -1288,7 +1288,7 @@ function renderAdminReports() {
   content.innerHTML = s.recent_reports.map(r=>`
     <div class="report-item">
       <div class="report-header">
-        <span class="report-emp">👤 ${r.employee || r.username || '?'}</span>
+        <span class="report-emp">👤 ${r.employee}</span>
         <span class="report-date">${r.date} ${r.time}</span>
       </div>
       <div class="report-proj">📁 ${r.project} — ${r.hours} ч</div>
@@ -1337,16 +1337,30 @@ async function removeProject(abbr) {
   }
 }
 
-function renderAssignProjects() {
+async function renderAssignProjects() {
   const uid = document.getElementById('assignUser').value;
   if (!uid) return;
+
+  // Получаем текущие назначения сотрудника
+  let assignedAbbrs = null;
+  try {
+    const res = await apiCall('/user-projects', 'POST', { user_id: parseInt(uid), admin_id: APP.userId });
+    assignedAbbrs = res.abbrs;
+  } catch(e) {
+    // Если не удалось — показываем все отмеченными
+    assignedAbbrs = null;
+  }
+
   const list = document.getElementById('assignProjectsList');
-  list.innerHTML = APP.allProjects.map(p => `
-    <label class="checkbox-item">
-      <input type="checkbox" value="${p.abbr}" checked>
-      <span>${p.abbr} — ${p.full}</span>
-    </label>
-  `).join('');
+  list.innerHTML = APP.allProjects.map(p => {
+    const checked = assignedAbbrs === null || assignedAbbrs.includes(p.abbr);
+    return `
+      <label class="checkbox-item">
+        <input type="checkbox" value="${p.abbr}" ${checked ? 'checked' : ''}>
+        <span>${p.abbr} — ${p.full}</span>
+      </label>
+    `;
+  }).join('');
   document.getElementById('assignBtn').style.display = 'block';
 }
 
@@ -1356,18 +1370,24 @@ async function submitAssign() {
   const uname = APP.allUsers.find(u=>u.id===uid)?.username || '';
   const checked = [...document.querySelectorAll('#assignProjectsList input:checked')].map(c=>c.value);
   if (!checked.length) { showToast('Выберите хотя бы один проект', 'error'); return; }
-  // Сохраняем в очередь pendingActions (не закрываем приложение)
-  APP.pendingActions = APP.pendingActions || [];
-  APP.pendingActions.push({ type: 'assign_projects', user_id: uid, username: uname, abbrs: checked });
 
-  // Запоминаем в pendingActions — отправится боту вместе со следующим отчётом
-  showToast(`✅ Проекты назначены для ${uname}`, 'success');
-  if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
+  try {
+    await apiCall('/assign', 'POST', {
+      admin_id: APP.userId,
+      user_id: uid,
+      abbrs: checked
+    });
 
-  // Сбрасываем форму
-  document.getElementById('assignUser').value = '';
-  document.getElementById('assignProjectsList').innerHTML = '';
-  document.getElementById('assignBtn').style.display = 'none';
+    showToast(`✅ Проекты назначены для ${uname}`, 'success');
+    haptic('notify', 'success');
+
+    // Сбрасываем форму
+    document.getElementById('assignUser').value = '';
+    document.getElementById('assignProjectsList').innerHTML = '';
+    document.getElementById('assignBtn').style.display = 'none';
+  } catch(e) {
+    console.error('Assign failed:', e);
+  }
 }
 
 // ── MODAL ──
