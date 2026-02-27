@@ -696,43 +696,35 @@ async function init() {
   const params = new URLSearchParams(window.location.search);
   const raw = params.get('data');
 
-  // Читаем все данные из URL
   if (raw) {
     try {
       const d = JSON.parse(decodeURIComponent(raw));
-      APP.userId      = d.user_id      || 0;
-      APP.admin       = !!d.admin;
-      APP.username    = d.username     || '';
-      APP.projects    = d.projects     || [];
-      APP.allProjects = d.all_projects || d.projects || [];
-      APP.allUsers    = d.all_users    || [];
-      APP.userStats   = d.user_stats   || {};
-      // adminStats грузим отдельно при открытии админ-панели
+      APP.userId    = d.user_id    || 0;
+      APP.admin     = !!d.admin;
+      APP.username  = d.username   || '';
+      APP.userStats = d.user_stats || {};
     } catch(e) {
-      console.error('Init error', e);
-      APP.userId = 0;
+      console.error('Init parse error', e);
     }
-  }
-
-  if (!APP.userId) {
-    APP.projects = [{abbr:'DEMO', full:'Demo проект'}];
   }
 
   if (APP.admin) {
     document.querySelectorAll('.admin-only').forEach(el => el.style.display = '');
   }
 
-  buildProjectsGrid();
-  renderMyStats();
-  renderAdminOverview();
   initHoursSlider();
   initAddProjectForm();
   initNav();
-
-  // Back button
   tg.BackButton.onClick(() => goBack());
 
-  // Проверка версии и показ уведомления
+  if (APP.userId) {
+    await loadDataFromAPI();
+  } else {
+    APP.projects = [{abbr:'DEMO', full:'Demo проект'}];
+    buildProjectsGrid();
+    renderMyStats();
+  }
+
   checkVersion();
 }
 
@@ -758,7 +750,6 @@ function nav(pageId, addToHistory = true) {
 
   if (tg.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
 
-  // При открытии админ-панели — грузим статистику
   if (pageId === 'admin-panel' && APP.admin && !APP.adminStats) {
     loadAdminStats().then(() => renderAdminTab(currentAdminTab));
   }
@@ -1089,6 +1080,9 @@ async function submitReport() {
 
     showToast('✅ Отчёт сохранён!');
     if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
+
+    // Обновляем статистику
+    await loadDataFromAPI();
 
     setTimeout(() => nav('home'), 1500);
   } catch (error) {
