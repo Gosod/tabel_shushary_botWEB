@@ -663,17 +663,20 @@ async function loadDataFromAPI() {
   try {
     const data = await apiCall('/init', 'POST', { user_id: APP.userId });
     
-    APP.admin = data.admin;
-    APP.username = data.username;
-    APP.projects = data.projects || [];
+    // Обновляем данные, сохраняя admin флаг из URL
+    if (data.admin !== undefined) APP.admin = data.admin;
+    APP.username    = data.username     || APP.username;
+    APP.projects    = data.projects     || [];
     APP.allProjects = data.all_projects || [];
-    APP.allUsers = data.all_users || [];
-    APP.userStats = data.user_stats || {};
-    APP.adminStats = data.admin_stats || null;
-    
+    APP.allUsers    = data.all_users    || [];
+    APP.userStats   = data.user_stats   || APP.userStats;
+
+    if (APP.admin) {
+      document.querySelectorAll('.admin-only').forEach(el => el.style.display = '');
+    }
+
     buildProjectsGrid();
     renderMyStats();
-    if (APP.admin) renderAdminOverview();
     
     return true;
   } catch (error) {
@@ -695,36 +698,42 @@ async function loadAdminStats() {
 async function init() {
   const params = new URLSearchParams(window.location.search);
   const raw = params.get('data');
-
+  
+  // Получаем минимальные данные из URL
   if (raw) {
     try {
       const d = JSON.parse(decodeURIComponent(raw));
-      APP.userId    = d.user_id    || 0;
-      APP.admin     = !!d.admin;
-      APP.username  = d.username   || '';
-      APP.userStats = d.user_stats || {};
-    } catch(e) {
-      console.error('Init parse error', e);
+      APP.userId = d.user_id || 0;
+      APP.admin = !!d.admin;
+    } catch(e) { 
+      console.error('Init error', e);
+      APP.userId = 0;
     }
+  }
+
+  // Загружаем полные данные через API
+  if (APP.userId) {
+    await loadDataFromAPI();
+  } else {
+    // Demo data для локального тестирования
+    APP.projects = [{abbr:'DEMO',full:'Demo проект'}];
   }
 
   if (APP.admin) {
     document.querySelectorAll('.admin-only').forEach(el => el.style.display = '');
   }
 
+  buildProjectsGrid();
+  renderMyStats();
+  renderAdminOverview();
   initHoursSlider();
   initAddProjectForm();
   initNav();
+
+  // Back button
   tg.BackButton.onClick(() => goBack());
 
-  if (APP.userId) {
-    await loadDataFromAPI();
-  } else {
-    APP.projects = [{abbr:'DEMO', full:'Demo проект'}];
-    buildProjectsGrid();
-    renderMyStats();
-  }
-
+  // Проверка версии и показ уведомления
   checkVersion();
 }
 
@@ -1080,10 +1089,6 @@ async function submitReport() {
 
     showToast('✅ Отчёт сохранён!');
     if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
-
-    // Обновляем статистику
-    await loadDataFromAPI();
-
     setTimeout(() => nav('home'), 1500);
   } catch (error) {
     console.error('Submit report failed:', error);
@@ -1226,6 +1231,155 @@ async function submitAssign() {
   } catch(e) {
     console.error('Assign failed:', e);
   }
+}
+
+
+// ── MY STATS ──
+function renderMyStats() {
+  const content = document.getElementById('myStatsContent');
+  const s = APP.userStats;
+  if (!s || !s.total_reports) {
+    document.getElementById('myStatsSubtitle').textContent = 'Ещё нет отчётов';
+    content.innerHTML = '<div class="empty"><div class="empty-icon">📭</div><div>Создайте первый отчёт!</div></div>';
+    return;
+  }
+  document.getElementById('myStatsSubtitle').textContent = 'Всего за всё время';
+  let html = `
+    <div class="card"><div class="card-row"><div class="card-label">⏱️ Всего часов</div><div class="card-value">${s.total_hours}</div></div></div>
+    <div class="card"><div class="card-row"><div class="card-label">📝 Отчётов</div><div class="card-value">${s.total_reports}</div></div></div>
+    <div class="form-label" style="margin-top:4px">📁 По проектам</div>
+  `;
+  Object.entries(s.by_project || {}).sort((a,b)=>b[1]-a[1]).forEach(([proj, h]) => {
+    html += `<div class="card"><div class="card-row"><span>${proj}</span><span style="font-weight:700;color:var(--accent)">${h} ч</span></div></div>`;
+  });
+  content.innerHTML = html;
+}
+
+// ── ADMIN TABS ──
+let currentAdminTab = 'overview';
+function adminTab(tab, btn) {
+  document.querySelectorAll('.stat-tab').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  currentAdminTab = tab;
+  renderAdminTab(tab);
+}
+
+function renderAdminTab(tab) {
+  if (tab === 'overview')      renderAdminOverview();
+  else if (tab === 'employees')     renderAdminEmployees();
+  else if (tab === 'projects-stat') renderAdminProjects();
+  else if (tab === 'reports-list')  renderAdminReports();
+  else if (tab === 'manage')        renderAdminManage();
+}
+
+function renderAdminOverview() {
+  const s = APP.adminStats;
+  const content = document.getElementById('adminContent');
+  if (!s) {
+    content.innerHTML = '<div class="empty"><div class="empty-icon">📊</div><div>Нет данных</div></div>';
+    return;
+  }
+  content.innerHTML = `
+    <div class="card"><div class="card-row"><div class="card-label">⏱️ Всего часов</div><div class="card-value">${s.total_hours}</div></div></div>
+    <div class="card"><div class="card-row"><div class="card-label">📝 Отчётов</div><div class="card-value">${s.total_reports}</div></div></div>
+    <div class="card"><div class="card-row"><div class="card-label">👥 Сотрудников</div><div class="card-value">${s.employees?.length||0}</div></div></div>
+    <div class="chart-wrap"><canvas id="overviewChart"></canvas></div>
+  `;
+  if (s.employees?.length && typeof Chart !== 'undefined') {
+    if (APP.adminChart) APP.adminChart.destroy();
+    APP.adminChart = new Chart(document.getElementById('overviewChart'), {
+      type: 'bar',
+      data: {
+        labels: s.employees.map(e=>e.name),
+        datasets: [{ label:'Часы', data: s.employees.map(e=>e.hours), backgroundColor: 'rgba(37,99,235,0.7)', borderRadius: 6 }]
+      },
+      options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true}} }
+    });
+  }
+}
+
+function renderAdminEmployees() {
+  const s = APP.adminStats;
+  const content = document.getElementById('adminContent');
+  if (!s?.employees?.length) {
+    content.innerHTML = '<div class="empty"><div class="empty-icon">👥</div><div>Нет данных</div></div>';
+    return;
+  }
+  content.innerHTML = [...s.employees].sort((a,b)=>b.hours-a.hours).map(emp => `
+    <div class="emp-card">
+      <div class="emp-header">
+        <div class="emp-name">👤 ${emp.name}</div>
+        <div class="emp-hours">${emp.hours} ч</div>
+      </div>
+      <div style="font-size:13px;color:var(--hint);margin-bottom:8px">📝 Отчётов: ${emp.reports}</div>
+      ${Object.entries(emp.projects||{}).map(([p,h])=>`<div class="emp-proj"><span class="emp-proj-name">${p}</span><span>${h} ч</span></div>`).join('')}
+    </div>
+  `).join('');
+}
+
+function renderAdminProjects() {
+  const s = APP.adminStats;
+  const content = document.getElementById('adminContent');
+  if (!s?.projects) {
+    content.innerHTML = '<div class="empty"><div class="empty-icon">📁</div><div>Нет данных</div></div>';
+    return;
+  }
+  const sorted = Object.entries(s.projects).sort((a,b)=>b[1]-a[1]);
+  content.innerHTML = sorted.map(([p,h])=>`
+    <div class="card"><div class="card-row"><span>${p}</span><span style="font-weight:700;color:var(--accent)">${h} ч</span></div></div>
+  `).join('') + '<div class="chart-wrap"><canvas id="projChart"></canvas></div>';
+  if (sorted.length && typeof Chart !== 'undefined') {
+    if (APP.projChart) APP.projChart.destroy();
+    APP.projChart = new Chart(document.getElementById('projChart'), {
+      type: 'doughnut',
+      data: {
+        labels: sorted.map(([p])=>p),
+        datasets: [{ data: sorted.map(([,h])=>h), backgroundColor: ['#2563eb','#16a34a','#d97706','#9333ea','#ef4444','#0891b2','#f59e0b','#10b981'], borderWidth:0 }]
+      },
+      options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{position:'bottom',labels:{font:{size:11}}}} }
+    });
+  }
+}
+
+function renderAdminReports() {
+  const s = APP.adminStats;
+  const content = document.getElementById('adminContent');
+  if (!s?.recent_reports?.length) {
+    content.innerHTML = '<div class="empty"><div class="empty-icon">📝</div><div>Нет отчётов</div></div>';
+    return;
+  }
+  content.innerHTML = s.recent_reports.map(r=>`
+    <div class="report-item">
+      <div class="report-header">
+        <span class="report-emp">👤 ${r.employee}</span>
+        <span class="report-date">${r.date} ${r.time||''}</span>
+      </div>
+      <div class="report-proj">📁 ${r.project} — ${r.hours} ч</div>
+      ${r.comment && r.comment !== '-' ? `<div class="report-comment">💬 ${r.comment}</div>` : ''}
+    </div>
+  `).join('');
+}
+
+function renderAdminManage() {
+  const content = document.getElementById('adminContent');
+  const projs = APP.allProjects || [];
+  const users = APP.allUsers || [];
+  content.innerHTML = `
+    <div class="form-label">📁 Проекты (${projs.length})</div>
+    ${projs.map(p=>`
+      <div class="project-list-item">
+        <span class="proj-list-name">${p.abbr} — ${p.full}</span>
+        <button class="remove-btn" onclick="removeProject('${p.abbr}')">✕</button>
+      </div>`).join('')}
+    <button class="btn btn-primary" onclick="openModal()">➕ Добавить проект</button>
+    <div class="form-label" style="margin-top:24px">👥 Назначить проекты сотруднику</div>
+    <select class="user-select" id="assignUser" onchange="renderAssignProjects()">
+      <option value="">— Выберите сотрудника —</option>
+      ${users.map(u=>`<option value="${u.id}">${u.username}</option>`).join('')}
+    </select>
+    <div id="assignProjectsList" class="checkbox-list"></div>
+    <button class="btn btn-primary" id="assignBtn" style="display:none" onclick="submitAssign()">✅ Сохранить назначение</button>
+  `;
 }
 
 // ── MODAL ──
