@@ -631,6 +631,7 @@ let APP = {
   navHistory: [],
   adminChart: null,
   projChart: null,
+  refreshTimer: null,
 };
 
 
@@ -694,6 +695,49 @@ async function loadAdminStats() {
   }
 }
 
+// ── AUTO REFRESH ──
+const REFRESH_INTERVAL = 60000; // 1 минута
+
+async function silentRefresh() {
+  if (!APP.userId || !APP.admin) return;
+  try {
+    // Обновляем admin stats тихо
+    const newStats = await apiCall('/admin-stats', 'POST', { user_id: APP.userId });
+    APP.adminStats = newStats;
+    // Перерисовываем только если сейчас открыта админ-панель
+    const adminPanel = document.getElementById('admin-panel');
+    if (adminPanel && adminPanel.classList.contains('active')) {
+      renderAdminTab(currentAdminTab);
+    }
+    // Обновляем личную статистику тоже
+    const initData = await apiCall('/init', 'POST', { user_id: APP.userId });
+    APP.userStats = initData.user_stats || APP.userStats;
+    APP.projects  = initData.projects   || APP.projects;
+    APP.allProjects = initData.all_projects || APP.allProjects;
+    APP.allUsers    = initData.all_users    || APP.allUsers;
+    buildProjectsGrid();
+    renderMyStats();
+  } catch(e) {
+    // Тихая ошибка — не показываем пользователю
+    console.log('Silent refresh failed:', e);
+  }
+}
+
+function startAutoRefresh() {
+  if (APP.refreshTimer) clearInterval(APP.refreshTimer);
+  APP.refreshTimer = setInterval(silentRefresh, REFRESH_INTERVAL);
+}
+
+function stopAutoRefresh() {
+  if (APP.refreshTimer) { clearInterval(APP.refreshTimer); APP.refreshTimer = null; }
+}
+
+// Останавливаем когда вкладка скрыта, возобновляем когда снова видна
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) stopAutoRefresh();
+  else if (APP.userId) startAutoRefresh();
+});
+
 // ── INIT ──
 async function init() {
   const params = new URLSearchParams(window.location.search);
@@ -735,6 +779,9 @@ async function init() {
 
   // Проверка версии и показ уведомления
   checkVersion();
+
+  // Запускаем автообновление
+  if (APP.userId) startAutoRefresh();
 }
 
 // ── NAVIGATION ──
@@ -884,18 +931,40 @@ function renderSelectedList() {
     const el = document.createElement('div');
     el.style.cssText = 'background:var(--bg2);border-radius:12px;padding:12px 14px;margin-bottom:10px;box-shadow:var(--shadow)';
     el.innerHTML = `
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
         <span style="font-weight:600;font-size:14px;flex:1;margin-right:8px">${item.abbr} — ${item.project}</span>
-        <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
-          <span style="font-weight:700;color:var(--accent);font-size:15px">${item.hours} ч</span>
-          <button onclick="removeItem(${idx})" style="background:none;border:none;color:var(--danger);font-size:18px;cursor:pointer;padding:0;line-height:1">✕</button>
+        <button onclick="removeItem(${idx})" style="background:none;border:none;color:var(--danger);font-size:18px;cursor:pointer;padding:0;line-height:1;flex-shrink:0">✕</button>
+      </div>
+
+      <!-- Редактирование часов -->
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+        <span style="font-size:13px;color:var(--hint);white-space:nowrap">⏱️ Часов:</span>
+        <input type="text" inputmode="decimal"
+          value="${item.hours}"
+          onchange="updateItemHours(${idx}, this.value)"
+          onblur="updateItemHours(${idx}, this.value)"
+          style="width:70px;padding:6px 10px;border:1.5px solid var(--border);border-radius:8px;
+          font:700 16px 'Golos Text',sans-serif;color:var(--accent);text-align:center;
+          background:var(--bg);outline:none;box-sizing:border-box"
+          onfocus="this.style.borderColor='var(--accent)'"
+          onblur="this.style.borderColor='var(--border)';updateItemHours(${idx},this.value)">
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          ${[1,2,4,6,8].map(h => `
+            <button onclick="setItemHours(${idx},${h})"
+              style="padding:5px 10px;border-radius:8px;border:1.5px solid ${item.hours===h?'var(--accent)':'var(--border)'};
+              background:${item.hours===h?'var(--accent)':'transparent'};color:${item.hours===h?'#fff':'var(--text)'};
+              font:600 13px inherit;cursor:pointer">${h}ч</button>`).join('')}
         </div>
       </div>
+
+      <!-- Комментарий -->
       <input type="text"
-        placeholder="Комментарий к ${item.project} (необязательно)"
+        placeholder="Комментарий (необязательно)"
         value="${(item.comment || '').replace(/"/g, '&quot;')}"
         oninput="APP.reportItems[${idx}].comment = this.value; updateSummary()"
-        style="width:100%;padding:8px 10px;border:1.5px solid var(--border);border-radius:8px;font:14px 'Golos Text',sans-serif;background:var(--bg);color:var(--text);box-sizing:border-box;outline:none"
+        style="width:100%;padding:8px 10px;border:1.5px solid var(--border);border-radius:8px;
+        font:14px 'Golos Text',sans-serif;background:var(--bg);color:var(--text);
+        box-sizing:border-box;outline:none"
         onfocus="this.style.borderColor='var(--accent)'"
         onblur="this.style.borderColor='var(--border)'"
       >
@@ -905,6 +974,19 @@ function renderSelectedList() {
   updateTotalHours();
 }
 
+function updateItemHours(idx, raw) {
+  const val = parseHoursInput(raw);
+  APP.reportItems[idx].hours = val;
+  renderSelectedList();
+  updateSummary();
+}
+
+function setItemHours(idx, h) {
+  APP.reportItems[idx].hours = h;
+  renderSelectedList();
+  updateSummary();
+  if (tg.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
+}
 function updateTotalHours() {
   const total = APP.reportItems.reduce((s, i) => s + i.hours, 0) + (APP.selectedProject ? APP.currentHours : 0);
   document.getElementById('totalHoursDisplay').textContent = total;
