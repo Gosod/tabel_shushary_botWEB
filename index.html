@@ -1307,6 +1307,20 @@ function renderAdminOverview() {
 }
 
 let empPeriod = 'all';
+let empCustomMonth = null;
+
+function setEmpPeriod(period, monthKey) {
+  empPeriod = period;
+  if (period === 'custom' && monthKey) {
+    // Собираем все даты из всех сотрудников
+    const allDates = (APP.adminStats?.employees || []).flatMap(e => (e.days||[]).map(d => ({date: d.date})));
+    const months = getAvailableMonths(allDates);
+    empCustomMonth = months.find(m => m.key === monthKey) || null;
+  } else {
+    empCustomMonth = null;
+  }
+  renderAdminEmployees();
+}
 
 function renderAdminEmployees() {
   const s = APP.adminStats;
@@ -1316,57 +1330,36 @@ function renderAdminEmployees() {
     return;
   }
 
-  const now = new Date();
-  function inPeriod(dateStr) {
-    if (empPeriod === 'all') return true;
-    const parts = dateStr.split('.');
-    if (parts.length !== 3) return true;
-    const d = new Date(parseInt(parts[2]), parseInt(parts[1])-1, parseInt(parts[0]));
-    if (empPeriod === 'day') return d.toDateString() === now.toDateString();
-    if (empPeriod === 'week') { const w = new Date(now); w.setDate(now.getDate()-7); return d >= w; }
-    if (empPeriod === 'month') return d.getMonth()===now.getMonth() && d.getFullYear()===now.getFullYear();
-    return true;
-  }
-
-  const periods = [['all','Все'],['day','Сегодня'],['week','Неделя'],['month','Месяц']];
-  const periodBar = `<div style="display:flex;gap:6px;margin-bottom:14px;overflow-x:auto;padding-bottom:2px">
-    ${periods.map(([val,label]) => `<button onclick="empPeriod='${val}';renderAdminEmployees()"
-      style="padding:6px 14px;border-radius:20px;border:1.5px solid ${empPeriod===val?'var(--accent)':'var(--border)'};
-      background:${empPeriod===val?'var(--accent)':'transparent'};color:${empPeriod===val?'#fff':'var(--hint)'};
-      font:500 13px inherit;cursor:pointer;white-space:nowrap;flex-shrink:0">${label}</button>`).join('')}
-  </div>`;
+  const allDates = s.employees.flatMap(e => (e.days||[]).map(d => ({date: d.date})));
+  const availableMonths = getAvailableMonths(allDates);
+  const periodBar = buildPeriodBar(empPeriod, empCustomMonth, availableMonths, 'setEmpPeriod');
 
   const cards = [...s.employees].map((emp, empIdx) => {
-    // Фильтруем дни по периоду
-    const filteredDays = (emp.days || []).filter(d => inPeriod(d.date));
+    const filteredDays = (emp.days||[]).filter(d => matchesPeriod(d.date, empPeriod, empCustomMonth));
     if (empPeriod !== 'all' && !filteredDays.length) return '';
 
-    // Пересчитываем итого за период
-    let periodHours = 0;
-    let periodReports = 0;
+    let periodHours = 0, periodReports = 0;
     const periodProjects = {};
     filteredDays.forEach(d => {
       d.projects.forEach(p => {
-        periodHours = Math.round((periodHours + p.hours) * 100) / 100;
+        periodHours = Math.round((periodHours + p.hours)*100)/100;
         periodReports++;
-        periodProjects[p.project] = Math.round(((periodProjects[p.project]||0) + p.hours) * 100) / 100;
+        periodProjects[p.project] = Math.round(((periodProjects[p.project]||0)+p.hours)*100)/100;
       });
     });
 
-    const totalHours = empPeriod === 'all' ? emp.hours : periodHours;
-    const totalReports = empPeriod === 'all' ? emp.reports : periodReports;
-    const projects = empPeriod === 'all' ? emp.projects : periodProjects;
+    const totalHours = empPeriod==='all' ? emp.hours : periodHours;
+    const totalReports = empPeriod==='all' ? emp.reports : periodReports;
+    const projects = empPeriod==='all' ? emp.projects : periodProjects;
 
-    const projRows = Object.entries(projects)
-      .sort((a,b)=>b[1]-a[1])
-      .map(([p,h])=>`<div class="emp-proj"><span class="emp-proj-name">${p}</span><span>${h} ч</span></div>`)
-      .join('');
+    const projRows = Object.entries(projects).sort((a,b)=>b[1]-a[1])
+      .map(([p,h])=>`<div class="emp-proj"><span class="emp-proj-name">${p}</span><span>${h} ч</span></div>`).join('');
 
     const dayRows = filteredDays.map(day => {
       const projs = day.projects.map(p => `
         <div style="display:flex;justify-content:space-between;padding:3px 8px;font-size:12px">
           <span style="color:var(--hint);flex:1;margin-right:8px">${p.project}</span>
-          <span style="white-space:nowrap">${p.hours} ч${p.comment && p.comment !== '-' ? ' <i style="color:var(--hint);font-size:11px">· '+p.comment+'</i>' : ''}</span>
+          <span style="white-space:nowrap">${p.hours} ч${p.comment&&p.comment!=='-'?' <i style="color:var(--hint);font-size:11px">· '+p.comment+'</i>':''}</span>
         </div>`).join('');
       return `<div style="border-top:1px solid var(--border);padding:6px 0 2px">
         <div style="display:flex;justify-content:space-between;align-items:center;padding:0 0 4px">
@@ -1376,10 +1369,7 @@ function renderAdminEmployees() {
     }).join('');
 
     return `<div class="emp-card">
-      <div class="emp-header">
-        <div class="emp-name">👤 ${emp.name}</div>
-        <div class="emp-hours">${totalHours} ч</div>
-      </div>
+      <div class="emp-header"><div class="emp-name">👤 ${emp.name}</div><div class="emp-hours">${totalHours} ч</div></div>
       <div style="font-size:13px;color:var(--hint);margin-bottom:8px">📝 Отчётов: ${totalReports}</div>
       <div style="margin-bottom:10px">${projRows}</div>
       <button onclick="toggleDays('days-${empIdx}',this)"
@@ -1388,7 +1378,7 @@ function renderAdminEmployees() {
         📅 По дням ▾
       </button>
       <div id="days-${empIdx}" style="display:none;margin-top:6px">
-        ${dayRows || '<div style="color:var(--hint);font-size:13px;padding:8px 0">Нет данных за период</div>'}
+        ${dayRows||'<div style="color:var(--hint);font-size:13px;padding:8px 0">Нет данных за период</div>'}
       </div>
     </div>`;
   }).filter(Boolean).join('');
@@ -1427,7 +1417,83 @@ function renderAdminProjects() {
   }
 }
 
+// ── ПЕРИОД HELPERS ──
+function parseReportDate(dateStr) {
+  // Формат dd.mm.yyyy
+  const parts = dateStr.split('.');
+  if (parts.length !== 3) return null;
+  return new Date(parseInt(parts[2]), parseInt(parts[1])-1, parseInt(parts[0]));
+}
+
+function getAvailableMonths(reports) {
+  // Возвращает уникальные месяцы из отчётов, отсортированные по убыванию
+  const seen = new Set();
+  const months = [];
+  reports.forEach(r => {
+    const d = parseReportDate(r.date);
+    if (!d) return;
+    const key = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
+    if (!seen.has(key)) {
+      seen.add(key);
+      months.push({ key, year: d.getFullYear(), month: d.getMonth(), label: d.toLocaleString('ru', {month:'long',year:'numeric'}) });
+    }
+  });
+  return months.sort((a,b) => b.key.localeCompare(a.key));
+}
+
+function matchesPeriod(dateStr, period, customMonth) {
+  const d = parseReportDate(dateStr);
+  if (!d) return true;
+  const now = new Date();
+  if (period === 'all') return true;
+  if (period === 'day') return d.toDateString() === now.toDateString();
+  if (period === 'week') { const w = new Date(now); w.setDate(now.getDate()-7); return d >= w; }
+  if (period === 'month') return d.getMonth()===now.getMonth() && d.getFullYear()===now.getFullYear();
+  if (period === 'custom' && customMonth) return d.getMonth()===customMonth.month && d.getFullYear()===customMonth.year;
+  return true;
+}
+
+function buildPeriodBar(currentPeriod, customMonth, availableMonths, onChangeFn) {
+  const periods = [['all','Все'],['day','Сегодня'],['week','Неделя'],['month','Этот месяц']];
+  const btns = periods.map(([val,label]) => {
+    const active = currentPeriod === val;
+    return `<button onclick="${onChangeFn}('${val}',null)"
+      style="padding:6px 14px;border-radius:20px;border:1.5px solid ${active?'var(--accent)':'var(--border)'};
+      background:${active?'var(--accent)':'transparent'};color:${active?'#fff':'var(--hint)'};
+      font:500 13px inherit;cursor:pointer;white-space:nowrap;flex-shrink:0">${label}</button>`;
+  }).join('');
+
+  const monthOpts = availableMonths.map(m => {
+    const sel = currentPeriod==='custom' && customMonth && customMonth.key===m.key ? 'selected' : '';
+    return `<option value="${m.key}" ${sel}>${m.label}</option>`;
+  }).join('');
+
+  const selectActive = currentPeriod === 'custom';
+  const monthSelect = availableMonths.length ? `
+    <select onchange="${onChangeFn}('custom',this.value)"
+      style="padding:6px 10px;border-radius:20px;border:1.5px solid ${selectActive?'var(--accent)':'var(--border)'};
+      background:${selectActive?'var(--accent)':'var(--bg2)'};color:${selectActive?'#fff':'var(--hint)'};
+      font:500 13px inherit;cursor:pointer;flex-shrink:0;outline:none;max-width:150px">
+      <option value="">📅 Месяц...</option>
+      ${monthOpts}
+    </select>` : '';
+
+  return `<div style="display:flex;gap:6px;margin-bottom:14px;overflow-x:auto;padding-bottom:2px;flex-wrap:nowrap">${btns}${monthSelect}</div>`;
+}
+
 let reportsPeriod = 'all';
+let reportsCustomMonth = null;
+
+function setReportsPeriod(period, monthKey) {
+  reportsPeriod = period;
+  if (period === 'custom' && monthKey) {
+    const months = getAvailableMonths(APP.adminStats?.recent_reports || []);
+    reportsCustomMonth = months.find(m => m.key === monthKey) || null;
+  } else {
+    reportsCustomMonth = null;
+  }
+  renderAdminReports();
+}
 
 function renderAdminReports() {
   const s = APP.adminStats;
@@ -1437,20 +1503,12 @@ function renderAdminReports() {
     return;
   }
 
-  // Фильтр по периоду
-  const now = new Date();
-  const filtered = s.recent_reports.filter(r => {
-    if (reportsPeriod === 'all') return true;
-    const parts = r.date.split('.');
-    if (parts.length !== 3) return true;
-    const rDate = new Date(parseInt(parts[2]), parseInt(parts[1])-1, parseInt(parts[0]));
-    if (reportsPeriod === 'day') return rDate.toDateString() === now.toDateString();
-    if (reportsPeriod === 'week') { const w = new Date(now); w.setDate(now.getDate()-7); return rDate >= w; }
-    if (reportsPeriod === 'month') return rDate.getMonth()===now.getMonth() && rDate.getFullYear()===now.getFullYear();
-    return true;
-  });
+  const availableMonths = getAvailableMonths(s.recent_reports);
+  const periodBar = buildPeriodBar(reportsPeriod, reportsCustomMonth, availableMonths, 'setReportsPeriod');
 
-  // Группируем по сотруднику + дате (ключ = имя + дата)
+  const filtered = s.recent_reports.filter(r => matchesPeriod(r.date, reportsPeriod, reportsCustomMonth));
+
+  // Группируем по сотруднику + дате
   const groups = {};
   const order = [];
   filtered.forEach(r => {
@@ -1459,14 +1517,6 @@ function renderAdminReports() {
     groups[key].items.push(r);
     groups[key].total = Math.round((groups[key].total + r.hours) * 100) / 100;
   });
-
-  const periods = [['all','Все'],['day','Сегодня'],['week','Неделя'],['month','Месяц']];
-  const periodBar = `<div style="display:flex;gap:6px;margin-bottom:14px;overflow-x:auto;padding-bottom:2px">
-    ${periods.map(([val,label]) => `<button onclick="reportsPeriod='${val}';renderAdminReports()"
-      style="padding:6px 14px;border-radius:20px;border:1.5px solid ${reportsPeriod===val?'var(--accent)':'var(--border)'};
-      background:${reportsPeriod===val?'var(--accent)':'transparent'};color:${reportsPeriod===val?'#fff':'var(--hint)'};
-      font:500 13px inherit;cursor:pointer;white-space:nowrap;flex-shrink:0">${label}</button>`).join('')}
-  </div>`;
 
   if (!order.length) {
     content.innerHTML = periodBar + '<div class="empty"><div class="empty-icon">📭</div><div>Нет отчётов за этот период</div></div>';
