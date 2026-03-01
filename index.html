@@ -493,9 +493,9 @@ textarea:focus, input:focus {
       <div class="form-label" id="hoursLabel">⏱️ Часов для выбранного проекта</div>
       <div class="hours-box">
         <div>
-          <input type="number" class="hours-big-input" id="hoursDisplay" value="4" 
-                 min="0.25" max="12" step="0.25" 
-                 onchange="updateHoursFromInput()" 
+          <input type="text" class="hours-big-input" id="hoursDisplay" value="4"
+                 placeholder="4" inputmode="decimal"
+                 onchange="updateHoursFromInput()"
                  oninput="updateHoursFromInput()">
           <div class="hours-unit">часов</div>
         </div>
@@ -949,6 +949,14 @@ function initHoursSlider() {
       if (tg.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
     });
   });
+  document.getElementById('hoursDisplay').addEventListener('blur', () => {
+    const val = parseHoursInput(document.getElementById('hoursDisplay').value);
+    APP.currentHours = val;
+    document.getElementById('hoursDisplay').value = val;
+    document.getElementById('hoursRange').value = Math.min(val, 12);
+    updateQuickBtns(val);
+    updateSummary(); updateTotalHours();
+  });
   updateQuickBtns(4);
 }
 
@@ -960,18 +968,18 @@ function updateQuickBtns(val) {
 
 
 
+function parseHoursInput(raw) {
+  const str = String(raw).replace(',', '.').trim();
+  const val = parseFloat(str);
+  if (isNaN(val) || val <= 0) return 0.5;
+  if (val > 24) return 24;
+  return Math.round(val * 100) / 100;
+}
+
 function updateHoursFromInput() {
-  let val = parseFloat(document.getElementById('hoursDisplay').value);
-  if (isNaN(val)) val = 0.25;
-  if (val < 0.25) val = 0.25;
-  if (val > 12) val = 12;
-  
-  // Округляем до ближайшего 0.25
-  val = Math.round(val * 4) / 4;
-  
+  const val = parseHoursInput(document.getElementById('hoursDisplay').value);
   APP.currentHours = val;
-  document.getElementById('hoursDisplay').value = val;
-  document.getElementById('hoursRange').value = val;
+  document.getElementById('hoursRange').value = Math.min(val, 12);
   updateQuickBtns(val);
   updateSummary();
   updateTotalHours();
@@ -1298,6 +1306,8 @@ function renderAdminOverview() {
   }
 }
 
+let empPeriod = 'all';
+
 function renderAdminEmployees() {
   const s = APP.adminStats;
   const content = document.getElementById('adminContent');
@@ -1305,18 +1315,94 @@ function renderAdminEmployees() {
     content.innerHTML = '<div class="empty"><div class="empty-icon">👥</div><div>Нет данных</div></div>';
     return;
   }
-  content.innerHTML = [...s.employees].sort((a,b)=>b.hours-a.hours).map(emp => `
-    <div class="emp-card">
+
+  const now = new Date();
+  function inPeriod(dateStr) {
+    if (empPeriod === 'all') return true;
+    const parts = dateStr.split('.');
+    if (parts.length !== 3) return true;
+    const d = new Date(parseInt(parts[2]), parseInt(parts[1])-1, parseInt(parts[0]));
+    if (empPeriod === 'day') return d.toDateString() === now.toDateString();
+    if (empPeriod === 'week') { const w = new Date(now); w.setDate(now.getDate()-7); return d >= w; }
+    if (empPeriod === 'month') return d.getMonth()===now.getMonth() && d.getFullYear()===now.getFullYear();
+    return true;
+  }
+
+  const periods = [['all','Все'],['day','Сегодня'],['week','Неделя'],['month','Месяц']];
+  const periodBar = `<div style="display:flex;gap:6px;margin-bottom:14px;overflow-x:auto;padding-bottom:2px">
+    ${periods.map(([val,label]) => `<button onclick="empPeriod='${val}';renderAdminEmployees()"
+      style="padding:6px 14px;border-radius:20px;border:1.5px solid ${empPeriod===val?'var(--accent)':'var(--border)'};
+      background:${empPeriod===val?'var(--accent)':'transparent'};color:${empPeriod===val?'#fff':'var(--hint)'};
+      font:500 13px inherit;cursor:pointer;white-space:nowrap;flex-shrink:0">${label}</button>`).join('')}
+  </div>`;
+
+  const cards = [...s.employees].map((emp, empIdx) => {
+    // Фильтруем дни по периоду
+    const filteredDays = (emp.days || []).filter(d => inPeriod(d.date));
+    if (empPeriod !== 'all' && !filteredDays.length) return '';
+
+    // Пересчитываем итого за период
+    let periodHours = 0;
+    let periodReports = 0;
+    const periodProjects = {};
+    filteredDays.forEach(d => {
+      d.projects.forEach(p => {
+        periodHours = Math.round((periodHours + p.hours) * 100) / 100;
+        periodReports++;
+        periodProjects[p.project] = Math.round(((periodProjects[p.project]||0) + p.hours) * 100) / 100;
+      });
+    });
+
+    const totalHours = empPeriod === 'all' ? emp.hours : periodHours;
+    const totalReports = empPeriod === 'all' ? emp.reports : periodReports;
+    const projects = empPeriod === 'all' ? emp.projects : periodProjects;
+
+    const projRows = Object.entries(projects)
+      .sort((a,b)=>b[1]-a[1])
+      .map(([p,h])=>`<div class="emp-proj"><span class="emp-proj-name">${p}</span><span>${h} ч</span></div>`)
+      .join('');
+
+    const dayRows = filteredDays.map(day => {
+      const projs = day.projects.map(p => `
+        <div style="display:flex;justify-content:space-between;padding:3px 8px;font-size:12px">
+          <span style="color:var(--hint);flex:1;margin-right:8px">${p.project}</span>
+          <span style="white-space:nowrap">${p.hours} ч${p.comment && p.comment !== '-' ? ' <i style="color:var(--hint);font-size:11px">· '+p.comment+'</i>' : ''}</span>
+        </div>`).join('');
+      return `<div style="border-top:1px solid var(--border);padding:6px 0 2px">
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:0 0 4px">
+          <span style="font-weight:600;font-size:13px">📅 ${day.date}</span>
+          <span style="font-weight:700;color:var(--accent);font-size:13px">${day.hours} ч</span>
+        </div>${projs}</div>`;
+    }).join('');
+
+    return `<div class="emp-card">
       <div class="emp-header">
         <div class="emp-name">👤 ${emp.name}</div>
-        <div class="emp-hours">${emp.hours} ч</div>
+        <div class="emp-hours">${totalHours} ч</div>
       </div>
-      <div style="font-size:13px;color:var(--hint);margin-bottom:8px">📝 Отчётов: ${emp.reports}</div>
-      ${Object.entries(emp.projects||{}).map(([p,h])=>`<div class="emp-proj"><span class="emp-proj-name">${p}</span><span>${h} ч</span></div>`).join('')}
-    </div>
-  `).join('');
+      <div style="font-size:13px;color:var(--hint);margin-bottom:8px">📝 Отчётов: ${totalReports}</div>
+      <div style="margin-bottom:10px">${projRows}</div>
+      <button onclick="toggleDays('days-${empIdx}',this)"
+        style="width:100%;padding:7px 12px;border:1.5px solid var(--border);border-radius:10px;
+        background:transparent;color:var(--accent);font:600 13px inherit;cursor:pointer;text-align:left">
+        📅 По дням ▾
+      </button>
+      <div id="days-${empIdx}" style="display:none;margin-top:6px">
+        ${dayRows || '<div style="color:var(--hint);font-size:13px;padding:8px 0">Нет данных за период</div>'}
+      </div>
+    </div>`;
+  }).filter(Boolean).join('');
+
+  content.innerHTML = periodBar + (cards || '<div class="empty"><div class="empty-icon">📭</div><div>Нет данных за этот период</div></div>');
 }
 
+function toggleDays(id, btn) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  const isOpen = el.style.display !== 'none';
+  el.style.display = isOpen ? 'none' : 'block';
+  btn.textContent = isOpen ? '📅 По дням ▾' : '📅 По дням ▴';
+}
 function renderAdminProjects() {
   const s = APP.adminStats;
   const content = document.getElementById('adminContent');
@@ -1341,6 +1427,8 @@ function renderAdminProjects() {
   }
 }
 
+let reportsPeriod = 'all';
+
 function renderAdminReports() {
   const s = APP.adminStats;
   const content = document.getElementById('adminContent');
@@ -1348,18 +1436,68 @@ function renderAdminReports() {
     content.innerHTML = '<div class="empty"><div class="empty-icon">📝</div><div>Нет отчётов</div></div>';
     return;
   }
-  content.innerHTML = s.recent_reports.map(r=>`
-    <div class="report-item">
-      <div class="report-header">
-        <span class="report-emp">👤 ${r.employee}</span>
-        <span class="report-date">${r.date} ${r.time||''}</span>
-      </div>
-      <div class="report-proj">📁 ${r.project} — ${r.hours} ч</div>
-      ${r.comment && r.comment !== '-' ? `<div class="report-comment">💬 ${r.comment}</div>` : ''}
-    </div>
-  `).join('');
-}
 
+  // Фильтр по периоду
+  const now = new Date();
+  const filtered = s.recent_reports.filter(r => {
+    if (reportsPeriod === 'all') return true;
+    const parts = r.date.split('.');
+    if (parts.length !== 3) return true;
+    const rDate = new Date(parseInt(parts[2]), parseInt(parts[1])-1, parseInt(parts[0]));
+    if (reportsPeriod === 'day') return rDate.toDateString() === now.toDateString();
+    if (reportsPeriod === 'week') { const w = new Date(now); w.setDate(now.getDate()-7); return rDate >= w; }
+    if (reportsPeriod === 'month') return rDate.getMonth()===now.getMonth() && rDate.getFullYear()===now.getFullYear();
+    return true;
+  });
+
+  // Группируем по сотруднику + дате (ключ = имя + дата)
+  const groups = {};
+  const order = [];
+  filtered.forEach(r => {
+    const key = r.employee + '__' + r.date;
+    if (!groups[key]) { groups[key] = { employee: r.employee, date: r.date, time: r.time, items: [], total: 0 }; order.push(key); }
+    groups[key].items.push(r);
+    groups[key].total = Math.round((groups[key].total + r.hours) * 100) / 100;
+  });
+
+  const periods = [['all','Все'],['day','Сегодня'],['week','Неделя'],['month','Месяц']];
+  const periodBar = `<div style="display:flex;gap:6px;margin-bottom:14px;overflow-x:auto;padding-bottom:2px">
+    ${periods.map(([val,label]) => `<button onclick="reportsPeriod='${val}';renderAdminReports()"
+      style="padding:6px 14px;border-radius:20px;border:1.5px solid ${reportsPeriod===val?'var(--accent)':'var(--border)'};
+      background:${reportsPeriod===val?'var(--accent)':'transparent'};color:${reportsPeriod===val?'#fff':'var(--hint)'};
+      font:500 13px inherit;cursor:pointer;white-space:nowrap;flex-shrink:0">${label}</button>`).join('')}
+  </div>`;
+
+  if (!order.length) {
+    content.innerHTML = periodBar + '<div class="empty"><div class="empty-icon">📭</div><div>Нет отчётов за этот период</div></div>';
+    return;
+  }
+
+  const cards = order.map(key => {
+    const g = groups[key];
+    const rows = g.items.map(r => `
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;padding:6px 0;border-bottom:1px solid var(--border);font-size:13px">
+        <div style="flex:1;margin-right:8px">
+          <span style="color:var(--accent);font-weight:600">${r.project}</span>
+          ${r.comment && r.comment !== '-' ? `<div style="color:var(--hint);font-style:italic;font-size:12px;margin-top:2px">💬 ${r.comment}</div>` : ''}
+        </div>
+        <span style="font-weight:700;white-space:nowrap">${r.hours} ч</span>
+      </div>`).join('');
+    return `<div class="report-item" style="padding:14px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <span style="font-weight:700;font-size:14px">👤 ${g.employee}</span>
+        <span style="color:var(--hint);font-size:12px">${g.date}${g.time?' '+g.time:''}</span>
+      </div>
+      ${rows}
+      <div style="display:flex;justify-content:flex-end;margin-top:8px;padding-top:4px">
+        <span style="font-size:13px;color:var(--hint)">Итого:&nbsp;</span>
+        <span style="font-weight:700;color:var(--accent)">${g.total} ч</span>
+      </div>
+    </div>`;
+  }).join('');
+
+  content.innerHTML = periodBar + cards;
+}
 function renderAdminManage() {
   const content = document.getElementById('adminContent');
   const projs = APP.allProjects || [];
@@ -1402,24 +1540,7 @@ document.getElementById('addProjModal').addEventListener('click', function(e) {
 });
 
 // ── VERSION CHECK ──
-function checkVersion() {
-  try {
-    const savedVersion = localStorage.getItem(VERSION_KEY);
-    
-    if (!savedVersion) {
-      // Первый запуск
-      localStorage.setItem(VERSION_KEY, APP_VERSION);
-      showVersionToast('welcome');
-    } else if (savedVersion !== APP_VERSION) {
-      // Обновление
-      localStorage.setItem(VERSION_KEY, APP_VERSION);
-      showVersionToast('update', savedVersion);
-    }
-    // Если версия совпадает — ничего не показываем
-  } catch (e) {
-    console.log('localStorage недоступен');
-  }
-}
+function checkVersion() { /* уведомления отключены */ }
 
 function showVersionToast(type, oldVersion = null) {
   const changelog = CHANGELOG[APP_VERSION];
