@@ -1117,6 +1117,12 @@ function showToast(msg, type = 'success') {
 
 // ── SUBMIT REPORT ──
 async function submitReport() {
+  // Защита от двойного нажатия
+  if (APP.submitting) return;
+  APP.submitting = true;
+  const btn = document.getElementById('submitBtn');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Отправляем...'; }
+
   if (APP.selectedProject) {
     APP.reportItems.push({ project: APP.selectedProject.full, abbr: APP.selectedProject.abbr, hours: APP.currentHours });
     APP.selectedProject = null;
@@ -1124,32 +1130,32 @@ async function submitReport() {
   if (!APP.reportItems.length) {
     document.getElementById('projError').classList.add('show');
     if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('error');
+    APP.submitting = false;
+    if (btn) { btn.disabled = false; btn.textContent = '📤 Отправить отчёт'; }
     return;
   }
 
   const generalComment = document.getElementById('comment').value || '';
   const data = {
     type: 'report',
-    projects: APP.reportItems.map(i => ({ 
-      project: i.project, 
+    projects: APP.reportItems.map(i => ({
+      project: i.project,
       hours: i.hours,
       comment: i.comment || ''
     })),
     comments: generalComment || '-'
   };
 
-  // Добавляем pending actions если есть
   if (APP.pendingActions && APP.pendingActions.length) {
     data.pending = APP.pendingActions;
     APP.pendingActions = [];
   }
   try {
-    // Отправляем через API
     await apiCall('/report', 'POST', {
       user_id: APP.userId,
       username: APP.username,
-      projects: APP.reportItems.map(i => ({ 
-        project: i.project, 
+      projects: APP.reportItems.map(i => ({
+        project: i.project,
         hours: i.hours,
         comment: i.comment || ''
       })),
@@ -1182,6 +1188,9 @@ async function submitReport() {
     setTimeout(() => nav('home'), 1500);
   } catch (error) {
     console.error('Submit report failed:', error);
+    // При ошибке разблокируем кнопку
+    APP.submitting = false;
+    if (btn) { btn.disabled = false; btn.textContent = '📤 Отправить отчёт'; }
   }
 }
 
