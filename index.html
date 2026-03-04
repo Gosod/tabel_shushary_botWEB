@@ -1639,19 +1639,70 @@ function renderAdminReports() {
 
   content.innerHTML = periodBar + cards;
 }
+async function notifyAll() {
+  const btn = document.getElementById('notifyBtn');
+  btn.disabled = true;
+  btn.textContent = '⏳ Отправляем...';
+  try {
+    const res = await apiCall('/notify-all', 'POST', { user_id: APP.userId });
+    showToast(`✅ Отправлено: ${res.sent}, ошибок: ${res.failed}`, 'success');
+    if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
+  } catch(e) {
+    showToast('❌ Ошибка рассылки', 'error');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '📣 Напомнить всем внести отчёт';
+  }
+}
+
+async function deleteUser(userId, username) {
+  if (!confirm(`Удалить пользователя ${username}?`)) return;
+  try {
+    await apiCall(`/user/${userId}`, 'DELETE', { user_id: APP.userId });
+    APP.allUsers = APP.allUsers.filter(u => u.id !== userId);
+    showToast(`🗑 ${username} удалён`, 'info');
+    renderAdminManage();
+    if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
+  } catch(e) {
+    showToast('❌ Ошибка удаления', 'error');
+  }
+}
+
 function renderAdminManage() {
   const content = document.getElementById('adminContent');
   const projs = APP.allProjects || [];
   const users = APP.allUsers || [];
   content.innerHTML = `
-    <div class="form-label">📁 Проекты (${projs.length})</div>
+    <!-- Рассылка -->
+    <div class="form-label">📣 Уведомления</div>
+    <div class="card" style="margin-bottom:16px">
+      <div style="font-size:13px;color:var(--hint);margin-bottom:10px">
+        Отправить всем сотрудникам напоминание нажать /start и внести отчёт
+      </div>
+      <button id="notifyBtn" class="btn btn-primary" style="margin-top:0" onclick="notifyAll()">
+        📣 Напомнить всем внести отчёт
+      </button>
+    </div>
+
+    <!-- Сотрудники -->
+    <div class="form-label" style="margin-top:8px">👥 Сотрудники (${users.length})</div>
+    ${users.map(u=>`
+      <div class="project-list-item">
+        <span class="proj-list-name">@${u.username}</span>
+        <button class="remove-btn" onclick="deleteUser(${u.id},'${u.username}')">✕</button>
+      </div>`).join('')}
+
+    <!-- Проекты -->
+    <div class="form-label" style="margin-top:20px">📁 Проекты (${projs.length})</div>
     ${projs.map(p=>`
       <div class="project-list-item">
         <span class="proj-list-name">${p.abbr} — ${p.full}</span>
         <button class="remove-btn" onclick="removeProject('${p.abbr}')">✕</button>
       </div>`).join('')}
     <button class="btn btn-primary" onclick="openModal()">➕ Добавить проект</button>
-    <div class="form-label" style="margin-top:24px">👥 Назначить проекты сотруднику</div>
+
+    <!-- Назначение проектов -->
+    <div class="form-label" style="margin-top:24px">🗂 Назначить проекты сотруднику</div>
     <select class="user-select" id="assignUser" onchange="renderAssignProjects()">
       <option value="">— Выберите сотрудника —</option>
       ${users.map(u=>`<option value="${u.id}">${u.username}</option>`).join('')}
