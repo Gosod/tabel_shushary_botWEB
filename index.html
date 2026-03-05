@@ -535,9 +535,7 @@ textarea:focus, input:focus {
   <div class="page-title">📊 Моя статистика</div>
   <div class="page-sub" id="myStatsSubtitle">Загрузка...</div>
   <div id="myStatsContent"></div>
-  <div class="info-card" style="margin-top:8px;font-size:12px">
-    💡 Данные обновляются при каждом открытии приложения через /start
-  </div>
+
   <button class="btn btn-secondary" onclick="nav('home')">⬅️ На главную</button>
 </div>
 
@@ -1334,6 +1332,20 @@ async function submitAssign() {
 
 
 // ── MY STATS ──
+let myStatsPeriod = 'all';
+let myStatsCustomMonth = null;
+
+function setMyStatsPeriod(period, monthKey) {
+  myStatsPeriod = period;
+  if (period === 'custom' && monthKey) {
+    const months = getAvailableMonths((APP.userStats?.days || []).map(d => ({date: d.date})));
+    myStatsCustomMonth = months.find(m => m.key === monthKey) || null;
+  } else {
+    myStatsCustomMonth = null;
+  }
+  renderMyStats();
+}
+
 function renderMyStats() {
   const content = document.getElementById('myStatsContent');
   const s = APP.userStats;
@@ -1342,15 +1354,74 @@ function renderMyStats() {
     content.innerHTML = '<div class="empty"><div class="empty-icon">📭</div><div>Создайте первый отчёт!</div></div>';
     return;
   }
-  document.getElementById('myStatsSubtitle').textContent = 'Всего за всё время';
-  let html = `
-    <div class="card"><div class="card-row"><div class="card-label">⏱️ Всего часов</div><div class="card-value">${s.total_hours}</div></div></div>
-    <div class="card"><div class="card-row"><div class="card-label">📝 Отчётов</div><div class="card-value">${s.total_reports}</div></div></div>
+
+  // Фильтруем дни по периоду
+  const allDays = s.days || [];
+  const filteredDays = allDays.filter(d => matchesPeriod(d.date, myStatsPeriod, myStatsCustomMonth));
+
+  // Пересчитываем итого за период
+  let periodHours = 0;
+  const periodProjects = {};
+  filteredDays.forEach(d => {
+    Object.entries(d.projects).forEach(([proj, h]) => {
+      periodHours = Math.round((periodHours + h) * 100) / 100;
+      periodProjects[proj] = Math.round(((periodProjects[proj] || 0) + h) * 100) / 100;
+    });
+  });
+
+  const totalHours  = myStatsPeriod === 'all' ? s.total_hours  : periodHours;
+  const totalDays   = myStatsPeriod === 'all' ? allDays.length  : filteredDays.length;
+  const projects    = myStatsPeriod === 'all' ? s.by_project    : periodProjects;
+
+  // Период-бар
+  const availableMonths = getAvailableMonths(allDays.map(d => ({date: d.date})));
+  const periodBar = buildPeriodBar(myStatsPeriod, myStatsCustomMonth, availableMonths, 'setMyStatsPeriod');
+
+  document.getElementById('myStatsSubtitle').textContent =
+    myStatsPeriod === 'all' ? 'Всего за всё время' :
+    myStatsPeriod === 'day' ? 'За сегодня' :
+    myStatsPeriod === 'week' ? 'За последние 7 дней' :
+    myStatsPeriod === 'month' ? 'За этот месяц' :
+    myStatsCustomMonth ? myStatsCustomMonth.label : '';
+
+  let html = periodBar;
+
+  if (filteredDays.length === 0 && myStatsPeriod !== 'all') {
+    html += '<div class="empty"><div class="empty-icon">📭</div><div>Нет отчётов за этот период</div></div>';
+    content.innerHTML = html;
+    return;
+  }
+
+  html += `
+    <div class="card"><div class="card-row"><div class="card-label">⏱️ Часов</div><div class="card-value">${totalHours}</div></div></div>
+    <div class="card"><div class="card-row"><div class="card-label">📅 Дней с отчётами</div><div class="card-value">${totalDays}</div></div></div>
     <div class="form-label" style="margin-top:4px">📁 По проектам</div>
   `;
-  Object.entries(s.by_project || {}).sort((a,b)=>b[1]-a[1]).forEach(([proj, h]) => {
-    html += `<div class="card"><div class="card-row"><span>${proj}</span><span style="font-weight:700;color:var(--accent)">${h} ч</span></div></div>`;
+
+  Object.entries(projects).sort((a,b) => b[1]-a[1]).forEach(([proj, h]) => {
+    html += `<div class="card"><div class="card-row"><span style="font-size:14px">${proj}</span><span style="font-weight:700;color:var(--accent)">${h} ч</span></div></div>`;
   });
+
+  // История по дням
+  if (filteredDays.length > 0) {
+    html += '<div class="form-label" style="margin-top:8px">📅 По дням</div>';
+    filteredDays.forEach(day => {
+      const projRows = Object.entries(day.projects).map(([p,h]) =>
+        `<div style="display:flex;justify-content:space-between;padding:4px 0;font-size:13px;border-bottom:1px solid var(--border)">
+          <span style="color:var(--hint);flex:1;margin-right:8px">${p}</span>
+          <span style="font-weight:600">${h} ч</span>
+        </div>`).join('');
+      html += `
+        <div class="card" style="padding:12px 14px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+            <span style="font-weight:700;font-size:14px">${day.date}</span>
+            <span style="font-weight:700;color:var(--accent)">${day.hours} ч</span>
+          </div>
+          ${projRows}
+        </div>`;
+    });
+  }
+
   content.innerHTML = html;
 }
 
