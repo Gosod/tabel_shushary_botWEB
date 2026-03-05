@@ -479,6 +479,14 @@ textarea:focus, input:focus {
 
   <div class="form-group">
     <div class="form-label">📁 Проект</div>
+    <input type="text" id="projectSearch" inputmode="search"
+      placeholder="🔍 Поиск проекта..."
+      oninput="filterProjects(this.value)"
+      style="width:100%;padding:10px 14px;border:1.5px solid var(--border);border-radius:12px;
+      font:15px 'Golos Text',sans-serif;background:var(--bg2);color:var(--text);
+      box-sizing:border-box;outline:none;margin-bottom:10px"
+      onfocus="this.style.borderColor='var(--accent)'"
+      onblur="this.style.borderColor='var(--border)'">
     <div class="projects-grid" id="projectsGrid"></div>
     <div class="error-msg" id="projError">Выберите хотя бы один проект</div>
   </div>
@@ -792,6 +800,11 @@ function nav(pageId, addToHistory = true) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
 
+  if (pageId === 'report') {
+    const sf = document.getElementById('projectSearch');
+    if (sf) { sf.value = ''; buildProjectsGrid(); }
+  }
+
   document.getElementById(pageId).classList.add('active');
   const btn = document.querySelector(`[data-page="${pageId}"]`);
   if (btn) btn.classList.add('active');
@@ -829,16 +842,30 @@ function initNav() {
 }
 
 // ── PROJECTS GRID ──
-function buildProjectsGrid() {
+function buildProjectsGrid(filter) {
   const grid = document.getElementById('projectsGrid');
   grid.innerHTML = '';
-  APP.projects.forEach(proj => {
+  const q = (filter || '').toLowerCase().trim();
+  const filtered = q
+    ? APP.projects.filter(p =>
+        p.full.toLowerCase().includes(q) || p.abbr.toLowerCase().includes(q))
+    : APP.projects;
+
+  if (filtered.length === 0) {
+    grid.innerHTML = '<div style="color:var(--hint);font-size:14px;padding:12px 0;text-align:center">Ничего не найдено</div>';
+    return;
+  }
+  filtered.forEach(proj => {
     const card = document.createElement('div');
     card.className = 'proj-card';
     card.innerHTML = `<div class="proj-abbr">${proj.abbr}</div><div class="proj-name">${proj.full}</div>`;
     card.onclick = () => selectProject(proj, card);
     grid.appendChild(card);
   });
+}
+
+function filterProjects(value) {
+  buildProjectsGrid(value);
 }
 
 function selectProject(proj, card) {
