@@ -1463,7 +1463,6 @@ function adminTab(tab, btn) {
 
 function renderAdminTab(tab) {
   if (tab === 'overview')      renderAdminOverview();
-  else if (tab === 'employees')     renderAdminEmployees();
   else if (tab === 'projects-stat') renderAdminProjects();
   else if (tab === 'reports-list')  renderAdminReports();
   else if (tab === 'manage')        renderAdminManage();
@@ -1673,6 +1672,10 @@ function buildPeriodBar(currentPeriod, customMonth, availableMonths, onChangeFn)
 let reportsPeriod = 'all';
 let reportsCustomMonth = null;
 
+let reportsPeriod = 'all';
+let reportsCustomMonth = null;
+let reportsEmployee = 'all'; // фильтр по сотруднику
+
 function setReportsPeriod(period, monthKey) {
   reportsPeriod = period;
   if (period === 'custom' && monthKey) {
@@ -1681,6 +1684,11 @@ function setReportsPeriod(period, monthKey) {
   } else {
     reportsCustomMonth = null;
   }
+  renderAdminReports();
+}
+
+function setReportsEmployee(emp) {
+  reportsEmployee = emp;
   renderAdminReports();
 }
 
@@ -1695,7 +1703,27 @@ function renderAdminReports() {
   const availableMonths = getAvailableMonths(s.recent_reports);
   const periodBar = buildPeriodBar(reportsPeriod, reportsCustomMonth, availableMonths, 'setReportsPeriod');
 
-  const filtered = s.recent_reports.filter(r => matchesPeriod(r.date, reportsPeriod, reportsCustomMonth));
+  // Уникальные сотрудники
+  const employees = [...new Set(s.recent_reports.map(r => r.employee))].sort();
+  const empBar = `<div style="display:flex;gap:6px;margin-bottom:14px;overflow-x:auto;padding-bottom:2px;flex-wrap:nowrap">
+    <button onclick="setReportsEmployee('all')"
+      style="padding:6px 14px;border-radius:20px;border:1.5px solid ${reportsEmployee==='all'?'var(--accent)':'var(--border)'};
+      background:${reportsEmployee==='all'?'var(--accent)':'transparent'};color:${reportsEmployee==='all'?'#fff':'var(--hint)'};
+      font:500 13px inherit;cursor:pointer;white-space:nowrap;flex-shrink:0">Все</button>
+    ${employees.map(e => `
+      <button onclick="setReportsEmployee('${e.replace(/'/g, "\'")}')"
+        style="padding:6px 14px;border-radius:20px;border:1.5px solid ${reportsEmployee===e?'var(--accent)':'var(--border)'};
+        background:${reportsEmployee===e?'var(--accent)':'transparent'};color:${reportsEmployee===e?'#fff':'var(--hint)'};
+        font:500 13px inherit;cursor:pointer;white-space:nowrap;flex-shrink:0">
+        ${e}</button>`).join('')}
+  </div>`;
+
+  // Фильтрация
+  const filtered = s.recent_reports.filter(r => {
+    const periodOk = matchesPeriod(r.date, reportsPeriod, reportsCustomMonth);
+    const empOk = reportsEmployee === 'all' || r.employee === reportsEmployee;
+    return periodOk && empOk;
+  });
 
   // Группируем по сотруднику + дате
   const groups = {};
@@ -1708,8 +1736,23 @@ function renderAdminReports() {
   });
 
   if (!order.length) {
-    content.innerHTML = periodBar + '<div class="empty"><div class="empty-icon">📭</div><div>Нет отчётов за этот период</div></div>';
+    content.innerHTML = periodBar + empBar + '<div class="empty"><div class="empty-icon">📭</div><div>Нет отчётов за этот период</div></div>';
     return;
+  }
+
+  // Итого по периоду если выбран конкретный сотрудник
+  let summaryHtml = '';
+  if (reportsEmployee !== 'all') {
+    const totalHours = Object.values(groups).reduce((s, g) => Math.round((s + g.total)*100)/100, 0);
+    const byProject = {};
+    filtered.forEach(r => { byProject[r.project] = Math.round(((byProject[r.project]||0)+r.hours)*100)/100; });
+    const projRows = Object.entries(byProject).sort((a,b)=>b[1]-a[1])
+      .map(([p,h]) => `<div style="display:flex;justify-content:space-between;font-size:13px;padding:3px 0;border-bottom:1px solid var(--border)">
+        <span style="color:var(--hint)">${p}</span><span style="font-weight:600;color:var(--accent)">${h} ч</span></div>`).join('');
+    summaryHtml = `<div class="report-item" style="padding:14px;margin-bottom:14px;background:var(--accent-light);border:1.5px solid var(--accent)">
+      <div style="font-weight:700;font-size:15px;margin-bottom:10px">📊 Итого: ${totalHours} ч за ${order.length} дней</div>
+      ${projRows}
+    </div>`;
   }
 
   const cards = order.map(key => {
@@ -1735,22 +1778,7 @@ function renderAdminReports() {
     </div>`;
   }).join('');
 
-  content.innerHTML = periodBar + cards;
-}
-async function notifyAll() {
-  const btn = document.getElementById('notifyBtn');
-  btn.disabled = true;
-  btn.textContent = '⏳ Отправляем...';
-  try {
-    const res = await apiCall('/notify-all', 'POST', { user_id: APP.userId });
-    showToast(`✅ Отправлено: ${res.sent}, ошибок: ${res.failed}`, 'success');
-    if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
-  } catch(e) {
-    showToast('❌ Ошибка рассылки', 'error');
-  } finally {
-    btn.disabled = false;
-    btn.textContent = '📣 Напомнить всем внести отчёт';
-  }
+  content.innerHTML = periodBar + empBar + summaryHtml + cards;
 }
 
 async function deleteUser(userId, username) {
