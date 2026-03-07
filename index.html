@@ -1807,6 +1807,28 @@ function renderAdminManage() {
       </button>
     </div>
 
+    <!-- Синхронизация -->
+    <div class="form-label" style="margin-top:8px">🔄 Синхронизация с Google Sheets</div>
+    <div class="card" style="margin-bottom:16px">
+      <div style="font-size:13px;color:var(--hint);margin-bottom:10px">
+        Принудительно выгрузить отчёты в таблицу. Можно указать конкретную дату или выгрузить все.
+      </div>
+      <div style="display:flex;gap:8px;margin-bottom:10px">
+        <input type="date" id="syncDate"
+          style="flex:1;padding:10px 12px;border:1.5px solid var(--border);border-radius:12px;
+          font:14px 'Golos Text',sans-serif;background:var(--bg);color:var(--text);outline:none">
+        <button onclick="document.getElementById('syncDate').value=''"
+          style="padding:10px 14px;border:1.5px solid var(--border);border-radius:12px;
+          background:transparent;color:var(--hint);font:500 13px inherit;cursor:pointer;white-space:nowrap">
+          Все даты
+        </button>
+      </div>
+      <button id="syncBtn" class="btn btn-primary" style="margin-top:0;background:#16a34a" onclick="forceSync()">
+        🔄 Выгрузить в таблицу
+      </button>
+      <div id="syncResult" style="margin-top:8px;font-size:13px;text-align:center"></div>
+    </div>
+
     <!-- Сотрудники -->
     <div class="form-label" style="margin-top:8px">👥 Сотрудники (${users.length})</div>
     ${users.map(u=>`
@@ -1836,6 +1858,33 @@ function renderAdminManage() {
 }
 
 // ── MODAL ──
+async function forceSync() {
+  const btn = document.getElementById('syncBtn');
+  const result = document.getElementById('syncResult');
+  const date = document.getElementById('syncDate') ? document.getElementById('syncDate').value : '';
+
+  btn.disabled = true;
+  btn.textContent = '⏳ Выгружаем...';
+  result.textContent = '';
+  result.style.color = 'var(--hint)';
+
+  try {
+    const body = { user_id: APP.userId };
+    if (date) body.date = date;
+    const res = await apiCall('/force-sync', 'POST', body);
+    result.textContent = '✅ Выгружено ' + res.synced + ' записей';
+    result.style.color = 'var(--success, #16a34a)';
+    showToast('✅ Выгружено ' + res.synced + ' записей в Sheets');
+  } catch(e) {
+    result.textContent = '❌ ' + (e.message || 'Ошибка синхронизации');
+    result.style.color = 'var(--danger, #ef4444)';
+    showToast('❌ Ошибка синхронизации', 'error');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '🔄 Выгрузить в таблицу';
+  }
+}
+
 function openModal() {
   document.getElementById('modalAbbr').value = '';
   document.getElementById('modalFull').value = '';
