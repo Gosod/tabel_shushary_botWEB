@@ -553,7 +553,6 @@ textarea:focus, input:focus {
   <div class="page-sub">Управление и аналитика</div>
   <div class="stat-tabs">
     <button class="stat-tab active" onclick="adminTab('overview',this)">Обзор</button>
-    <button class="stat-tab" onclick="adminTab('employees',this)">Сотрудники</button>
     <button class="stat-tab" onclick="adminTab('projects-stat',this)">Проекты</button>
     <button class="stat-tab" onclick="adminTab('reports-list',this)">Отчёты</button>
     <button class="stat-tab" onclick="adminTab('manage',this)">Управление</button>
@@ -1208,12 +1207,13 @@ async function submitReport() {
   });
   renderMyStats();
 
+    APP.submitting = false;
+    if (btn) { btn.disabled = false; btn.textContent = '📤 Отправить отчёт'; }
     showToast('✅ Отчёт сохранён!');
     if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
     setTimeout(() => nav('home'), 1500);
   } catch (error) {
     console.error('Submit report failed:', error);
-    // При ошибке разблокируем кнопку
     APP.submitting = false;
     if (btn) { btn.disabled = false; btn.textContent = '📤 Отправить отчёт'; }
   }
