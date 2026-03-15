@@ -534,6 +534,24 @@ textarea:focus, input:focus {
     <div id="summaryRows"></div>
   </div>
 
+  <div id="reportDateWrap" style="display:none;margin-bottom:10px">
+    <div class="form-label" style="margin-bottom:6px">📅 Дата отчёта</div>
+    <div style="display:flex;gap:8px;align-items:center">
+      <button id="reportDateToday" class="btn" onclick="setReportDate('today')"
+        style="padding:8px 14px;border-radius:10px;border:1.5px solid var(--accent);
+        background:var(--accent);color:#fff;font:600 13px inherit;cursor:pointer">
+        Сегодня
+      </button>
+      <button id="reportDateOther" class="btn" onclick="setReportDate('other')"
+        style="padding:8px 14px;border-radius:10px;border:1.5px solid var(--border);
+        background:transparent;color:var(--hint);font:500 13px inherit;cursor:pointer">
+        Другой день
+      </button>
+      <input type="date" id="reportDateInput" style="display:none;flex:1;padding:8px 10px;
+        border:1.5px solid var(--accent);border-radius:10px;font:14px inherit;
+        background:var(--bg2);color:var(--text);outline:none">
+    </div>
+  </div>
   <button class="btn btn-primary" id="submitBtn" style="display:none" onclick="submitReport()">📤 Отправить отчёт</button>
   <button class="btn btn-secondary" onclick="nav('home')">⬅️ На главную</button>
 </div>
@@ -922,6 +940,7 @@ function addCurrentProject() {
   // Показываем кнопки действий
   document.getElementById('commentWrap').style.display = 'block';
   document.getElementById('submitBtn').style.display = 'block';
+  document.getElementById('reportDateWrap').style.display = 'block';
   updateTotalHours();
 
   showToast(`➕ ${APP.reportItems[APP.reportItems.length-1].project} добавлен`, 'info');
@@ -1140,6 +1159,38 @@ function showToast(msg, type = 'success') {
 }
 
 // ── SUBMIT REPORT ──
+function setReportDate(mode) {
+  const todayBtn = document.getElementById('reportDateToday');
+  const otherBtn = document.getElementById('reportDateOther');
+  const input    = document.getElementById('reportDateInput');
+
+  if (mode === 'today') {
+    APP.reportDate = null;
+    input.style.display = 'none';
+    todayBtn.style.background    = 'var(--accent)';
+    todayBtn.style.color         = '#fff';
+    todayBtn.style.borderColor   = 'var(--accent)';
+    otherBtn.style.background    = 'transparent';
+    otherBtn.style.color         = 'var(--hint)';
+    otherBtn.style.borderColor   = 'var(--border)';
+  } else {
+    input.style.display = 'block';
+    input.max = new Date().toISOString().split('T')[0];
+    // Устанавливаем вчера по умолчанию
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    input.value = yesterday.toISOString().split('T')[0];
+    APP.reportDate = input.value;
+    input.oninput = () => { APP.reportDate = input.value; };
+    todayBtn.style.background    = 'transparent';
+    todayBtn.style.color         = 'var(--hint)';
+    todayBtn.style.borderColor   = 'var(--border)';
+    otherBtn.style.background    = 'var(--accent)';
+    otherBtn.style.color         = '#fff';
+    otherBtn.style.borderColor   = 'var(--accent)';
+  }
+}
+
 async function submitReport() {
   // Защита от двойного нажатия
   if (APP.submitting) return;
@@ -1176,11 +1227,12 @@ async function submitReport() {
   }
   try {
     await apiCall('/report', 'POST', {
-      user_id: APP.userId,
-      username: APP.username,
-      projects: APP.reportItems.map(i => ({
+      user_id:     APP.userId,
+      username:    APP.username,
+      report_date: APP.reportDate || null,
+      projects:    APP.reportItems.map(i => ({
         project: i.project,
-        hours: i.hours,
+        hours:   i.hours,
         comment: i.comment || ''
       })),
       comments: generalComment || '-'
@@ -1193,6 +1245,9 @@ async function submitReport() {
   document.getElementById('selectedProjectsWrap').style.display = 'none';
   document.getElementById('commentWrap').style.display = 'none';
   document.getElementById('summary').style.display = 'none';
+  document.getElementById('reportDateWrap').style.display = 'none';
+  document.getElementById('reportDateInput').style.display = 'none';
+  APP.reportDate = null;
   document.getElementById('comment').value = '';
   document.getElementById('selectedProjectsList').innerHTML = '';
   document.getElementById('submitBtn').style.display = 'none';
@@ -1778,6 +1833,22 @@ function renderAdminReports() {
   content.innerHTML = periodBar + empBar + summaryHtml + cards;
 }
 
+async function setUserSchedule(userId, schedule) {
+  try {
+    await apiCall('/user-schedule', 'POST', {
+      admin_id: APP.userId,
+      user_id:  userId,
+      schedule: schedule
+    });
+    // Обновляем локально
+    const u = APP.allUsers.find(u => u.id === userId);
+    if (u) u.schedule = schedule;
+    showToast(`✅ График обновлён`);
+  } catch(e) {
+    showToast('❌ Ошибка обновления графика', 'error');
+  }
+}
+
 async function deleteUser(userId, username) {
   if (!confirm(`Удалить пользователя ${username}?`)) return;
   try {
@@ -1832,8 +1903,15 @@ function renderAdminManage() {
     <!-- Сотрудники -->
     <div class="form-label" style="margin-top:8px">👥 Сотрудники (${users.length})</div>
     ${users.map(u=>`
-      <div class="project-list-item">
-        <span class="proj-list-name">@${u.username}</span>
+      <div class="project-list-item" style="flex-wrap:wrap;gap:8px">
+        <span class="proj-list-name" style="flex:1;min-width:100px">@${u.username}</span>
+        <select onchange="setUserSchedule(${u.id},this.value)"
+          style="padding:5px 8px;border-radius:8px;border:1.5px solid var(--border);
+          background:var(--bg2);color:var(--text);font:500 13px inherit;cursor:pointer;outline:none">
+          <option value="5/2" ${(u.schedule||'5/2')==='5/2'?'selected':''}>5/2 (пн-пт)</option>
+          <option value="A"   ${u.schedule==='A'?'selected':''}>Смена A (2/2)</option>
+          <option value="B"   ${u.schedule==='B'?'selected':''}>Смена B (2/2)</option>
+        </select>
         <button class="remove-btn" onclick="deleteUser(${u.id},'${u.username}')">✕</button>
       </div>`).join('')}
 
