@@ -552,6 +552,7 @@ textarea:focus, input:focus {
         background:var(--bg2);color:var(--text);outline:none">
     </div>
   </div>
+  <div id="reportDateDebug" style="display:none;font-size:12px;color:var(--hint);text-align:center;margin-bottom:6px;padding:4px 8px;background:var(--bg2);border-radius:8px"></div>
   <button class="btn btn-primary" id="submitBtn" style="display:none" onclick="submitReport()">📤 Отправить отчёт</button>
   <button class="btn btn-secondary" onclick="nav('home')">⬅️ На главную</button>
 </div>
@@ -1168,6 +1169,8 @@ function setReportDate(mode) {
   if (mode === 'today') {
     APP.reportDate = null;
     input.style.display = 'none';
+    const dbg = document.getElementById('reportDateDebug');
+    if (dbg) { dbg.style.display = 'none'; dbg.textContent = ''; }
     todayBtn.style.background    = 'var(--accent)';
     todayBtn.style.color         = '#fff';
     todayBtn.style.borderColor   = 'var(--accent)';
@@ -1182,7 +1185,13 @@ function setReportDate(mode) {
     yesterday.setDate(yesterday.getDate() - 1);
     input.value = yesterday.toISOString().split('T')[0];
     APP.reportDate = input.value;
-    input.oninput = () => { APP.reportDate = input.value; };
+    const dbg2 = document.getElementById('reportDateDebug');
+    if (dbg2) { dbg2.style.display = 'block'; dbg2.textContent = '📅 Отчёт будет за: ' + input.value; }
+    input.oninput = () => {
+      APP.reportDate = input.value;
+      const d = document.getElementById('reportDateDebug');
+      if (d) d.textContent = '📅 Отчёт будет за: ' + input.value;
+    };
     todayBtn.style.background    = 'transparent';
     todayBtn.style.color         = 'var(--hint)';
     todayBtn.style.borderColor   = 'var(--border)';
@@ -1248,6 +1257,7 @@ async function submitReport() {
   document.getElementById('summary').style.display = 'none';
   document.getElementById('reportDateWrap').style.display = 'none';
   document.getElementById('reportDateInput').style.display = 'none';
+  document.getElementById('reportDateDebug').style.display = 'none';
   APP.reportDate = null;
   document.getElementById('comment').value = '';
   document.getElementById('selectedProjectsList').innerHTML = '';
