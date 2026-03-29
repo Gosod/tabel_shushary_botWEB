@@ -776,15 +776,27 @@ async function init() {
   const params = new URLSearchParams(window.location.search);
   const raw = params.get('data');
   
-  // Получаем минимальные данные из URL
+  // Сначала пробуем получить данные из URL-параметра
   if (raw) {
     try {
       const d = JSON.parse(decodeURIComponent(raw));
       APP.userId = d.user_id || 0;
       APP.admin = !!d.admin;
     } catch(e) { 
-      console.error('Init error', e);
-      APP.userId = 0;
+      console.error('Init error from URL', e);
+    }
+  }
+
+  // Fallback: берём userId из Telegram WebApp initData
+  if (!APP.userId) {
+    try {
+      const tgUser = tg.initDataUnsafe?.user;
+      if (tgUser?.id) {
+        APP.userId = tgUser.id;
+        APP.username = tgUser.username || tgUser.first_name || '';
+      }
+    } catch(e) {
+      console.error('Init error from tg', e);
     }
   }
 
