@@ -119,15 +119,7 @@ body {
 .form-group { margin-bottom: 22px; }
 
 /* PROJECT CARDS */
-.projects-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(130px,1fr));
-  gap: 10px;
-  max-height: 260px;
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
-  padding-right: 2px;
-}
+.projects-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px,1fr)); gap: 10px; }
 .proj-card {
   padding: 16px 12px;
   border: 1.5px solid var(--border);
@@ -700,8 +692,7 @@ async function loadDataFromAPI() {
     if (data.admin !== undefined) APP.admin = data.admin;
     APP.username    = data.username     || APP.username;
     APP.projects    = data.projects     || [];
-    APP.allProjects  = data.all_projects || [];
-    APP.userSchedule = APP.userSchedule || '5/2';
+    APP.allProjects = data.all_projects || [];
     APP.allUsers    = data.all_users    || [];
     APP.userStats   = data.user_stats   || APP.userStats;
 
@@ -954,12 +945,6 @@ function addCurrentProject() {
   updateTotalHours();
 
   showToast(`➕ ${APP.reportItems[APP.reportItems.length-1].project} добавлен`, 'info');
-
-  // Скроллим обратно к сетке проектов — чтобы можно было выбрать ещё
-  setTimeout(() => {
-    const grid = document.getElementById('projectsGrid');
-    if (grid) grid.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  }, 300);
 }
 
 function removeItem(idx) {
@@ -1440,36 +1425,6 @@ async function submitAssign() {
 
 
 // ── MY STATS ──
-
-// Нормы часов по месяцам 2026 (график 5/2)
-const HOURS_NORM_2026 = {
-  1: 120, 2: 152, 3: 168, 4: 176, 5: 144, 6: 152,
-  7: 184, 8: 168, 9: 176, 10: 184, 11: 152, 12: 176
-};
-// Нормы для смен A/B (12ч * рабочие дни из schedule)
-const HOURS_NORM_SHIFT = {
-  1: 144, 2: 156, 3: 180, 4: 180, 5: 180, 6: 168,
-  7: 192, 8: 180, 9: 180, 10: 192, 11: 168, 12: 180
-};
-
-function getMonthNorm(year, month, schedule) {
-  if (year !== 2026) return null;
-  if (schedule === 'A' || schedule === 'B') return HOURS_NORM_SHIFT[month] || null;
-  return HOURS_NORM_2026[month] || null;
-}
-
-function getMonthHours(days, year, month) {
-  const prefix = \`\${year}-\${String(month).padStart(2,'0')}\`;
-  let hours = 0;
-  (days || []).forEach(d => {
-    const parts = d.date.split('.');
-    if (parts.length === 3 && parts[2] === String(year) && parseInt(parts[1]) === month) {
-      hours += d.hours;
-    }
-  });
-  return Math.round(hours * 100) / 100;
-}
-
 let myStatsPeriod = 'all';
 let myStatsCustomMonth = null;
 
@@ -1484,31 +1439,6 @@ function setMyStatsPeriod(period, monthKey) {
   renderMyStats();
 }
 
-
-// Нормы рабочих часов по месяцам (5/2, производственный календарь 2026)
-const MONTHLY_NORM_52 = {
-  2026: [0, 120, 152, 168, 176, 144, 152, 184, 168, 176, 184, 152, 176]
-  // индекс 0 не используется, 1=январь, 12=декабрь
-};
-
-function getMonthlyNorm(year, month) {
-  const norms = MONTHLY_NORM_52[year];
-  if (norms && month >= 1 && month <= 12) return norms[month];
-  // Если нет данных — считаем по рабочим дням (примерно)
-  return 160;
-}
-
-function getMonthHoursWorked(year, month, days) {
-  // Считаем часы за конкретный месяц из массива days
-  return days
-    .filter(d => {
-      const parts = d.date.split('.');
-      return parts.length === 3 && 
-             parseInt(parts[2]) === year && 
-             parseInt(parts[1]) === month;
-    })
-    .reduce((sum, d) => sum + d.hours, 0);
-}
 function renderMyStats() {
   const content = document.getElementById('myStatsContent');
   const s = APP.userStats;
@@ -1547,10 +1477,6 @@ function renderMyStats() {
     myStatsPeriod === 'month' ? 'За этот месяц' :
     myStatsCustomMonth ? myStatsCustomMonth.label : '';
 
-  // Для фильтра по конкретному месяцу — показываем норму этого месяца
-  const displayYear  = myStatsPeriod === 'custom' && myStatsCustomMonth ? myStatsCustomMonth.year  : new Date().getFullYear();
-  const displayMonth = myStatsPeriod === 'custom' && myStatsCustomMonth ? myStatsCustomMonth.month + 1 : new Date().getMonth() + 1;
-
   let html = periodBar;
 
   if (filteredDays.length === 0 && myStatsPeriod !== 'all') {
@@ -1559,54 +1485,6 @@ function renderMyStats() {
     return;
   }
 
-  // Норма текущего месяца
-  const now = new Date();
-  const curYear = now.getFullYear();
-  const curMonth = now.getMonth() + 1;
-  const norm = getMonthNorm(curYear, curMonth, APP.userSchedule || '5/2');
-  const monthHours = getMonthHours(allDays, curYear, curMonth);
-  const normBlock = norm ? `
-    <div class="card" style="border:1.5px solid var(--accent)">
-      <div class="card-row">
-        <div class="card-label">📅 ${now.toLocaleString('ru',{month:'long'})} ${curYear}</div>
-        <div style="font-size:22px;font-weight:700">
-          <span style="color:var(--accent)">${monthHours}</span>
-          <span style="color:var(--hint);font-size:16px">/${norm} ч</span>
-        </div>
-      </div>
-      <div style="margin-top:8px;background:var(--border);border-radius:6px;height:6px;overflow:hidden">
-        <div style="background:var(--accent);height:100%;width:${Math.min(100,Math.round(monthHours/norm*100))}%;border-radius:6px;transition:width .3s"></div>
-      </div>
-      <div style="font-size:12px;color:var(--hint);margin-top:4px;text-align:right">${Math.min(100,Math.round(monthHours/norm*100))}% выполнено</div>
-    </div>` : '';
-
-  html += normBlock;
-  // Норма текущего месяца
-  const now = new Date();
-  const curYear  = now.getFullYear();
-  const curMonth = now.getMonth() + 1;
-  const normYear  = (typeof displayYear  !== "undefined") ? displayYear  : curYear;
-  const normMonth = (typeof displayMonth !== "undefined") ? displayMonth : curMonth;
-  const norm = getMonthlyNorm(normYear, normMonth);
-  const thisMonthHours = myStatsPeriod === "all" ? getMonthHoursWorked(curYear, curMonth, allDays) : periodHours;
-  const normBar = norm > 0 ? Math.min(100, Math.round(thisMonthHours / norm * 100)) : 0;
-  const normColor = normBar >= 100 ? 'var(--success, #22c55e)' : normBar >= 60 ? 'var(--accent)' : 'var(--danger, #ef4444)';
-
-  const monthNames = ['','Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
-
-  const normCard = norm > 0 ? `
-    <div class="card" style="margin-bottom:10px">
-      <div class="card-row" style="margin-bottom:8px">
-        <div class="card-label">📆 ${monthNames[curMonth]} — норма часов</div>
-        <div style="font-weight:700;font-size:18px;color:${normColor}">${thisMonthHours}<span style="font-size:14px;color:var(--hint)">/${norm}</span></div>
-      </div>
-      <div style="background:var(--border);border-radius:999px;height:6px;overflow:hidden">
-        <div style="background:${normColor};height:100%;width:${normBar}%;border-radius:999px;transition:width 0.5s"></div>
-      </div>
-      <div style="font-size:12px;color:var(--hint);margin-top:4px;text-align:right">${normBar}%</div>
-    </div>` : '';
-
-  html += normCard;
   html += `
     <div class="card"><div class="card-row"><div class="card-label">⏱️ Часов</div><div class="card-value">${totalHours}</div></div></div>
     <div class="card"><div class="card-row"><div class="card-label">📅 Дней с отчётами</div><div class="card-value">${totalDays}</div></div></div>
