@@ -1573,28 +1573,6 @@ function renderMyStats() {
 
   // Норма текущего месяца
   const now = new Date();
-  const curYear = now.getFullYear();
-  const curMonth = now.getMonth() + 1;
-  const norm = getMonthNorm(curYear, curMonth, APP.userSchedule || '5/2');
-  const monthHours = getMonthHours(allDays, curYear, curMonth);
-  const normBlock = norm ? `
-    <div class="card" style="border:1.5px solid var(--accent)">
-      <div class="card-row">
-        <div class="card-label">📅 ${now.toLocaleString('ru',{month:'long'})} ${curYear}</div>
-        <div style="font-size:22px;font-weight:700">
-          <span style="color:var(--accent)">${monthHours}</span>
-          <span style="color:var(--hint);font-size:16px">/${norm} ч</span>
-        </div>
-      </div>
-      <div style="margin-top:8px;background:var(--border);border-radius:6px;height:6px;overflow:hidden">
-        <div style="background:var(--accent);height:100%;width:${Math.min(100,Math.round(monthHours/norm*100))}%;border-radius:6px;transition:width .3s"></div>
-      </div>
-      <div style="font-size:12px;color:var(--hint);margin-top:4px;text-align:right">${Math.min(100,Math.round(monthHours/norm*100))}% выполнено</div>
-    </div>` : '';
-
-  html += normBlock;
-  // Норма текущего месяца
-  const now = new Date();
   const curYear  = now.getFullYear();
   const curMonth = now.getMonth() + 1;
   const normYear  = (typeof displayYear  !== "undefined") ? displayYear  : curYear;
