@@ -119,15 +119,7 @@ body {
 .form-group { margin-bottom: 22px; }
 
 /* PROJECT CARDS */
-.projects-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(130px,1fr));
-  gap: 10px;
-  max-height: 260px;
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
-  padding-right: 2px;
-}
+.projects-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px,1fr)); gap: 10px; }
 .proj-card {
   padding: 16px 12px;
   border: 1.5px solid var(--border);
@@ -144,8 +136,8 @@ body {
   background: var(--accent);
   color: #fff;
 }
-.proj-abbr { font-size: 16px; font-weight: 700; margin-bottom: 5px; }
-.proj-name { font-size: 12px; font-weight: 500; opacity: .85; line-height: 1.4; word-break: break-word; overflow-wrap: break-word; hyphens: auto; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.proj-abbr { font-size: 18px; font-weight: 700; margin-bottom: 4px; }
+.proj-name { font-size: 11px; opacity: .8; line-height: 1.3; word-break: break-word; overflow-wrap: break-word; hyphens: auto; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 
 /* DASHED ADD BTN */
 .dashed-btn {
@@ -487,14 +479,6 @@ textarea:focus, input:focus {
 
   <div class="form-group">
     <div class="form-label">📁 Проект</div>
-    <input type="text" id="projectSearch" inputmode="search"
-      placeholder="🔍 Поиск проекта..."
-      oninput="filterProjects(this.value)"
-      style="width:100%;padding:10px 14px;border:1.5px solid var(--border);border-radius:12px;
-      font:15px 'Golos Text',sans-serif;background:var(--bg2);color:var(--text);
-      box-sizing:border-box;outline:none;margin-bottom:10px"
-      onfocus="this.style.borderColor='var(--accent)'"
-      onblur="this.style.borderColor='var(--border)'">
     <div class="projects-grid" id="projectsGrid"></div>
     <div class="error-msg" id="projError">Выберите хотя бы один проект</div>
   </div>
@@ -509,9 +493,9 @@ textarea:focus, input:focus {
       <div class="form-label" id="hoursLabel">⏱️ Часов для выбранного проекта</div>
       <div class="hours-box">
         <div>
-          <input type="text" class="hours-big-input" id="hoursDisplay" value="4"
-                 placeholder="4" inputmode="decimal"
-                 onchange="updateHoursFromInput()"
+          <input type="number" class="hours-big-input" id="hoursDisplay" value="4" 
+                 min="0.25" max="12" step="0.25" 
+                 onchange="updateHoursFromInput()" 
                  oninput="updateHoursFromInput()">
           <div class="hours-unit">часов</div>
         </div>
@@ -542,25 +526,6 @@ textarea:focus, input:focus {
     <div id="summaryRows"></div>
   </div>
 
-  <div id="reportDateWrap" style="display:none;margin-bottom:10px">
-    <div class="form-label" style="margin-bottom:6px">📅 Дата отчёта</div>
-    <div style="display:flex;gap:8px;align-items:center">
-      <button id="reportDateToday" class="btn" onclick="setReportDate('today')"
-        style="padding:8px 14px;border-radius:10px;border:1.5px solid var(--accent);
-        background:var(--accent);color:#fff;font:600 13px inherit;cursor:pointer">
-        Сегодня
-      </button>
-      <button id="reportDateOther" class="btn" onclick="setReportDate('other')"
-        style="padding:8px 14px;border-radius:10px;border:1.5px solid var(--border);
-        background:transparent;color:var(--hint);font:500 13px inherit;cursor:pointer">
-        Другой день
-      </button>
-      <input type="date" id="reportDateInput" style="display:none;flex:1;padding:8px 10px;
-        border:1.5px solid var(--accent);border-radius:10px;font:14px inherit;
-        background:var(--bg2);color:var(--text);outline:none">
-    </div>
-  </div>
-  <div id="reportDateDebug" style="display:none;font-size:12px;color:var(--hint);text-align:center;margin-bottom:6px;padding:4px 8px;background:var(--bg2);border-radius:8px"></div>
   <button class="btn btn-primary" id="submitBtn" style="display:none" onclick="submitReport()">📤 Отправить отчёт</button>
   <button class="btn btn-secondary" onclick="nav('home')">⬅️ На главную</button>
 </div>
@@ -570,7 +535,9 @@ textarea:focus, input:focus {
   <div class="page-title">📊 Моя статистика</div>
   <div class="page-sub" id="myStatsSubtitle">Загрузка...</div>
   <div id="myStatsContent"></div>
-
+  <div class="info-card" style="margin-top:8px;font-size:12px">
+    💡 Данные обновляются при каждом открытии приложения через /start
+  </div>
   <button class="btn btn-secondary" onclick="nav('home')">⬅️ На главную</button>
 </div>
 
@@ -580,12 +547,40 @@ textarea:focus, input:focus {
   <div class="page-sub">Управление и аналитика</div>
   <div class="stat-tabs">
     <button class="stat-tab active" onclick="adminTab('overview',this)">Обзор</button>
+    <button class="stat-tab" onclick="adminTab('employees',this)">Сотрудники</button>
     <button class="stat-tab" onclick="adminTab('projects-stat',this)">Проекты</button>
     <button class="stat-tab" onclick="adminTab('reports-list',this)">Отчёты</button>
     <button class="stat-tab" onclick="adminTab('manage',this)">Управление</button>
   </div>
   <div id="adminContent"></div>
   <button class="btn btn-secondary" onclick="nav('home')">⬅️ На главную</button>
+</div>
+
+<!-- ADD PROJECT -->
+<div class="page" id="add-project">
+  <div class="page-title">➕ Добавить проект</div>
+  <div class="page-sub">Создайте новый проект</div>
+  <div class="info-card">💡 Аббревиатура — короткое название (2-5 символов), которое отображается на кнопке</div>
+  <div class="form-group">
+    <div class="form-label">🔤 Аббревиатура</div>
+    <input type="text" id="newAbbr" placeholder="Например: РС" maxlength="5">
+    <div class="input-hint">2-5 символов, автоматически CAPS</div>
+    <div class="error-msg" id="abbrErr">Заполните поле (мин. 2 символа)</div>
+  </div>
+  <div class="form-group">
+    <div class="form-label">📝 Полное название</div>
+    <input type="text" id="newFull" placeholder="Например: Разработка сайта" maxlength="50">
+    <div class="input-hint">До 50 символов</div>
+    <div class="error-msg" id="fullErr">Заполните поле (мин. 3 символа)</div>
+    <div id="projPreview" style="display:none">
+      <div class="proj-preview-box">
+        <div class="proj-preview-abbr" id="previewAbbr">РС</div>
+        <div class="proj-preview-name" id="previewFull">Разработка сайта</div>
+      </div>
+    </div>
+  </div>
+  <button class="btn btn-primary" onclick="submitAddProject()">✅ Добавить проект</button>
+  <button class="btn btn-secondary" onclick="goBack()">⬅️ Назад</button>
 </div>
 
 <!-- ADD PROJECT MODAL -->
@@ -598,18 +593,18 @@ textarea:focus, input:focus {
     <div class="info-card">💡 Аббревиатура — 2-5 символов, отображается на кнопке</div>
     <div class="form-group">
       <div class="form-label">🔤 Аббревиатура</div>
-      <input type="text" id="modalAbbr" placeholder="Например: РС" maxlength="5">
-      <div class="error-msg" id="modalAbbrErr">Заполните поле (мин. 2 символа)</div>
+      <input type="text" id="newAbbr" placeholder="Например: РС" maxlength="5">
+      <div class="error-msg" id="abbrErr">Заполните поле (мин. 2 символа)</div>
     </div>
     <div class="form-group">
       <div class="form-label">📝 Полное название</div>
-      <input type="text" id="modalFull" placeholder="Например: Разработка сайта" maxlength="50">
-      <div class="error-msg" id="modalFullErr">Заполните поле (мин. 3 символа)</div>
+      <input type="text" id="newFull" placeholder="Например: Разработка сайта" maxlength="50">
+      <div class="error-msg" id="fullErr">Заполните поле (мин. 3 символа)</div>
     </div>
-    <div id="modalProjPreview" style="display:none;margin-bottom:16px">
+    <div id="projPreview" style="display:none;margin-bottom:16px">
       <div class="proj-preview-box">
-        <div class="proj-preview-abbr" id="modalPreviewAbbr">РС</div>
-        <div class="proj-preview-name" id="modalPreviewFull">Разработка сайта</div>
+        <div class="proj-preview-abbr" id="previewAbbr">РС</div>
+        <div class="proj-preview-name" id="previewFull">Разработка сайта</div>
       </div>
     </div>
     <button class="btn btn-primary" onclick="submitAddProject()">✅ Добавить проект</button>
@@ -663,7 +658,6 @@ let APP = {
   navHistory: [],
   adminChart: null,
   projChart: null,
-  refreshTimer: null,
 };
 
 
@@ -696,21 +690,17 @@ async function loadDataFromAPI() {
   try {
     const data = await apiCall('/init', 'POST', { user_id: APP.userId });
     
-    // Обновляем данные, сохраняя admin флаг из URL
-    if (data.admin !== undefined) APP.admin = data.admin;
-    APP.username    = data.username     || APP.username;
-    APP.projects    = data.projects     || [];
-    APP.allProjects  = data.all_projects || [];
-    APP.userSchedule = APP.userSchedule || '5/2';
-    APP.allUsers    = data.all_users    || [];
-    APP.userStats   = data.user_stats   || APP.userStats;
-
-    if (APP.admin) {
-      document.querySelectorAll('.admin-only').forEach(el => el.style.display = '');
-    }
-
+    APP.admin = data.admin;
+    APP.username = data.username;
+    APP.projects = data.projects || [];
+    APP.allProjects = data.all_projects || [];
+    APP.allUsers = data.all_users || [];
+    APP.userStats = data.user_stats || {};
+    APP.adminStats = data.admin_stats || null;
+    
     buildProjectsGrid();
     renderMyStats();
+    if (APP.admin) renderAdminOverview();
     
     return true;
   } catch (error) {
@@ -718,85 +708,20 @@ async function loadDataFromAPI() {
     return false;
   }
 }
-
-async function loadAdminStats() {
-  if (!APP.admin || !APP.userId) return;
-  try {
-    APP.adminStats = await apiCall('/admin-stats', 'POST', { user_id: APP.userId });
-  } catch(e) {
-    console.error('Admin stats failed:', e);
-  }
-}
-
-// ── AUTO REFRESH ──
-const REFRESH_INTERVAL = 60000; // 1 минута
-
-async function silentRefresh() {
-  if (!APP.userId || !APP.admin) return;
-  try {
-    // Обновляем admin stats тихо
-    const newStats = await apiCall('/admin-stats', 'POST', { user_id: APP.userId });
-    APP.adminStats = newStats;
-    // Перерисовываем только если сейчас открыта админ-панель
-    const adminPanel = document.getElementById('admin-panel');
-    if (adminPanel && adminPanel.classList.contains('active')) {
-      renderAdminTab(currentAdminTab);
-    }
-    // Обновляем личную статистику тоже
-    const initData = await apiCall('/init', 'POST', { user_id: APP.userId });
-    APP.userStats = initData.user_stats || APP.userStats;
-    APP.projects  = initData.projects   || APP.projects;
-    APP.allProjects = initData.all_projects || APP.allProjects;
-    APP.allUsers    = initData.all_users    || APP.allUsers;
-    buildProjectsGrid();
-    renderMyStats();
-  } catch(e) {
-    // Тихая ошибка — не показываем пользователю
-    console.log('Silent refresh failed:', e);
-  }
-}
-
-function startAutoRefresh() {
-  if (APP.refreshTimer) clearInterval(APP.refreshTimer);
-  APP.refreshTimer = setInterval(silentRefresh, REFRESH_INTERVAL);
-}
-
-function stopAutoRefresh() {
-  if (APP.refreshTimer) { clearInterval(APP.refreshTimer); APP.refreshTimer = null; }
-}
-
-// Останавливаем когда вкладка скрыта, возобновляем когда снова видна
-document.addEventListener('visibilitychange', () => {
-  if (document.hidden) stopAutoRefresh();
-  else if (APP.userId) startAutoRefresh();
-});
-
 // ── INIT ──
 async function init() {
   const params = new URLSearchParams(window.location.search);
   const raw = params.get('data');
   
-  // Сначала пробуем получить данные из URL-параметра
+  // Получаем минимальные данные из URL
   if (raw) {
     try {
       const d = JSON.parse(decodeURIComponent(raw));
       APP.userId = d.user_id || 0;
       APP.admin = !!d.admin;
     } catch(e) { 
-      console.error('Init error from URL', e);
-    }
-  }
-
-  // Fallback: берём userId из Telegram WebApp initData
-  if (!APP.userId) {
-    try {
-      const tgUser = tg.initDataUnsafe?.user;
-      if (tgUser?.id) {
-        APP.userId = tgUser.id;
-        APP.username = tgUser.username || tgUser.first_name || '';
-      }
-    } catch(e) {
-      console.error('Init error from tg', e);
+      console.error('Init error', e);
+      APP.userId = 0;
     }
   }
 
@@ -810,6 +735,7 @@ async function init() {
 
   if (APP.admin) {
     document.querySelectorAll('.admin-only').forEach(el => el.style.display = '');
+    renderAdminReports();
   }
 
   buildProjectsGrid();
@@ -824,9 +750,6 @@ async function init() {
 
   // Проверка версии и показ уведомления
   checkVersion();
-
-  // Запускаем автообновление
-  if (APP.userId) startAutoRefresh();
 }
 
 // ── NAVIGATION ──
@@ -839,11 +762,6 @@ function nav(pageId, addToHistory = true) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
 
-  if (pageId === 'report') {
-    const sf = document.getElementById('projectSearch');
-    if (sf) { sf.value = ''; buildProjectsGrid(); }
-  }
-
   document.getElementById(pageId).classList.add('active');
   const btn = document.querySelector(`[data-page="${pageId}"]`);
   if (btn) btn.classList.add('active');
@@ -855,10 +773,6 @@ function nav(pageId, addToHistory = true) {
   else tg.BackButton.hide();
 
   if (tg.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
-
-  if (pageId === 'admin-panel' && APP.admin && !APP.adminStats) {
-    loadAdminStats().then(() => renderAdminTab(currentAdminTab));
-  }
 }
 
 function goBack() {
@@ -881,30 +795,16 @@ function initNav() {
 }
 
 // ── PROJECTS GRID ──
-function buildProjectsGrid(filter) {
+function buildProjectsGrid() {
   const grid = document.getElementById('projectsGrid');
   grid.innerHTML = '';
-  const q = (filter || '').toLowerCase().trim();
-  const filtered = q
-    ? APP.projects.filter(p =>
-        p.full.toLowerCase().includes(q) || p.abbr.toLowerCase().includes(q))
-    : APP.projects;
-
-  if (filtered.length === 0) {
-    grid.innerHTML = '<div style="color:var(--hint);font-size:14px;padding:12px 0;text-align:center">Ничего не найдено</div>';
-    return;
-  }
-  filtered.forEach(proj => {
+  APP.projects.forEach(proj => {
     const card = document.createElement('div');
     card.className = 'proj-card';
     card.innerHTML = `<div class="proj-abbr">${proj.abbr}</div><div class="proj-name">${proj.full}</div>`;
     card.onclick = () => selectProject(proj, card);
     grid.appendChild(card);
   });
-}
-
-function filterProjects(value) {
-  buildProjectsGrid(value);
 }
 
 function selectProject(proj, card) {
@@ -962,16 +862,9 @@ function addCurrentProject() {
   // Показываем кнопки действий
   document.getElementById('commentWrap').style.display = 'block';
   document.getElementById('submitBtn').style.display = 'block';
-  document.getElementById('reportDateWrap').style.display = 'block';
   updateTotalHours();
 
   showToast(`➕ ${APP.reportItems[APP.reportItems.length-1].project} добавлен`, 'info');
-
-  // Скроллим обратно к сетке проектов — чтобы можно было выбрать ещё
-  setTimeout(() => {
-    const grid = document.getElementById('projectsGrid');
-    if (grid) grid.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  }, 300);
 }
 
 function removeItem(idx) {
@@ -1002,40 +895,18 @@ function renderSelectedList() {
     const el = document.createElement('div');
     el.style.cssText = 'background:var(--bg2);border-radius:12px;padding:12px 14px;margin-bottom:10px;box-shadow:var(--shadow)';
     el.innerHTML = `
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
         <span style="font-weight:600;font-size:14px;flex:1;margin-right:8px">${item.abbr} — ${item.project}</span>
-        <button onclick="removeItem(${idx})" style="background:none;border:none;color:var(--danger);font-size:18px;cursor:pointer;padding:0;line-height:1;flex-shrink:0">✕</button>
-      </div>
-
-      <!-- Редактирование часов -->
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
-        <span style="font-size:13px;color:var(--hint);white-space:nowrap">⏱️ Часов:</span>
-        <input type="text" inputmode="decimal"
-          value="${item.hours}"
-          onchange="updateItemHours(${idx}, this.value)"
-          onblur="updateItemHours(${idx}, this.value)"
-          style="width:70px;padding:6px 10px;border:1.5px solid var(--border);border-radius:8px;
-          font:700 16px 'Golos Text',sans-serif;color:var(--accent);text-align:center;
-          background:var(--bg);outline:none;box-sizing:border-box"
-          onfocus="this.style.borderColor='var(--accent)'"
-          onblur="this.style.borderColor='var(--border)';updateItemHours(${idx},this.value)">
-        <div style="display:flex;gap:6px;flex-wrap:wrap">
-          ${[1,2,4,6,8].map(h => `
-            <button onclick="setItemHours(${idx},${h})"
-              style="padding:5px 10px;border-radius:8px;border:1.5px solid ${item.hours===h?'var(--accent)':'var(--border)'};
-              background:${item.hours===h?'var(--accent)':'transparent'};color:${item.hours===h?'#fff':'var(--text)'};
-              font:600 13px inherit;cursor:pointer">${h}ч</button>`).join('')}
+        <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
+          <span style="font-weight:700;color:var(--accent);font-size:15px">${item.hours} ч</span>
+          <button onclick="removeItem(${idx})" style="background:none;border:none;color:var(--danger);font-size:18px;cursor:pointer;padding:0;line-height:1">✕</button>
         </div>
       </div>
-
-      <!-- Комментарий -->
       <input type="text"
-        placeholder="Комментарий (необязательно)"
+        placeholder="Комментарий к ${item.project} (необязательно)"
         value="${(item.comment || '').replace(/"/g, '&quot;')}"
         oninput="APP.reportItems[${idx}].comment = this.value; updateSummary()"
-        style="width:100%;padding:8px 10px;border:1.5px solid var(--border);border-radius:8px;
-        font:14px 'Golos Text',sans-serif;background:var(--bg);color:var(--text);
-        box-sizing:border-box;outline:none"
+        style="width:100%;padding:8px 10px;border:1.5px solid var(--border);border-radius:8px;font:14px 'Golos Text',sans-serif;background:var(--bg);color:var(--text);box-sizing:border-box;outline:none"
         onfocus="this.style.borderColor='var(--accent)'"
         onblur="this.style.borderColor='var(--border)'"
       >
@@ -1045,19 +916,6 @@ function renderSelectedList() {
   updateTotalHours();
 }
 
-function updateItemHours(idx, raw) {
-  const val = parseHoursInput(raw);
-  APP.reportItems[idx].hours = val;
-  renderSelectedList();
-  updateSummary();
-}
-
-function setItemHours(idx, h) {
-  APP.reportItems[idx].hours = h;
-  renderSelectedList();
-  updateSummary();
-  if (tg.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
-}
 function updateTotalHours() {
   const total = APP.reportItems.reduce((s, i) => s + i.hours, 0) + (APP.selectedProject ? APP.currentHours : 0);
   document.getElementById('totalHoursDisplay').textContent = total;
@@ -1081,7 +939,6 @@ function updateSummary() {
 
   document.getElementById('commentWrap').style.display = 'block';
   document.getElementById('submitBtn').style.display = 'block';
-  document.getElementById('reportDateWrap').style.display = 'block';
 }
 
 // ── HOURS SLIDER ──
@@ -1103,14 +960,6 @@ function initHoursSlider() {
       if (tg.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
     });
   });
-  document.getElementById('hoursDisplay').addEventListener('blur', () => {
-    const val = parseHoursInput(document.getElementById('hoursDisplay').value);
-    APP.currentHours = val;
-    document.getElementById('hoursDisplay').value = val;
-    document.getElementById('hoursRange').value = Math.min(val, 12);
-    updateQuickBtns(val);
-    updateSummary(); updateTotalHours();
-  });
   updateQuickBtns(4);
 }
 
@@ -1122,18 +971,18 @@ function updateQuickBtns(val) {
 
 
 
-function parseHoursInput(raw) {
-  const str = String(raw).replace(',', '.').trim();
-  const val = parseFloat(str);
-  if (isNaN(val) || val <= 0) return 0.5;
-  if (val > 24) return 24;
-  return Math.round(val * 100) / 100;
-}
-
 function updateHoursFromInput() {
-  const val = parseHoursInput(document.getElementById('hoursDisplay').value);
+  let val = parseFloat(document.getElementById('hoursDisplay').value);
+  if (isNaN(val)) val = 0.25;
+  if (val < 0.25) val = 0.25;
+  if (val > 12) val = 12;
+  
+  // Округляем до ближайшего 0.25
+  val = Math.round(val * 4) / 4;
+  
   APP.currentHours = val;
-  document.getElementById('hoursRange').value = Math.min(val, 12);
+  document.getElementById('hoursDisplay').value = val;
+  document.getElementById('hoursRange').value = val;
   updateQuickBtns(val);
   updateSummary();
   updateTotalHours();
@@ -1188,53 +1037,7 @@ function showToast(msg, type = 'success') {
 }
 
 // ── SUBMIT REPORT ──
-function setReportDate(mode) {
-  const todayBtn = document.getElementById('reportDateToday');
-  const otherBtn = document.getElementById('reportDateOther');
-  const input    = document.getElementById('reportDateInput');
-
-  if (mode === 'today') {
-    APP.reportDate = null;
-    input.style.display = 'none';
-    const dbg = document.getElementById('reportDateDebug');
-    if (dbg) { dbg.style.display = 'none'; dbg.textContent = ''; }
-    todayBtn.style.background    = 'var(--accent)';
-    todayBtn.style.color         = '#fff';
-    todayBtn.style.borderColor   = 'var(--accent)';
-    otherBtn.style.background    = 'transparent';
-    otherBtn.style.color         = 'var(--hint)';
-    otherBtn.style.borderColor   = 'var(--border)';
-  } else {
-    input.style.display = 'block';
-    input.max = new Date().toISOString().split('T')[0];
-    // Устанавливаем вчера по умолчанию
-    const yesterday = new Date();
-    yesterday.setDate(yesterday.getDate() - 1);
-    input.value = yesterday.toISOString().split('T')[0];
-    APP.reportDate = input.value;
-    const dbg2 = document.getElementById('reportDateDebug');
-    if (dbg2) { dbg2.style.display = 'block'; dbg2.textContent = '📅 Отчёт будет за: ' + input.value; }
-    input.oninput = () => {
-      APP.reportDate = input.value;
-      const d = document.getElementById('reportDateDebug');
-      if (d) d.textContent = '📅 Отчёт будет за: ' + input.value;
-    };
-    todayBtn.style.background    = 'transparent';
-    todayBtn.style.color         = 'var(--hint)';
-    todayBtn.style.borderColor   = 'var(--border)';
-    otherBtn.style.background    = 'var(--accent)';
-    otherBtn.style.color         = '#fff';
-    otherBtn.style.borderColor   = 'var(--accent)';
-  }
-}
-
 async function submitReport() {
-  // Защита от двойного нажатия
-  if (APP.submitting) return;
-  APP.submitting = true;
-  const btn = document.getElementById('submitBtn');
-  if (btn) { btn.disabled = true; btn.textContent = '⏳ Отправляем...'; }
-
   if (APP.selectedProject) {
     APP.reportItems.push({ project: APP.selectedProject.full, abbr: APP.selectedProject.abbr, hours: APP.currentHours });
     APP.selectedProject = null;
@@ -1242,34 +1045,33 @@ async function submitReport() {
   if (!APP.reportItems.length) {
     document.getElementById('projError').classList.add('show');
     if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('error');
-    APP.submitting = false;
-    if (btn) { btn.disabled = false; btn.textContent = '📤 Отправить отчёт'; }
     return;
   }
 
   const generalComment = document.getElementById('comment').value || '';
   const data = {
     type: 'report',
-    projects: APP.reportItems.map(i => ({
-      project: i.project,
+    projects: APP.reportItems.map(i => ({ 
+      project: i.project, 
       hours: i.hours,
       comment: i.comment || ''
     })),
     comments: generalComment || '-'
   };
 
+  // Добавляем pending actions если есть
   if (APP.pendingActions && APP.pendingActions.length) {
     data.pending = APP.pendingActions;
     APP.pendingActions = [];
   }
   try {
+    // Отправляем через API
     await apiCall('/report', 'POST', {
-      user_id:     APP.userId,
-      username:    APP.username,
-      report_date: APP.reportDate || null,
-      projects:    APP.reportItems.map(i => ({
-        project: i.project,
-        hours:   i.hours,
+      user_id: APP.userId,
+      username: APP.username,
+      projects: APP.reportItems.map(i => ({ 
+        project: i.project, 
+        hours: i.hours,
         comment: i.comment || ''
       })),
       comments: generalComment || '-'
@@ -1282,10 +1084,6 @@ async function submitReport() {
   document.getElementById('selectedProjectsWrap').style.display = 'none';
   document.getElementById('commentWrap').style.display = 'none';
   document.getElementById('summary').style.display = 'none';
-  document.getElementById('reportDateWrap').style.display = 'none';
-  document.getElementById('reportDateInput').style.display = 'none';
-  document.getElementById('reportDateDebug').style.display = 'none';
-  APP.reportDate = null;
   document.getElementById('comment').value = '';
   document.getElementById('selectedProjectsList').innerHTML = '';
   document.getElementById('submitBtn').style.display = 'none';
@@ -1300,86 +1098,229 @@ async function submitReport() {
   });
   renderMyStats();
 
-    APP.submitting = false;
-    if (btn) { btn.disabled = false; btn.textContent = '📤 Отправить отчёт'; }
     showToast('✅ Отчёт сохранён!');
     if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
+
+    // Обновляем статистику
+    await loadDataFromAPI();
+
     setTimeout(() => nav('home'), 1500);
   } catch (error) {
     console.error('Submit report failed:', error);
-    APP.submitting = false;
-    if (btn) { btn.disabled = false; btn.textContent = '📤 Отправить отчёт'; }
   }
 }
 
 // ── ADD PROJECT FORM ──
 function initAddProjectForm() {
-  document.getElementById('modalAbbr').addEventListener('input', e => {
+  document.getElementById('newAbbr').addEventListener('input', e => {
     e.target.value = e.target.value.toUpperCase();
     updateProjPreview();
   });
-  document.getElementById('modalFull').addEventListener('input', updateProjPreview);
+  document.getElementById('newFull').addEventListener('input', updateProjPreview);
 }
 
 function updateProjPreview() {
-  const a = document.getElementById('modalAbbr').value.trim();
-  const f = document.getElementById('modalFull').value.trim();
-  const preview = document.getElementById('modalProjPreview');
+  const a = document.getElementById('newAbbr').value.trim();
+  const f = document.getElementById('newFull').value.trim();
+  const preview = document.getElementById('projPreview');
   if (a || f) {
     preview.style.display = 'block';
-    document.getElementById('modalPreviewAbbr').textContent = a || 'АБВ';
-    document.getElementById('modalPreviewFull').textContent = f || 'Название';
+    document.getElementById('previewAbbr').textContent = a || 'АБВ';
+    document.getElementById('previewFull').textContent = f || 'Название';
   } else {
     preview.style.display = 'none';
   }
 }
 
 async function submitAddProject() {
-  const abbr = document.getElementById('modalAbbr').value.trim().toUpperCase();
-  const full = document.getElementById('modalFull').value.trim();
+  const abbr = document.getElementById('newAbbr').value.trim().toUpperCase();
+  const full = document.getElementById('newFull').value.trim();
   let ok = true;
 
   if (abbr.length < 2) {
-    document.getElementById('modalAbbrErr').textContent = 'Минимум 2 символа';
-    document.getElementById('modalAbbrErr').classList.add('show'); ok = false;
-  } else document.getElementById('modalAbbrErr').classList.remove('show');
+    document.getElementById('abbrErr').textContent = 'Минимум 2 символа';
+    document.getElementById('abbrErr').classList.add('show'); ok = false;
+  } else document.getElementById('abbrErr').classList.remove('show');
 
   if (full.length < 3) {
-    document.getElementById('modalFullErr').textContent = 'Минимум 3 символа';
-    document.getElementById('modalFullErr').classList.add('show'); ok = false;
-  } else document.getElementById('modalFullErr').classList.remove('show');
+    document.getElementById('fullErr').textContent = 'Минимум 3 символа';
+    document.getElementById('fullErr').classList.add('show'); ok = false;
+  } else document.getElementById('fullErr').classList.remove('show');
 
   if (APP.allProjects.find(p => p.abbr === abbr)) {
-    document.getElementById('modalAbbrErr').textContent = 'Аббревиатура уже используется';
-    document.getElementById('modalAbbrErr').classList.add('show'); ok = false;
+    document.getElementById('abbrErr').textContent = 'Аббревиатура уже используется';
+    document.getElementById('abbrErr').classList.add('show'); ok = false;
   }
 
   if (!ok) { if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('error'); return; }
 
-  try {
-    await apiCall('/project', 'POST', { user_id: APP.userId, abbr, full });
+  // Отправляем боту БЕЗ закрытия (sendData не закрывает если не вызван tg.close)
+  tg.sendData(JSON.stringify({ type: 'add_project', abbr, full }));
 
-    const newProj = { abbr, full };
-    APP.allProjects.push(newProj);
-    APP.projects.push(newProj);
+  // Добавляем локально сразу
+  const newProj = { abbr, full };
+  APP.allProjects.push(newProj);
+  APP.projects.push(newProj);
 
-    document.getElementById('modalAbbr').value = '';
-    document.getElementById('modalFull').value = '';
-    document.getElementById('modalProjPreview').style.display = 'none';
-    document.getElementById('modalAbbrErr').classList.remove('show');
-    document.getElementById('modalFullErr').classList.remove('show');
+  // Сбрасываем форму
+  document.getElementById('newAbbr').value = '';
+  document.getElementById('newFull').value = '';
+  document.getElementById('projPreview').style.display = 'none';
+  document.getElementById('abbrErr').classList.remove('show');
+  document.getElementById('fullErr').classList.remove('show');
 
-    buildProjectsGrid();
-    renderAdminManage();
+  // Обновляем UI
+  buildProjectsGrid();
+  renderAdminManage();
 
-    showToast(`✅ Проект ${abbr} добавлен!`);
-    if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
-    closeModal();
-  } catch(e) {
-    console.error('Add project failed:', e);
+  showToast(`✅ Проект ${abbr} добавлен!`);
+  if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
+
+  // Закрываем модальное окно
+  closeModal();
+}
+
+// ── MY STATS ──
+function renderMyStats() {
+  const content = document.getElementById('myStatsContent');
+  const s = APP.userStats;
+  if (!s || !s.total_reports) {
+    document.getElementById('myStatsSubtitle').textContent = 'Ещё нет отчётов';
+    content.innerHTML = `<div class="empty"><div class="empty-icon">📭</div><div>Создайте первый отчёт!</div></div>`;
+    return;
+  }
+  document.getElementById('myStatsSubtitle').textContent = `Всего за всё время`;
+  let html = `
+    <div class="card"><div class="card-row"><div class="card-label">⏱️ Всего часов</div><div class="card-value">${s.total_hours}</div></div></div>
+    <div class="card"><div class="card-row"><div class="card-label">📝 Отчётов</div><div class="card-value">${s.total_reports}</div></div></div>
+    <div class="form-label" style="margin-top:4px">📁 По проектам</div>
+  `;
+  Object.entries(s.by_project || {}).sort((a,b)=>b[1]-a[1]).forEach(([proj, h]) => {
+    html += `<div class="card"><div class="card-row"><span>${proj}</span><span style="font-weight:700;color:var(--accent)">${h} ч</span></div></div>`;
+  });
+  content.innerHTML = html;
+}
+
+// ── ADMIN TABS ──
+let currentAdminTab = 'overview';
+function adminTab(tab, btn) {
+  document.querySelectorAll('.stat-tab').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  currentAdminTab = tab;
+  renderAdminTab(tab);
+}
+
+function renderAdminTab(tab) {
+  if (tab === 'overview') renderAdminOverview();
+  else if (tab === 'employees') renderAdminEmployees();
+  else if (tab === 'projects-stat') renderAdminProjects();
+  else if (tab === 'reports-list') renderAdminReports();
+  else if (tab === 'manage') renderAdminManage();
+}
+
+function renderAdminOverview() {
+  if (!document.getElementById('admin-panel').classList.contains('active') && currentAdminTab !== 'overview') return;
+  const s = APP.adminStats;
+  const content = document.getElementById('adminContent');
+  if (!s) {
+    content.innerHTML = `<div class="empty"><div class="empty-icon">📊</div><div>Нет данных</div></div>`;
+    return;
+  }
+  content.innerHTML = `
+    <div class="card"><div class="card-row"><div class="card-label">⏱️ Всего часов</div><div class="card-value">${s.total_hours}</div></div></div>
+    <div class="card"><div class="card-row"><div class="card-label">📝 Отчётов</div><div class="card-value">${s.total_reports}</div></div></div>
+    <div class="card"><div class="card-row"><div class="card-label">👥 Сотрудников</div><div class="card-value">${s.employees?.length||0}</div></div></div>
+    <div class="chart-wrap"><canvas id="overviewChart"></canvas></div>
+  `;
+  if (s.employees?.length && typeof Chart !== 'undefined') {
+    if (APP.adminChart) APP.adminChart.destroy();
+    const ctx = document.getElementById('overviewChart');
+    APP.adminChart = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: s.employees.map(e=>e.name),
+        datasets: [{ label:'Часы', data: s.employees.map(e=>e.hours), backgroundColor: 'rgba(37,99,235,0.7)', borderRadius: 6 }]
+      },
+      options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true}} }
+    });
   }
 }
 
+function renderAdminEmployees() {
+  const s = APP.adminStats;
+  const content = document.getElementById('adminContent');
+  if (!s?.employees?.length) { content.innerHTML = `<div class="empty"><div class="empty-icon">👥</div><div>Нет данных</div></div>`; return; }
+  content.innerHTML = [...s.employees].sort((a,b)=>b.hours-a.hours).map(emp => `
+    <div class="emp-card">
+      <div class="emp-header">
+        <div class="emp-name">👤 ${emp.name}</div>
+        <div class="emp-hours">${emp.hours} ч</div>
+      </div>
+      <div style="font-size:13px;color:var(--hint);margin-bottom:8px">📝 Отчётов: ${emp.reports}</div>
+      ${Object.entries(emp.projects||{}).map(([p,h])=>`<div class="emp-proj"><span class="emp-proj-name">${p}</span><span>${h} ч</span></div>`).join('')}
+    </div>
+  `).join('');
+}
+
+function renderAdminProjects() {
+  const s = APP.adminStats;
+  const content = document.getElementById('adminContent');
+  if (!s?.projects) { content.innerHTML = `<div class="empty"><div class="empty-icon">📁</div><div>Нет данных</div></div>`; return; }
+  const sorted = Object.entries(s.projects).sort((a,b)=>b[1]-a[1]);
+  content.innerHTML = sorted.map(([p,h])=>`<div class="card"><div class="card-row"><span>${p}</span><span style="font-weight:700;color:var(--accent)">${h} ч</span></div></div>`).join('')
+    + `<div class="chart-wrap"><canvas id="projChart"></canvas></div>`;
+  if (sorted.length && typeof Chart !== 'undefined') {
+    if (APP.projChart) APP.projChart.destroy();
+    APP.projChart = new Chart(document.getElementById('projChart'), {
+      type: 'doughnut',
+      data: {
+        labels: sorted.map(([p])=>p),
+        datasets: [{ data: sorted.map(([,h])=>h), backgroundColor: ['#2563eb','#16a34a','#d97706','#9333ea','#ef4444','#0891b2'], borderWidth:0 }]
+      },
+      options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{position:'bottom',labels:{font:{size:12}}}} }
+    });
+  }
+}
+
+function renderAdminReports() {
+  const s = APP.adminStats;
+  const content = document.getElementById('adminContent');
+  if (!s?.recent_reports?.length) { content.innerHTML = `<div class="empty"><div class="empty-icon">📝</div><div>Нет отчётов</div></div>`; return; }
+  content.innerHTML = s.recent_reports.map(r=>`
+    <div class="report-item">
+      <div class="report-header">
+        <span class="report-emp">👤 ${r.employee}</span>
+        <span class="report-date">${r.date} ${r.time}</span>
+      </div>
+      <div class="report-proj">📁 ${r.project} — ${r.hours} ч</div>
+      ${r.comment && r.comment !== '-' ? `<div class="report-comment">💬 ${r.comment}</div>` : ''}
+    </div>
+  `).join('');
+}
+
+function renderAdminManage() {
+  const content = document.getElementById('adminContent');
+  const projs = APP.allProjects;
+  const users = APP.allUsers;
+
+  content.innerHTML = `
+    <div class="form-label">📁 Проекты (${projs.length})</div>
+    ${projs.map(p=>`
+      <div class="project-list-item">
+        <span class="proj-list-name">${p.abbr} — ${p.full}</span>
+        <button class="remove-btn" onclick="removeProject('${p.abbr}')">✕</button>
+      </div>`).join('')}
+    <button class="btn btn-primary" onclick="openModal()">➕ Добавить проект</button>
+
+    <div class="form-label" style="margin-top:24px">👥 Назначить проекты сотруднику</div>
+    <select class="user-select" id="assignUser" onchange="renderAssignProjects()">
+      <option value="">— Выберите сотрудника —</option>
+      ${users.map(u=>`<option value="${u.id}">${u.username}</option>`).join('')}
+    </select>
+    <div id="assignProjectsList" class="checkbox-list"></div>
+    <button class="btn btn-primary" id="assignBtn" style="display:none" onclick="submitAssign()">✅ Сохранить назначение</button>
+  `;
+}
 
 async function removeProject(abbr) {
   if (confirm(`Удалить проект ${abbr}?`)) {
@@ -1397,30 +1338,16 @@ async function removeProject(abbr) {
   }
 }
 
-async function renderAssignProjects() {
+function renderAssignProjects() {
   const uid = document.getElementById('assignUser').value;
   if (!uid) return;
-
-  // Получаем текущие назначения сотрудника
-  let assignedAbbrs = null;
-  try {
-    const res = await apiCall('/user-projects', 'POST', { user_id: parseInt(uid), admin_id: APP.userId });
-    assignedAbbrs = res.abbrs;
-  } catch(e) {
-    // Если не удалось — показываем все отмеченными
-    assignedAbbrs = null;
-  }
-
   const list = document.getElementById('assignProjectsList');
-  list.innerHTML = APP.allProjects.map(p => {
-    const checked = assignedAbbrs === null || assignedAbbrs.includes(p.abbr);
-    return `
-      <label class="checkbox-item">
-        <input type="checkbox" value="${p.abbr}" ${checked ? 'checked' : ''}>
-        <span>${p.abbr} — ${p.full}</span>
-      </label>
-    `;
-  }).join('');
+  list.innerHTML = APP.allProjects.map(p => `
+    <label class="checkbox-item">
+      <input type="checkbox" value="${p.abbr}" checked>
+      <span>${p.abbr} — ${p.full}</span>
+    </label>
+  `).join('');
   document.getElementById('assignBtn').style.display = 'block';
 }
 
@@ -1430,668 +1357,27 @@ async function submitAssign() {
   const uname = APP.allUsers.find(u=>u.id===uid)?.username || '';
   const checked = [...document.querySelectorAll('#assignProjectsList input:checked')].map(c=>c.value);
   if (!checked.length) { showToast('Выберите хотя бы один проект', 'error'); return; }
-
-  try {
-    await apiCall('/assign', 'POST', {
-      admin_id: APP.userId,
-      user_id: uid,
-      abbrs: checked
-    });
-
-    showToast(`✅ Проекты назначены для ${uname}`, 'success');
-    if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
-
-    // Сбрасываем форму
-    document.getElementById('assignUser').value = '';
-    document.getElementById('assignProjectsList').innerHTML = '';
-    document.getElementById('assignBtn').style.display = 'none';
-  } catch(e) {
-    console.error('Assign failed:', e);
-  }
-}
-
-
-// ── MY STATS ──
-
-// Нормы часов по месяцам 2026 (график 5/2)
-const HOURS_NORM_2026 = {
-  1: 120, 2: 152, 3: 168, 4: 176, 5: 144, 6: 152,
-  7: 184, 8: 168, 9: 176, 10: 184, 11: 152, 12: 176
-};
-// Нормы для смен A/B (12ч * рабочие дни из schedule)
-const HOURS_NORM_SHIFT = {
-  1: 144, 2: 156, 3: 180, 4: 180, 5: 180, 6: 168,
-  7: 192, 8: 180, 9: 180, 10: 192, 11: 168, 12: 180
-};
-
-function getMonthNorm(year, month, schedule) {
-  if (year !== 2026) return null;
-  if (schedule === 'A' || schedule === 'B') return HOURS_NORM_SHIFT[month] || null;
-  return HOURS_NORM_2026[month] || null;
-}
-
-function getMonthHours(days, year, month) {
-  const prefix = `${year}-${String(month).padStart(2,'0')}`;
-  let hours = 0;
-  (days || []).forEach(d => {
-    const parts = d.date.split('.');
-    if (parts.length === 3 && parts[2] === String(year) && parseInt(parts[1]) === month) {
-      hours += d.hours;
-    }
-  });
-  return Math.round(hours * 100) / 100;
-}
-
-let myStatsPeriod = 'all';
-let myStatsCustomMonth = null;
-
-function setMyStatsPeriod(period, monthKey) {
-  myStatsPeriod = period;
-  if (period === 'custom' && monthKey) {
-    const months = getAvailableMonths((APP.userStats?.days || []).map(d => ({date: d.date})));
-    myStatsCustomMonth = months.find(m => m.key === monthKey) || null;
-  } else {
-    myStatsCustomMonth = null;
-  }
-  renderMyStats();
-}
-
-
-// Нормы рабочих часов по месяцам (5/2, производственный календарь 2026)
-const MONTHLY_NORM_52 = {
-  2026: [0, 120, 152, 168, 176, 144, 152, 184, 168, 176, 184, 152, 176]
-  // индекс 0 не используется, 1=январь, 12=декабрь
-};
-
-function getMonthlyNorm(year, month) {
-  const norms = MONTHLY_NORM_52[year];
-  if (norms && month >= 1 && month <= 12) return norms[month];
-  // Если нет данных — считаем по рабочим дням (примерно)
-  return 160;
-}
-
-function getMonthHoursWorked(year, month, days) {
-  // Считаем часы за конкретный месяц из массива days
-  return days
-    .filter(d => {
-      const parts = d.date.split('.');
-      return parts.length === 3 && 
-             parseInt(parts[2]) === year && 
-             parseInt(parts[1]) === month;
-    })
-    .reduce((sum, d) => sum + d.hours, 0);
-}
-function renderMyStats() {
-  const content = document.getElementById('myStatsContent');
-  const s = APP.userStats;
-  if (!s || !s.total_reports) {
-    document.getElementById('myStatsSubtitle').textContent = 'Ещё нет отчётов';
-    content.innerHTML = '<div class="empty"><div class="empty-icon">📭</div><div>Создайте первый отчёт!</div></div>';
-    return;
-  }
-
-  // Фильтруем дни по периоду
-  const allDays = s.days || [];
-  const filteredDays = allDays.filter(d => matchesPeriod(d.date, myStatsPeriod, myStatsCustomMonth));
-
-  // Пересчитываем итого за период
-  let periodHours = 0;
-  const periodProjects = {};
-  filteredDays.forEach(d => {
-    Object.entries(d.projects).forEach(([proj, h]) => {
-      periodHours = Math.round((periodHours + h) * 100) / 100;
-      periodProjects[proj] = Math.round(((periodProjects[proj] || 0) + h) * 100) / 100;
-    });
-  });
-
-  const totalHours  = myStatsPeriod === 'all' ? s.total_hours  : periodHours;
-  const totalDays   = myStatsPeriod === 'all' ? allDays.length  : filteredDays.length;
-  const projects    = myStatsPeriod === 'all' ? s.by_project    : periodProjects;
-
-  // Период-бар
-  const availableMonths = getAvailableMonths(allDays.map(d => ({date: d.date})));
-  const periodBar = buildPeriodBar(myStatsPeriod, myStatsCustomMonth, availableMonths, 'setMyStatsPeriod');
-
-  document.getElementById('myStatsSubtitle').textContent =
-    myStatsPeriod === 'all' ? 'Всего за всё время' :
-    myStatsPeriod === 'day' ? 'За сегодня' :
-    myStatsPeriod === 'week' ? 'За последние 7 дней' :
-    myStatsPeriod === 'month' ? 'За этот месяц' :
-    myStatsCustomMonth ? myStatsCustomMonth.label : '';
-
-  // Для фильтра по конкретному месяцу — показываем норму этого месяца
-  const displayYear  = myStatsPeriod === 'custom' && myStatsCustomMonth ? myStatsCustomMonth.year  : new Date().getFullYear();
-  const displayMonth = myStatsPeriod === 'custom' && myStatsCustomMonth ? myStatsCustomMonth.month + 1 : new Date().getMonth() + 1;
-
-  let html = periodBar;
-
-  if (filteredDays.length === 0 && myStatsPeriod !== 'all') {
-    html += '<div class="empty"><div class="empty-icon">📭</div><div>Нет отчётов за этот период</div></div>';
-    content.innerHTML = html;
-    return;
-  }
-
-  // Норма текущего месяца
-  const now = new Date();
-  const curYear  = now.getFullYear();
-  const curMonth = now.getMonth() + 1;
-  const normYear  = (typeof displayYear  !== "undefined") ? displayYear  : curYear;
-  const normMonth = (typeof displayMonth !== "undefined") ? displayMonth : curMonth;
-  const norm = getMonthlyNorm(normYear, normMonth);
-  const thisMonthHours = myStatsPeriod === "all" ? getMonthHoursWorked(curYear, curMonth, allDays) : periodHours;
-  const normBar = norm > 0 ? Math.min(100, Math.round(thisMonthHours / norm * 100)) : 0;
-  const normColor = normBar >= 100 ? 'var(--success, #22c55e)' : normBar >= 60 ? 'var(--accent)' : 'var(--danger, #ef4444)';
-
-  const monthNames = ['','Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
-
-  const normCard = norm > 0 ? `
-    <div class="card" style="margin-bottom:10px">
-      <div class="card-row" style="margin-bottom:8px">
-        <div class="card-label">📆 ${monthNames[curMonth]} — норма часов</div>
-        <div style="font-weight:700;font-size:18px;color:${normColor}">${thisMonthHours}<span style="font-size:14px;color:var(--hint)">/${norm}</span></div>
-      </div>
-      <div style="background:var(--border);border-radius:999px;height:6px;overflow:hidden">
-        <div style="background:${normColor};height:100%;width:${normBar}%;border-radius:999px;transition:width 0.5s"></div>
-      </div>
-      <div style="font-size:12px;color:var(--hint);margin-top:4px;text-align:right">${normBar}%</div>
-    </div>` : '';
-
-  html += normCard;
-  html += `
-    <div class="card"><div class="card-row"><div class="card-label">⏱️ Часов</div><div class="card-value">${totalHours}</div></div></div>
-    <div class="card"><div class="card-row"><div class="card-label">📅 Дней с отчётами</div><div class="card-value">${totalDays}</div></div></div>
-    <div class="form-label" style="margin-top:4px">📁 По проектам</div>
-  `;
-
-  Object.entries(projects).sort((a,b) => b[1]-a[1]).forEach(([proj, h]) => {
-    html += `<div class="card"><div class="card-row"><span style="font-size:14px">${proj}</span><span style="font-weight:700;color:var(--accent)">${h} ч</span></div></div>`;
-  });
-
-  // История по дням
-  if (filteredDays.length > 0) {
-    html += '<div class="form-label" style="margin-top:8px">📅 По дням</div>';
-    filteredDays.forEach(day => {
-      const projRows = Object.entries(day.projects).map(([p,h]) =>
-        `<div style="display:flex;justify-content:space-between;padding:4px 0;font-size:13px;border-bottom:1px solid var(--border)">
-          <span style="color:var(--hint);flex:1;margin-right:8px">${p}</span>
-          <span style="font-weight:600">${h} ч</span>
-        </div>`).join('');
-      html += `
-        <div class="card" style="padding:12px 14px">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-            <span style="font-weight:700;font-size:14px">${day.date}</span>
-            <span style="font-weight:700;color:var(--accent)">${day.hours} ч</span>
-          </div>
-          ${projRows}
-        </div>`;
-    });
-  }
-
-  content.innerHTML = html;
-}
-
-// ── ADMIN TABS ──
-let currentAdminTab = 'overview';
-function adminTab(tab, btn) {
-  document.querySelectorAll('.stat-tab').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  currentAdminTab = tab;
-  renderAdminTab(tab);
-}
-
-function renderAdminTab(tab) {
-  if (tab === 'overview')      renderAdminOverview();
-  else if (tab === 'projects-stat') renderAdminProjects();
-  else if (tab === 'reports-list')  renderAdminReports();
-  else if (tab === 'manage')        renderAdminManage();
-}
-
-function renderAdminOverview() {
-  const s = APP.adminStats;
-  const content = document.getElementById('adminContent');
-  if (!s) {
-    content.innerHTML = '<div class="empty"><div class="empty-icon">📊</div><div>Нет данных</div></div>';
-    return;
-  }
-  content.innerHTML = `
-    <div class="card"><div class="card-row"><div class="card-label">⏱️ Всего часов</div><div class="card-value">${s.total_hours}</div></div></div>
-    <div class="card"><div class="card-row"><div class="card-label">📝 Отчётов</div><div class="card-value">${s.total_reports}</div></div></div>
-    <div class="card"><div class="card-row"><div class="card-label">👥 Сотрудников</div><div class="card-value">${s.employees?.length||0}</div></div></div>
-    <div class="chart-wrap"><canvas id="overviewChart"></canvas></div>
-  `;
-  if (s.employees?.length && typeof Chart !== 'undefined') {
-    if (APP.adminChart) APP.adminChart.destroy();
-    APP.adminChart = new Chart(document.getElementById('overviewChart'), {
-      type: 'bar',
-      data: {
-        labels: s.employees.map(e=>e.name),
-        datasets: [{ label:'Часы', data: s.employees.map(e=>e.hours), backgroundColor: 'rgba(37,99,235,0.7)', borderRadius: 6 }]
-      },
-      options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true}} }
-    });
-  }
-}
-
-let empPeriod = 'all';
-let empCustomMonth = null;
-
-function setEmpPeriod(period, monthKey) {
-  empPeriod = period;
-  if (period === 'custom' && monthKey) {
-    // Собираем все даты из всех сотрудников
-    const allDates = (APP.adminStats?.employees || []).flatMap(e => (e.days||[]).map(d => ({date: d.date})));
-    const months = getAvailableMonths(allDates);
-    empCustomMonth = months.find(m => m.key === monthKey) || null;
-  } else {
-    empCustomMonth = null;
-  }
-  renderAdminEmployees();
-}
-
-function renderAdminEmployees() {
-  const s = APP.adminStats;
-  const content = document.getElementById('adminContent');
-  if (!s?.employees?.length) {
-    content.innerHTML = '<div class="empty"><div class="empty-icon">👥</div><div>Нет данных</div></div>';
-    return;
-  }
-
-  const allDates = s.employees.flatMap(e => (e.days||[]).map(d => ({date: d.date})));
-  const availableMonths = getAvailableMonths(allDates);
-  const periodBar = buildPeriodBar(empPeriod, empCustomMonth, availableMonths, 'setEmpPeriod');
-
-  const cards = [...s.employees].map((emp, empIdx) => {
-    const filteredDays = (emp.days||[]).filter(d => matchesPeriod(d.date, empPeriod, empCustomMonth));
-    if (empPeriod !== 'all' && !filteredDays.length) return '';
-
-    let periodHours = 0, periodReports = 0;
-    const periodProjects = {};
-    filteredDays.forEach(d => {
-      d.projects.forEach(p => {
-        periodHours = Math.round((periodHours + p.hours)*100)/100;
-        periodReports++;
-        periodProjects[p.project] = Math.round(((periodProjects[p.project]||0)+p.hours)*100)/100;
-      });
-    });
-
-    const totalHours = empPeriod==='all' ? emp.hours : periodHours;
-    const totalReports = empPeriod==='all' ? emp.reports : periodReports;
-    const projects = empPeriod==='all' ? emp.projects : periodProjects;
-
-    const projRows = Object.entries(projects).sort((a,b)=>b[1]-a[1])
-      .map(([p,h])=>`<div class="emp-proj"><span class="emp-proj-name">${p}</span><span>${h} ч</span></div>`).join('');
-
-    const dayRows = filteredDays.map(day => {
-      const projs = day.projects.map(p => `
-        <div style="display:flex;justify-content:space-between;padding:3px 8px;font-size:12px">
-          <span style="color:var(--hint);flex:1;margin-right:8px">${p.project}</span>
-          <span style="white-space:nowrap">${p.hours} ч${p.comment&&p.comment!=='-'?' <i style="color:var(--hint);font-size:11px">· '+p.comment+'</i>':''}</span>
-        </div>`).join('');
-      return `<div style="border-top:1px solid var(--border);padding:6px 0 2px">
-        <div style="display:flex;justify-content:space-between;align-items:center;padding:0 0 4px">
-          <span style="font-weight:600;font-size:13px">📅 ${day.date}</span>
-          <span style="font-weight:700;color:var(--accent);font-size:13px">${day.hours} ч</span>
-        </div>${projs}</div>`;
-    }).join('');
-
-    return `<div class="emp-card">
-      <div class="emp-header"><div class="emp-name">👤 ${emp.name}</div><div class="emp-hours">${totalHours} ч</div></div>
-      <div style="font-size:13px;color:var(--hint);margin-bottom:8px">📝 Отчётов: ${totalReports}</div>
-      <div style="margin-bottom:10px">${projRows}</div>
-      <button onclick="toggleDays('days-${empIdx}',this)"
-        style="width:100%;padding:7px 12px;border:1.5px solid var(--border);border-radius:10px;
-        background:transparent;color:var(--accent);font:600 13px inherit;cursor:pointer;text-align:left">
-        📅 По дням ▾
-      </button>
-      <div id="days-${empIdx}" style="display:none;margin-top:6px">
-        ${dayRows||'<div style="color:var(--hint);font-size:13px;padding:8px 0">Нет данных за период</div>'}
-      </div>
-    </div>`;
-  }).filter(Boolean).join('');
-
-  content.innerHTML = periodBar + (cards || '<div class="empty"><div class="empty-icon">📭</div><div>Нет данных за этот период</div></div>');
-}
-
-function toggleDays(id, btn) {
-  const el = document.getElementById(id);
-  if (!el) return;
-  const isOpen = el.style.display !== 'none';
-  el.style.display = isOpen ? 'none' : 'block';
-  btn.textContent = isOpen ? '📅 По дням ▾' : '📅 По дням ▴';
-}
-function renderAdminProjects() {
-  const s = APP.adminStats;
-  const content = document.getElementById('adminContent');
-  if (!s?.projects) {
-    content.innerHTML = '<div class="empty"><div class="empty-icon">📁</div><div>Нет данных</div></div>';
-    return;
-  }
-  const sorted = Object.entries(s.projects).sort((a,b)=>b[1]-a[1]);
-  content.innerHTML = sorted.map(([p,h])=>`
-    <div class="card"><div class="card-row"><span>${p}</span><span style="font-weight:700;color:var(--accent)">${h} ч</span></div></div>
-  `).join('') + '<div class="chart-wrap"><canvas id="projChart"></canvas></div>';
-  if (sorted.length && typeof Chart !== 'undefined') {
-    if (APP.projChart) APP.projChart.destroy();
-    APP.projChart = new Chart(document.getElementById('projChart'), {
-      type: 'doughnut',
-      data: {
-        labels: sorted.map(([p])=>p),
-        datasets: [{ data: sorted.map(([,h])=>h), backgroundColor: ['#2563eb','#16a34a','#d97706','#9333ea','#ef4444','#0891b2','#f59e0b','#10b981'], borderWidth:0 }]
-      },
-      options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{position:'bottom',labels:{font:{size:11}}}} }
-    });
-  }
-}
-
-// ── ПЕРИОД HELPERS ──
-function parseReportDate(dateStr) {
-  // Формат dd.mm.yyyy
-  const parts = dateStr.split('.');
-  if (parts.length !== 3) return null;
-  return new Date(parseInt(parts[2]), parseInt(parts[1])-1, parseInt(parts[0]));
-}
-
-function getAvailableMonths(reports) {
-  // Возвращает уникальные месяцы из отчётов, отсортированные по убыванию
-  const seen = new Set();
-  const months = [];
-  reports.forEach(r => {
-    const d = parseReportDate(r.date);
-    if (!d) return;
-    const key = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
-    if (!seen.has(key)) {
-      seen.add(key);
-      months.push({ key, year: d.getFullYear(), month: d.getMonth(), label: d.toLocaleString('ru', {month:'long',year:'numeric'}) });
-    }
-  });
-  return months.sort((a,b) => b.key.localeCompare(a.key));
-}
-
-function matchesPeriod(dateStr, period, customMonth) {
-  const d = parseReportDate(dateStr);
-  if (!d) return true;
-  const now = new Date();
-  if (period === 'all') return true;
-  if (period === 'day') return d.toDateString() === now.toDateString();
-  if (period === 'week') { const w = new Date(now); w.setDate(now.getDate()-7); return d >= w; }
-  if (period === 'month') return d.getMonth()===now.getMonth() && d.getFullYear()===now.getFullYear();
-  if (period === 'custom' && customMonth) return d.getMonth()===customMonth.month && d.getFullYear()===customMonth.year;
-  return true;
-}
-
-function buildPeriodBar(currentPeriod, customMonth, availableMonths, onChangeFn) {
-  const periods = [['all','Все'],['day','Сегодня'],['week','Неделя'],['month','Этот месяц']];
-  const btns = periods.map(([val,label]) => {
-    const active = currentPeriod === val;
-    return `<button onclick="${onChangeFn}('${val}',null)"
-      style="padding:6px 14px;border-radius:20px;border:1.5px solid ${active?'var(--accent)':'var(--border)'};
-      background:${active?'var(--accent)':'transparent'};color:${active?'#fff':'var(--hint)'};
-      font:500 13px inherit;cursor:pointer;white-space:nowrap;flex-shrink:0">${label}</button>`;
-  }).join('');
-
-  const monthOpts = availableMonths.map(m => {
-    const sel = currentPeriod==='custom' && customMonth && customMonth.key===m.key ? 'selected' : '';
-    return `<option value="${m.key}" ${sel}>${m.label}</option>`;
-  }).join('');
-
-  const selectActive = currentPeriod === 'custom';
-  const monthSelect = availableMonths.length ? `
-    <select onchange="${onChangeFn}('custom',this.value)"
-      style="padding:6px 10px;border-radius:20px;border:1.5px solid ${selectActive?'var(--accent)':'var(--border)'};
-      background:${selectActive?'var(--accent)':'var(--bg2)'};color:${selectActive?'#fff':'var(--hint)'};
-      font:500 13px inherit;cursor:pointer;flex-shrink:0;outline:none;max-width:150px">
-      <option value="">📅 Месяц...</option>
-      ${monthOpts}
-    </select>` : '';
-
-  return `<div style="display:flex;gap:6px;margin-bottom:14px;overflow-x:auto;padding-bottom:2px;flex-wrap:nowrap">${btns}${monthSelect}</div>`;
-}
-
-let reportsPeriod = 'all';
-let reportsCustomMonth = null;
-let reportsEmployee = 'all'; // фильтр по сотруднику
-
-function setReportsPeriod(period, monthKey) {
-  reportsPeriod = period;
-  if (period === 'custom' && monthKey) {
-    const months = getAvailableMonths(APP.adminStats?.recent_reports || []);
-    reportsCustomMonth = months.find(m => m.key === monthKey) || null;
-  } else {
-    reportsCustomMonth = null;
-  }
-  renderAdminReports();
-}
-
-function setReportsEmployee(emp) {
-  reportsEmployee = emp;
-  renderAdminReports();
-}
-
-function renderAdminReports() {
-  const s = APP.adminStats;
-  const content = document.getElementById('adminContent');
-  if (!s?.recent_reports?.length) {
-    content.innerHTML = '<div class="empty"><div class="empty-icon">📝</div><div>Нет отчётов</div></div>';
-    return;
-  }
-
-  const availableMonths = getAvailableMonths(s.recent_reports);
-  const periodBar = buildPeriodBar(reportsPeriod, reportsCustomMonth, availableMonths, 'setReportsPeriod');
-
-  // Уникальные сотрудники
-  const employees = [...new Set(s.recent_reports.map(r => r.employee))].sort();
-  const empBar = `<div style="display:flex;gap:6px;margin-bottom:14px;overflow-x:auto;padding-bottom:2px;flex-wrap:nowrap">
-    <button onclick="setReportsEmployee('all')"
-      style="padding:6px 14px;border-radius:20px;border:1.5px solid ${reportsEmployee==='all'?'var(--accent)':'var(--border)'};
-      background:${reportsEmployee==='all'?'var(--accent)':'transparent'};color:${reportsEmployee==='all'?'#fff':'var(--hint)'};
-      font:500 13px inherit;cursor:pointer;white-space:nowrap;flex-shrink:0">Все</button>
-    ${employees.map(e => `
-      <button onclick="setReportsEmployee('${e.replace(/'/g, "\'")}')"
-        style="padding:6px 14px;border-radius:20px;border:1.5px solid ${reportsEmployee===e?'var(--accent)':'var(--border)'};
-        background:${reportsEmployee===e?'var(--accent)':'transparent'};color:${reportsEmployee===e?'#fff':'var(--hint)'};
-        font:500 13px inherit;cursor:pointer;white-space:nowrap;flex-shrink:0">
-        ${e}</button>`).join('')}
-  </div>`;
-
-  // Фильтрация
-  const filtered = s.recent_reports.filter(r => {
-    const periodOk = matchesPeriod(r.date, reportsPeriod, reportsCustomMonth);
-    const empOk = reportsEmployee === 'all' || r.employee === reportsEmployee;
-    return periodOk && empOk;
-  });
-
-  // Группируем по сотруднику + дате
-  const groups = {};
-  const order = [];
-  filtered.forEach(r => {
-    const key = r.employee + '__' + r.date;
-    if (!groups[key]) { groups[key] = { employee: r.employee, date: r.date, time: r.time, items: [], total: 0 }; order.push(key); }
-    groups[key].items.push(r);
-    groups[key].total = Math.round((groups[key].total + r.hours) * 100) / 100;
-  });
-
-  if (!order.length) {
-    content.innerHTML = periodBar + empBar + '<div class="empty"><div class="empty-icon">📭</div><div>Нет отчётов за этот период</div></div>';
-    return;
-  }
-
-  // Итого по периоду если выбран конкретный сотрудник
-  let summaryHtml = '';
-  if (reportsEmployee !== 'all') {
-    const totalHours = Object.values(groups).reduce((s, g) => Math.round((s + g.total)*100)/100, 0);
-    const byProject = {};
-    filtered.forEach(r => { byProject[r.project] = Math.round(((byProject[r.project]||0)+r.hours)*100)/100; });
-    const projRows = Object.entries(byProject).sort((a,b)=>b[1]-a[1])
-      .map(([p,h]) => `<div style="display:flex;justify-content:space-between;font-size:13px;padding:3px 0;border-bottom:1px solid var(--border)">
-        <span style="color:var(--hint)">${p}</span><span style="font-weight:600;color:var(--accent)">${h} ч</span></div>`).join('');
-    summaryHtml = `<div class="report-item" style="padding:14px;margin-bottom:14px;background:var(--accent-light);border:1.5px solid var(--accent)">
-      <div style="font-weight:700;font-size:15px;margin-bottom:10px">📊 Итого: ${totalHours} ч за ${order.length} дней</div>
-      ${projRows}
-    </div>`;
-  }
-
-  const cards = order.map(key => {
-    const g = groups[key];
-    const rows = g.items.map(r => `
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;padding:6px 0;border-bottom:1px solid var(--border);font-size:13px">
-        <div style="flex:1;margin-right:8px">
-          <span style="color:var(--accent);font-weight:600">${r.project}</span>
-          ${r.comment && r.comment !== '-' ? `<div style="color:var(--hint);font-style:italic;font-size:12px;margin-top:2px">💬 ${r.comment}</div>` : ''}
-        </div>
-        <span style="font-weight:700;white-space:nowrap">${r.hours} ч</span>
-      </div>`).join('');
-    return `<div class="report-item" style="padding:14px">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-        <span style="font-weight:700;font-size:14px">👤 ${g.employee}</span>
-        <span style="color:var(--hint);font-size:12px">${g.date}${g.time?' '+g.time:''}</span>
-      </div>
-      ${rows}
-      <div style="display:flex;justify-content:flex-end;margin-top:8px;padding-top:4px">
-        <span style="font-size:13px;color:var(--hint)">Итого:&nbsp;</span>
-        <span style="font-weight:700;color:var(--accent)">${g.total} ч</span>
-      </div>
-    </div>`;
-  }).join('');
-
-  content.innerHTML = periodBar + empBar + summaryHtml + cards;
-}
-
-async function setUserSchedule(userId, schedule) {
-  try {
-    await apiCall('/user-schedule', 'POST', {
-      admin_id: APP.userId,
-      user_id:  userId,
-      schedule: schedule
-    });
-    // Обновляем локально
-    const u = APP.allUsers.find(u => u.id === userId);
-    if (u) u.schedule = schedule;
-    showToast(`✅ График обновлён`);
-  } catch(e) {
-    showToast('❌ Ошибка обновления графика', 'error');
-  }
-}
-
-async function deleteUser(userId, username) {
-  if (!confirm(`Удалить пользователя ${username}?`)) return;
-  try {
-    await apiCall(`/user/${userId}`, 'DELETE', { user_id: APP.userId });
-    APP.allUsers = APP.allUsers.filter(u => u.id !== userId);
-    showToast(`🗑 ${username} удалён`, 'info');
-    renderAdminManage();
-    if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
-  } catch(e) {
-    showToast('❌ Ошибка удаления', 'error');
-  }
-}
-
-function renderAdminManage() {
-  const content = document.getElementById('adminContent');
-  const projs = APP.allProjects || [];
-  const users = APP.allUsers || [];
-  content.innerHTML = `
-    <!-- Рассылка -->
-    <div class="form-label">📣 Уведомления</div>
-    <div class="card" style="margin-bottom:16px">
-      <div style="font-size:13px;color:var(--hint);margin-bottom:10px">
-        Отправить всем сотрудникам напоминание нажать /start и внести отчёт
-      </div>
-      <button id="notifyBtn" class="btn btn-primary" style="margin-top:0" onclick="notifyAll()">
-        📣 Напомнить всем внести отчёт
-      </button>
-    </div>
-
-    <!-- Синхронизация -->
-    <div class="form-label" style="margin-top:8px">🔄 Синхронизация с Google Sheets</div>
-    <div class="card" style="margin-bottom:16px">
-      <div style="font-size:13px;color:var(--hint);margin-bottom:10px">
-        Принудительно выгрузить отчёты в таблицу. Можно указать конкретную дату или выгрузить все.
-      </div>
-      <div style="display:flex;gap:8px;margin-bottom:10px">
-        <input type="date" id="syncDate"
-          style="flex:1;padding:10px 12px;border:1.5px solid var(--border);border-radius:12px;
-          font:14px 'Golos Text',sans-serif;background:var(--bg);color:var(--text);outline:none">
-        <button onclick="document.getElementById('syncDate').value=''"
-          style="padding:10px 14px;border:1.5px solid var(--border);border-radius:12px;
-          background:transparent;color:var(--hint);font:500 13px inherit;cursor:pointer;white-space:nowrap">
-          Все даты
-        </button>
-      </div>
-      <button id="syncBtn" class="btn btn-primary" style="margin-top:0;background:#16a34a" onclick="forceSync()">
-        🔄 Выгрузить в таблицу
-      </button>
-      <div id="syncResult" style="margin-top:8px;font-size:13px;text-align:center"></div>
-    </div>
-
-    <!-- Сотрудники -->
-    <div class="form-label" style="margin-top:8px">👥 Сотрудники (${users.length})</div>
-    ${users.map(u=>`
-      <div class="project-list-item" style="flex-wrap:wrap;gap:8px">
-        <span class="proj-list-name" style="flex:1;min-width:100px">@${u.username}</span>
-        <select onchange="setUserSchedule(${u.id},this.value)"
-          style="padding:5px 8px;border-radius:8px;border:1.5px solid var(--border);
-          background:var(--bg2);color:var(--text);font:500 13px inherit;cursor:pointer;outline:none">
-          <option value="5/2" ${(u.schedule||'5/2')==='5/2'?'selected':''}>5/2 (пн-пт)</option>
-          <option value="A"   ${u.schedule==='A'?'selected':''}>Смена A (2/2)</option>
-          <option value="B"   ${u.schedule==='B'?'selected':''}>Смена B (2/2)</option>
-        </select>
-        <button class="remove-btn" onclick="deleteUser(${u.id},'${u.username}')">✕</button>
-      </div>`).join('')}
-
-    <!-- Проекты -->
-    <div class="form-label" style="margin-top:20px">📁 Проекты (${projs.length})</div>
-    ${projs.map(p=>`
-      <div class="project-list-item">
-        <span class="proj-list-name">${p.abbr} — ${p.full}</span>
-        <button class="remove-btn" onclick="removeProject('${p.abbr}')">✕</button>
-      </div>`).join('')}
-    <button class="btn btn-primary" onclick="openModal()">➕ Добавить проект</button>
-
-    <!-- Назначение проектов -->
-    <div class="form-label" style="margin-top:24px">🗂 Назначить проекты сотруднику</div>
-    <select class="user-select" id="assignUser" onchange="renderAssignProjects()">
-      <option value="">— Выберите сотрудника —</option>
-      ${users.map(u=>`<option value="${u.id}">${u.username}</option>`).join('')}
-    </select>
-    <div id="assignProjectsList" class="checkbox-list"></div>
-    <button class="btn btn-primary" id="assignBtn" style="display:none" onclick="submitAssign()">✅ Сохранить назначение</button>
-  `;
+  // Сохраняем в очередь pendingActions (не закрываем приложение)
+  APP.pendingActions = APP.pendingActions || [];
+  APP.pendingActions.push({ type: 'assign_projects', user_id: uid, username: uname, abbrs: checked });
+
+  // Запоминаем в pendingActions — отправится боту вместе со следующим отчётом
+  showToast(`✅ Проекты назначены для ${uname}`, 'success');
+  if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
+
+  // Сбрасываем форму
+  document.getElementById('assignUser').value = '';
+  document.getElementById('assignProjectsList').innerHTML = '';
+  document.getElementById('assignBtn').style.display = 'none';
 }
 
 // ── MODAL ──
-async function forceSync() {
-  const btn = document.getElementById('syncBtn');
-  const result = document.getElementById('syncResult');
-  const date = document.getElementById('syncDate') ? document.getElementById('syncDate').value : '';
-
-  btn.disabled = true;
-  btn.textContent = '⏳ Выгружаем...';
-  result.textContent = '';
-  result.style.color = 'var(--hint)';
-
-  try {
-    const body = { user_id: APP.userId };
-    if (date) body.date = date;
-    const res = await apiCall('/force-sync', 'POST', body);
-    result.textContent = '✅ Выгружено ' + res.synced + ' записей';
-    result.style.color = 'var(--success, #16a34a)';
-    showToast('✅ Выгружено ' + res.synced + ' записей в Sheets');
-  } catch(e) {
-    result.textContent = '❌ ' + (e.message || 'Ошибка синхронизации');
-    result.style.color = 'var(--danger, #ef4444)';
-    showToast('❌ Ошибка синхронизации', 'error');
-  } finally {
-    btn.disabled = false;
-    btn.textContent = '🔄 Выгрузить в таблицу';
-  }
-}
-
 function openModal() {
-  document.getElementById('modalAbbr').value = '';
-  document.getElementById('modalFull').value = '';
-  document.getElementById('modalProjPreview').style.display = 'none';
-  document.getElementById('modalAbbrErr').classList.remove('show');
-  document.getElementById('modalFullErr').classList.remove('show');
+  document.getElementById('newAbbr').value = '';
+  document.getElementById('newFull').value = '';
+  document.getElementById('projPreview').style.display = 'none';
+  document.getElementById('abbrErr').classList.remove('show');
+  document.getElementById('fullErr').classList.remove('show');
   document.getElementById('addProjModal').classList.add('open');
 }
 
@@ -2105,7 +1391,24 @@ document.getElementById('addProjModal').addEventListener('click', function(e) {
 });
 
 // ── VERSION CHECK ──
-function checkVersion() { /* уведомления отключены */ }
+function checkVersion() {
+  try {
+    const savedVersion = localStorage.getItem(VERSION_KEY);
+    
+    if (!savedVersion) {
+      // Первый запуск
+      localStorage.setItem(VERSION_KEY, APP_VERSION);
+      showVersionToast('welcome');
+    } else if (savedVersion !== APP_VERSION) {
+      // Обновление
+      localStorage.setItem(VERSION_KEY, APP_VERSION);
+      showVersionToast('update', savedVersion);
+    }
+    // Если версия совпадает — ничего не показываем
+  } catch (e) {
+    console.log('localStorage недоступен');
+  }
+}
 
 function showVersionToast(type, oldVersion = null) {
   const changelog = CHANGELOG[APP_VERSION];
@@ -2177,6 +1480,209 @@ document.head.appendChild(style);
 
 // ── START ──
 init();
+
+
+// ══════════════════════════════════════════════════════
+// REPORTS MANAGEMENT
+// ══════════════════════════════════════════════════════
+
+async function loadReportsTable() {
+  const user = document.getElementById('filterUser').value;
+  const project = document.getElementById('filterProject').value;
+  const date = document.getElementById('filterDate').value;
+  
+  let url = `/reports?admin_id=${APP.userId}`;
+  if (user) url += `&user_id=${user}`;
+  if (project) url += `&project=${encodeURIComponent(project)}`;
+  if (date) url += `&date=${date}`;
+  
+  try {
+    const data = await apiCall(url, 'GET');
+    renderReportsTable(data.reports);
+  } catch (error) {
+    console.error('Load reports failed:', error);
+  }
+}
+
+function renderReportsTable(reports) {
+  const wrap = document.getElementById('reportsTableWrap');
+  
+  if (!reports || reports.length === 0) {
+    wrap.innerHTML = '<p style="padding: 20px; text-align: center; color: #999;">Отчётов не найдено</p>';
+    return;
+  }
+  
+  let html = `
+    <table style="width: 100%; border-collapse: collapse;">
+      <thead>
+        <tr style="background: #f5f5f5; border-bottom: 2px solid #e0e0e0;">
+          <th style="padding: 12px; text-align: left;">Дата</th>
+          <th style="padding: 12px; text-align: left;">Сотрудник</th>
+          <th style="padding: 12px; text-align: left;">Проект</th>
+          <th style="padding: 12px; text-align: center;">Часы</th>
+          <th style="padding: 12px; text-align: left;">Комментарий</th>
+          <th style="padding: 12px; text-align: center;">Действия</th>
+        </tr>
+      </thead>
+      <tbody>
+  `;
+  
+  reports.forEach(r => {
+    html += `
+      <tr style="border-bottom: 1px solid #f0f0f0;">
+        <td style="padding: 12px;">${r.date}</td>
+        <td style="padding: 12px;">${r.username}</td>
+        <td style="padding: 12px;">${r.project}</td>
+        <td style="padding: 12px; text-align: center;"><b>${r.hours}ч</b></td>
+        <td style="padding: 12px; color: #666;">${r.comments || '-'}</td>
+        <td style="padding: 12px; text-align: center;">
+          <button onclick='editReport(${JSON.stringify(r)})' style="padding: 6px 12px; background: #4CAF50; color: white; border: none; border-radius: 6px; margin-right: 5px; cursor: pointer;">✏️</button>
+          <button onclick='deleteReport("${r.id}", "${r.username}", "${r.project}")' style="padding: 6px 12px; background: #f44336; color: white; border: none; border-radius: 6px; cursor: pointer;">🗑️</button>
+        </td>
+      </tr>
+    `;
+  });
+  
+  html += `
+      </tbody>
+    </table>
+    <p style="padding: 15px; text-align: center; color: #999; border-top: 1px solid #e0e0e0;">
+      Всего отчётов: <b>${reports.length}</b>
+    </p>
+  `;
+  
+  wrap.innerHTML = html;
+}
+
+function editReport(report) {
+  APP.editingReport = report;
+  
+  const modal = document.createElement('div');
+  modal.id = 'editModal';
+  modal.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 10000;';
+  
+  modal.innerHTML = `
+    <div style="background: white; border-radius: 16px; padding: 24px; max-width: 500px; width: 90%; max-height: 80vh; overflow-y: auto;">
+      <h3 style="margin-top: 0;">✏️ Редактировать отчёт</h3>
+      
+      <div style="margin-bottom: 15px;">
+        <label style="display: block; margin-bottom: 5px; font-weight: 500;">Сотрудник:</label>
+        <input type="text" value="${report.username}" disabled style="width: 100%; padding: 10px; border: 1px solid #e0e0e0; border-radius: 8px; background: #f5f5f5;">
+      </div>
+      
+      <div style="margin-bottom: 15px;">
+        <label style="display: block; margin-bottom: 5px; font-weight: 500;">Проект:</label>
+        <select id="editProject" style="width: 100%; padding: 10px; border: 1px solid #e0e0e0; border-radius: 8px;">
+          ${APP.allProjects.map(p => `<option value="${p.full}" ${p.full === report.project ? 'selected' : ''}>${p.full}</option>`).join('')}
+        </select>
+      </div>
+      
+      <div style="margin-bottom: 15px;">
+        <label style="display: block; margin-bottom: 5px; font-weight: 500;">Часы:</label>
+        <input type="number" id="editHours" value="${report.hours}" step="0.25" min="0" max="24" style="width: 100%; padding: 10px; border: 1px solid #e0e0e0; border-radius: 8px;">
+      </div>
+      
+      <div style="margin-bottom: 15px;">
+        <label style="display: block; margin-bottom: 5px; font-weight: 500;">Дата:</label>
+        <input type="date" id="editDate" value="${report.date}" style="width: 100%; padding: 10px; border: 1px solid #e0e0e0; border-radius: 8px;">
+      </div>
+      
+      <div style="margin-bottom: 20px;">
+        <label style="display: block; margin-bottom: 5px; font-weight: 500;">Комментарий:</label>
+        <textarea id="editComments" style="width: 100%; padding: 10px; border: 1px solid #e0e0e0; border-radius: 8px; min-height: 60px;">${report.comments || ''}</textarea>
+      </div>
+      
+      <div style="display: flex; gap: 10px;">
+        <button onclick="saveReportEdit()" style="flex: 1; padding: 12px; background: var(--primary); color: white; border: none; border-radius: 8px; font-weight: 500; cursor: pointer;">💾 Сохранить</button>
+        <button onclick="closeEditModal()" style="flex: 1; padding: 12px; background: #ccc; color: #333; border: none; border-radius: 8px; font-weight: 500; cursor: pointer;">✖ Отмена</button>
+      </div>
+    </div>
+  `;
+  
+  document.body.appendChild(modal);
+  if (tg.HapticFeedback) tg.HapticFeedback.impactOccurred('medium');
+}
+
+async function saveReportEdit() {
+  const report = APP.editingReport;
+  const project = document.getElementById('editProject').value;
+  const hours = parseFloat(document.getElementById('editHours').value);
+  const date = document.getElementById('editDate').value;
+  const comments = document.getElementById('editComments').value;
+  
+  if (hours <= 0 || hours > 24) {
+    showToast('⚠️ Часы должны быть от 0.25 до 24', 'error');
+    return;
+  }
+  
+  try {
+    await apiCall(`/report/${report.id}`, 'PUT', {
+      admin_id: APP.userId,
+      project: project,
+      hours: hours,
+      date: date,
+      comments: comments
+    });
+    
+    showToast('✅ Отчёт обновлён!', 'success');
+    closeEditModal();
+    loadReportsTable();
+    await loadDataFromAPI(); // Обновляем статистику
+  } catch (error) {
+    console.error('Save edit failed:', error);
+  }
+}
+
+function closeEditModal() {
+  const modal = document.getElementById('editModal');
+  if (modal) modal.remove();
+  APP.editingReport = null;
+}
+
+async function deleteReport(id, username, project) {
+  if (!confirm(`Удалить отчёт?
+${username} — ${project}`)) return;
+  
+  try {
+    await apiCall(`/report/${id}`, 'DELETE', { admin_id: APP.userId });
+    
+    showToast('🗑️ Отчёт удалён', 'info');
+    if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
+    
+    loadReportsTable();
+    await loadDataFromAPI(); // Обновляем статистику
+  } catch (error) {
+    console.error('Delete failed:', error);
+  }
+}
+
+function clearFilters() {
+  document.getElementById('filterUser').value = '';
+  document.getElementById('filterProject').value = '';
+  document.getElementById('filterDate').value = '';
+  document.getElementById('reportsTableWrap').innerHTML = '<p style="padding: 20px; text-align: center; color: #999;">Выберите фильтры и нажмите 🔍 Фильтр</p>';
+}
+
+function renderAdminReports() {
+  // Заполняем фильтры пользователями
+  const userSelect = document.getElementById('filterUser');
+  userSelect.innerHTML = '<option value="">Все сотрудники</option>';
+  if (APP.allUsers) {
+    APP.allUsers.forEach(u => {
+      userSelect.innerHTML += `<option value="${u.id}">${u.username}</option>`;
+    });
+  }
+  
+  // Заполняем фильтры проектами
+  const projSelect = document.getElementById('filterProject');
+  projSelect.innerHTML = '<option value="">Все проекты</option>';
+  if (APP.allProjects) {
+    APP.allProjects.forEach(p => {
+      projSelect.innerHTML += `<option value="${p.full}">${p.full}</option>`;
+    });
+  }
+}
+
 </script>
 </body>
 </html>
