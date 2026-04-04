@@ -667,6 +667,7 @@ let APP = {
 // ══════════════════════════════════════════════════════
 async function apiCall(endpoint, method = 'POST', data = {}) {
   try {
+    console.log('API Call:', method, endpoint, data);
     const response = await fetch(`${API_URL}${endpoint}`, {
       method: method,
       headers: { 'Content-Type': 'application/json' },
@@ -691,7 +692,7 @@ async function loadDataFromAPI() {
     const data = await apiCall('/init', 'POST', { user_id: APP.userId });
     
     APP.admin = data.admin;
-    APP.username = data.username;
+    APP.username = data.username || 'User';
     APP.projects = data.projects || [];
     APP.allProjects = data.all_projects || [];
     APP.allUsers = data.all_users || [];
@@ -719,6 +720,7 @@ async function init() {
       const d = JSON.parse(decodeURIComponent(raw));
       APP.userId = d.user_id || 0;
       APP.admin = !!d.admin;
+      APP.username = d.username || 'User';
     } catch(e) { 
       console.error('Init error', e);
       APP.userId = 0;
@@ -736,6 +738,7 @@ async function init() {
   if (APP.admin) {
     document.querySelectorAll('.admin-only').forEach(el => el.style.display = '');
     renderAdminReports();
+    renderCreateReportScreen();
   }
 
   buildProjectsGrid();
@@ -1666,6 +1669,8 @@ function clearFilters() {
 function renderAdminReports() {
   // Заполняем фильтры пользователями
   const userSelect = document.getElementById('filterUser');
+  if (!userSelect) return;
+  
   userSelect.innerHTML = '<option value="">Все сотрудники</option>';
   if (APP.allUsers) {
     APP.allUsers.forEach(u => {
@@ -1680,6 +1685,173 @@ function renderAdminReports() {
     APP.allProjects.forEach(p => {
       projSelect.innerHTML += `<option value="${p.full}">${p.full}</option>`;
     });
+  }
+}
+
+
+
+// ══════════════════════════════════════════════════════
+// ADMIN CREATE REPORT FOR EMPLOYEE
+// ══════════════════════════════════════════════════════
+
+APP.adminReportProjects = [];
+
+function renderCreateReportScreen() {
+  // Заполняем список сотрудников
+  const userSelect = document.getElementById('createForUser');
+  if (!userSelect) return;
+  
+  userSelect.innerHTML = '<option value="">Выберите сотрудника</option>';
+  if (APP.allUsers) {
+    APP.allUsers.forEach(u => {
+      userSelect.innerHTML += `<option value="${u.id}" data-username="${u.username}">${u.username}</option>`;
+    });
+  }
+  
+  // Устанавливаем сегодняшнюю дату
+  const dateInput = document.getElementById('createReportDate');
+  if (dateInput) {
+    const today = new Date().toISOString().split('T')[0];
+    dateInput.value = today;
+  }
+  
+  // Очищаем список проектов
+  APP.adminReportProjects = [];
+  renderAdminReportProjects();
+}
+
+function addProjectToAdminReport() {
+  const modal = document.createElement('div');
+  modal.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 10000;';
+  
+  modal.innerHTML = `
+    <div style="background: white; border-radius: 16px; padding: 24px; max-width: 400px; width: 90%;">
+      <h3 style="margin-top: 0;">Добавить проект</h3>
+      
+      <div style="margin-bottom: 15px;">
+        <label style="display: block; margin-bottom: 5px;">Проект:</label>
+        <select id="modalProject" style="width: 100%; padding: 10px; border: 1px solid #e0e0e0; border-radius: 8px;">
+          ${APP.allProjects.map(p => `<option value="${p.full}">${p.full}</option>`).join('')}
+        </select>
+      </div>
+      
+      <div style="margin-bottom: 15px;">
+        <label style="display: block; margin-bottom: 5px;">Часы:</label>
+        <input type="number" id="modalHours" value="8" step="0.25" min="0.25" max="24" style="width: 100%; padding: 10px; border: 1px solid #e0e0e0; border-radius: 8px;">
+      </div>
+      
+      <div style="margin-bottom: 15px;">
+        <label style="display: block; margin-bottom: 5px;">Комментарий (необязательно):</label>
+        <input type="text" id="modalComment" style="width: 100%; padding: 10px; border: 1px solid #e0e0e0; border-radius: 8px;" placeholder="Комментарий к проекту">
+      </div>
+      
+      <div style="display: flex; gap: 10px;">
+        <button onclick="confirmAddProjectToAdmin()" style="flex: 1; padding: 12px; background: var(--primary); color: white; border: none; border-radius: 8px;">Добавить</button>
+        <button onclick="this.closest('[style*=fixed]').remove()" style="flex: 1; padding: 12px; background: #ccc; color: #333; border: none; border-radius: 8px;">Отмена</button>
+      </div>
+    </div>
+  `;
+  
+  document.body.appendChild(modal);
+}
+
+function confirmAddProjectToAdmin() {
+  const project = document.getElementById('modalProject').value;
+  const hours = parseFloat(document.getElementById('modalHours').value);
+  const comment = document.getElementById('modalComment').value;
+  
+  if (hours <= 0 || hours > 24) {
+    showToast('⚠️ Часы должны быть от 0.25 до 24', 'error');
+    return;
+  }
+  
+  APP.adminReportProjects.push({ project, hours, comment });
+  renderAdminReportProjects();
+  
+  document.querySelector('[style*="position: fixed"]').remove();
+  showToast(`✅ Добавлено: ${project} — ${hours}ч`);
+}
+
+function renderAdminReportProjects() {
+  const container = document.getElementById('createReportProjects');
+  if (!container) return;
+  
+  if (APP.adminReportProjects.length === 0) {
+    container.innerHTML = '<p style="text-align: center; color: #999; padding: 20px;">Добавьте проекты</p>';
+    return;
+  }
+  
+  let html = '';
+  APP.adminReportProjects.forEach((item, index) => {
+    html += `
+      <div style="background: #f5f5f5; padding: 12px; border-radius: 8px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;">
+        <div>
+          <div style="font-weight: 500;">${item.project}</div>
+          <div style="color: #666; font-size: 14px;">${item.hours}ч${item.comment ? ' • ' + item.comment : ''}</div>
+        </div>
+        <button onclick="removeAdminReportProject(${index})" style="background: #f44336; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer;">🗑️</button>
+      </div>
+    `;
+  });
+  
+  container.innerHTML = html;
+}
+
+function removeAdminReportProject(index) {
+  APP.adminReportProjects.splice(index, 1);
+  renderAdminReportProjects();
+}
+
+async function submitAdminReport() {
+  const userSelect = document.getElementById('createForUser');
+  const userId = userSelect.value;
+  const username = userSelect.selectedOptions[0]?.getAttribute('data-username');
+  const date = document.getElementById('createReportDate').value;
+  const generalComment = document.getElementById('createReportComment').value;
+  
+  if (!userId) {
+    showToast('⚠️ Выберите сотрудника', 'error');
+    return;
+  }
+  
+  if (!date) {
+    showToast('⚠️ Укажите дату', 'error');
+    return;
+  }
+  
+  if (APP.adminReportProjects.length === 0) {
+    showToast('⚠️ Добавьте хотя бы один проект', 'error');
+    return;
+  }
+  
+  try {
+    await apiCall('/report', 'POST', {
+      user_id: APP.userId,  // Админ который создаёт
+      on_behalf_of_user_id: parseInt(userId),  // За кого создаём
+      on_behalf_of_username: username,
+      custom_date: date,
+      projects: APP.adminReportProjects.map(p => ({
+        project: p.project,
+        hours: p.hours,
+        comment: p.comment || ''
+      })),
+      comments: generalComment || '-'
+    });
+    
+    showToast(`✅ Отчёт создан для ${username}`, 'success');
+    if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
+    
+    // Очищаем форму
+    APP.adminReportProjects = [];
+    renderAdminReportProjects();
+    document.getElementById('createForUser').value = '';
+    document.getElementById('createReportComment').value = '';
+    
+    // Обновляем данные
+    await loadDataFromAPI();
+    
+  } catch (error) {
+    console.error('Create report failed:', error);
   }
 }
 
