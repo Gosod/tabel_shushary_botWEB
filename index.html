@@ -557,6 +557,41 @@ textarea:focus, input:focus {
 </div>
 
 <!-- ADD PROJECT -->
+
+<!-- ADMIN CREATE REPORT FOR EMPLOYEE -->
+<div class="page" id="admin-create-report">
+  <div class="page-title">➕ Создать отчёт за сотрудника</div>
+  
+  <div style="background: white; border-radius: 12px; padding: 20px; margin-bottom: 20px;">
+    <div style="margin-bottom: 15px;">
+      <label class="form-label">👤 Сотрудник:</label>
+      <select id="createForUser" class="form-input">
+        <option value="">Выберите сотрудника</option>
+      </select>
+    </div>
+    
+    <div style="margin-bottom: 15px;">
+      <label class="form-label">📅 Дата:</label>
+      <input type="date" id="createReportDate" class="form-input">
+    </div>
+    
+    <div style="margin-bottom: 15px;">
+      <label class="form-label">📋 Проекты и часы:</label>
+      <div id="createReportProjects" style="max-height: 300px; overflow-y: auto; margin-top: 10px;"></div>
+      <button onclick="addProjectToAdminReport()" class="btn" style="margin-top: 10px; width: 100%;">+ Добавить проект</button>
+    </div>
+    
+    <div style="margin-bottom: 15px;">
+      <label class="form-label">💬 Общий комментарий:</label>
+      <textarea id="createReportComment" class="form-input" style="min-height: 80px;" placeholder="Необязательно"></textarea>
+    </div>
+    
+    <button onclick="submitAdminReport()" class="btn btn-primary" style="width: 100%;">💾 Создать отчёт</button>
+  </div>
+  
+  <button class="btn btn-secondary" onclick="nav('admin-panel')">⬅️ Назад</button>
+</div>
+
 <div class="page" id="add-project">
   <div class="page-title">➕ Добавить проект</div>
   <div class="page-sub">Создайте новый проект</div>
