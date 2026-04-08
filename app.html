@@ -552,6 +552,15 @@ textarea:focus, input:focus {
     <button class="stat-tab" onclick="adminTab('reports-list',this)">Отчёты</button>
     <button class="stat-tab" onclick="adminTab('manage',this)">Управление</button>
   </div>
+  
+  <!-- Навигация к другим админ-экранам -->
+  <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin: 16px 0;">
+    <button class="btn" onclick="nav('admin-manage')" style="padding: 12px;">⚙️ Управление</button>
+    <button class="btn" onclick="nav('admin-reports')" style="padding: 12px;">📋 Отчёты</button>
+    <button class="btn" onclick="nav('admin-create-report')" style="padding: 12px;">➕ Создать</button>
+    <button class="btn" onclick="nav('admin-assign')" style="padding: 12px;">👥 Назначение</button>
+  </div>
+
   <div id="adminContent"></div>
   <button class="btn btn-secondary" onclick="nav('home')">⬅️ На главную</button>
 </div>
