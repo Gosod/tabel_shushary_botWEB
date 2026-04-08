@@ -438,64 +438,8 @@ textarea:focus, input:focus {
 .proj-preview-name { font-size: 12px; color: var(--hint); }
 
 </style>
-<style>
-    body {
-      margin: 0;
-      font-family: Arial, sans-serif;
-      background: #f5f5f5;
-    }
-
-    .page {
-      display: none;
-      padding: 20px;
-    }
-
-    .page.active {
-      display: block;
-    }
-
-    .page-title {
-      font-size: 20px;
-      margin-bottom: 20px;
-      font-weight: bold;
-    }
-
-    .form-input {
-      width: 100%;
-      padding: 10px;
-      border-radius: 8px;
-      border: 1px solid #ccc;
-      font-size: 16px;
-    }
-
-    .form-label {
-      display: block;
-      margin-bottom: 6px;
-      font-size: 14px;
-    }
-
-    button {
-      padding: 12px;
-      border: none;
-      border-radius: 10px;
-      background: #2ea6ff;
-      color: white;
-      font-size: 16px;
-      width: 100%;
-    }
-  </style>
-
 </head>
 <body>
-
- <div id="navbar"></div>
-
-<div class="page active" id="home">
-  Главная
-  <button onclick="navigate('admin-create-report')">
-    ➕ Создать отчёт
-  </button>
-</div>
 
 <!-- NAV -->
 <div class="nav" id="nav">
@@ -672,38 +616,6 @@ textarea:focus, input:focus {
   </div>
   <button class="btn btn-primary" onclick="submitAddProject()">✅ Добавить проект</button>
   <button class="btn btn-secondary" onclick="goBack()">⬅️ Назад</button>
-</div>
-<div id="navbar"></div>
-
-<div class="page active" id="home">
-  <div class="page-title">Главная</div>
-
-  <button onclick="navigate('admin-create-report')">
-    ➕ Создать отчёт за сотрудника
-  </button>
-</div>
-
-<div class="page" id="admin-create-report">
-  <div class="page-title">➕ Создать отчёт за сотрудника</div>
-
-  <div style="background: white; border-radius: 12px; padding: 20px;">
-    
-    <div style="margin-bottom: 15px;">
-      <label class="form-label">👤 Сотрудник:</label>
-      <select id="createForUser" class="form-input">
-        <option value="">Выберите сотрудника</option>
-        <option value="1">Иван</option>
-        <option value="2">Петр</option>
-      </select>
-    </div>
-
-    <div style="margin-bottom: 15px;">
-      <label class="form-label">📅 Дата:</label>
-      <input type="date" id="reportDate" class="form-input">
-    </div>
-
-    <button onclick="submitAdminReport()">Отправить</button>
-  </div>
 </div>
 
 <!-- ADD PROJECT MODAL -->
@@ -894,12 +806,18 @@ function nav(pageId, addToHistory = true) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
 
-  document.getElementById(pageId).classList.add('active');
+  // Проверка существования элемента перед добавлением класса
+  const targetPage = document.getElementById(pageId);
+  if (!targetPage) {
+    console.error('[NAV ERROR] Page not found:', pageId);
+    return;
+  }
+  
+  targetPage.classList.add('active');
   const btn = document.querySelector(`[data-page="${pageId}"]`);
   if (btn) btn.classList.add('active');
 
   window.scrollTo(0, 0);
-  
 
   // Back button visibility
   if (APP.navHistory.length > 0) tg.BackButton.show();
@@ -908,16 +826,13 @@ function nav(pageId, addToHistory = true) {
   if (tg.HapticFeedback && tg.HapticFeedback.impactOccurred) tg.HapticFeedback.impactOccurred('light');
 }
 
-
-
-
 function goBack() {
   if (APP.navHistory.length > 0) {
     const prev = APP.navHistory.pop();
     nav(prev, false); // Не добавляем в историю при возврате назад
   } else {
     // Если истории нет — идём на главную
-    navigate('home', false);
+    nav('home', false);
   }
 }
 
@@ -1240,7 +1155,7 @@ async function submitReport() {
     // Обновляем статистику
     await loadDataFromAPI();
 
-    setTimeout(() =>nav('home'), 1500);
+    setTimeout(() => nav('home'), 1500);
   } catch (error) {
     console.error('Submit report failed:', error);
   }
@@ -1389,7 +1304,7 @@ function renderAdminEmployees() {
   content.innerHTML = [...s.employees].sort((a,b)=>b.hours-a.hours).map(emp => `
     <div class="emp-card">
       <div class="emp-header">
-        <div class="emp-name">👤 ${emp.name}</div>
+        <div class="emp-name">👤 ${emp.username || 'Unknown'}</div>
         <div class="emp-hours">${emp.hours} ч</div>
       </div>
       <div style="font-size:13px;color:var(--hint);margin-bottom:8px">📝 Отчётов: ${emp.reports}</div>
@@ -1855,12 +1770,7 @@ function renderCreateReportScreen() {
       userSelect.innerHTML += `<option value="${u.id}" data-username="${u.username}">${u.username}</option>`;
     });
   }
-  APP.allUsers = Object.entries(data.all_users || {}).map(([id, username]) => ({
-  id: Number(id),
-  username
-          }
-        )
-      );
+  
   // Устанавливаем сегодняшнюю дату
   const dateInput = document.getElementById('createReportDate');
   if (dateInput) {
@@ -2008,63 +1918,6 @@ async function submitAdminReport() {
   }
 }
 
-</script>
-<script>
-function navigate(pageId) {
-  const pages = document.querySelectorAll('.page');
-  pages.forEach(page => page.classList.remove('active'));
-
-  const target = document.getElementById(pageId);
-  if (!target) return;
-
-  target.classList.add('active');
-  window.scrollTo(0, 0);
-}
-
-function submitAdminReport() {
-  const userId = document.getElementById('createForUser').value;
-  const date = document.getElementById('reportDate').value;
-
-  if (!userId || !date) {
-    alert('Заполните все поля');
-    return;
-  }
-
-  console.log('Отправка отчёта:', { userId, date });
-}
-
-document.addEventListener('DOMContentLoaded', () => {
-  navigate('home');
-});
-</script>
-<script>
-function navigate(pageId) {
-  const pages = document.querySelectorAll('.page');
-  pages.forEach(p => p.classList.remove('active'));
-
-  const target = document.getElementById(pageId);
-  if (!target) return;
-
-  target.classList.add('active');
-  window.scrollTo(0, 0);
-}
-
-function submitAdminReport() {
-  const userId = document.getElementById('createForUser').value;
-  const date = document.getElementById('reportDate').value;
-
-  if (!userId || !date) {
-    alert('Заполните все поля');
-    return;
-  }
-
-  alert('Отчёт отправлен');
-  console.log({ userId, date });
-}
-
-document.addEventListener('DOMContentLoaded', () => {
-  navigate('home');
-});
 </script>
 </body>
 </html>
