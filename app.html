@@ -438,11 +438,20 @@ textarea:focus, input:focus {
 .proj-preview-name { font-size: 12px; color: var(--hint); }
 
 </style>
+<style>
+.page {
+  display: none;
+}
+.page.active {
+  display: block;
+}
+</style>
+
 </head>
 <body>
 
 <!-- NAV -->
-<div class="nav" id="nav">
+<div class="nav" id="navbar">
   <button class="nav-btn active" data-page="home">🏠 Главная</button>
   <button class="nav-btn" data-page="report">📝 Отчёт</button>
   <button class="nav-btn" data-page="my-stats">📊 Статистика</button>
@@ -454,17 +463,17 @@ textarea:focus, input:focus {
   <div class="page-title">👋 Учёт времени</div>
   <div class="page-sub">Выберите действие</div>
   <div class="menu-grid">
-    <div class="menu-card" onclick="nav('report')">
+    <div class="menu-card" onclick="navigate('report')">
       <div class="menu-icon">📝</div>
       <div class="menu-title">Новый отчёт</div>
       <div class="menu-desc">Записать рабочее время</div>
     </div>
-    <div class="menu-card" onclick="nav('my-stats')">
+    <div class="menu-card" onclick="navigate('my-stats')">
       <div class="menu-icon">📊</div>
       <div class="menu-title">Статистика</div>
       <div class="menu-desc">Моя активность</div>
     </div>
-    <div class="menu-card admin-only" style="display:none" onclick="nav('admin-panel')">
+    <div class="menu-card admin-only" style="display:none" onclick="navigate('admin-panel')">
       <div class="menu-icon">👑</div>
       <div class="menu-title">Админ панель</div>
       <div class="menu-desc">Управление</div>
@@ -527,7 +536,7 @@ textarea:focus, input:focus {
   </div>
 
   <button class="btn btn-primary" id="submitBtn" style="display:none" onclick="submitReport()">📤 Отправить отчёт</button>
-  <button class="btn btn-secondary" onclick="nav('home')">⬅️ На главную</button>
+  <button class="btn btn-secondary" onclick="navigate('home')">⬅️ На главную</button>
 </div>
 
 <!-- MY STATS -->
@@ -538,7 +547,7 @@ textarea:focus, input:focus {
   <div class="info-card" style="margin-top:8px;font-size:12px">
     💡 Данные обновляются при каждом открытии приложения через /start
   </div>
-  <button class="btn btn-secondary" onclick="nav('home')">⬅️ На главную</button>
+  <button class="btn btn-secondary" onclick="navigate('home')">⬅️ На главную</button>
 </div>
 
 <!-- ADMIN PANEL -->
@@ -553,7 +562,7 @@ textarea:focus, input:focus {
     <button class="stat-tab" onclick="adminTab('manage',this)">Управление</button>
   </div>
   <div id="adminContent"></div>
-  <button class="btn btn-secondary" onclick="nav('home')">⬅️ На главную</button>
+  <button class="btn btn-secondary" onclick="navigate('home')">⬅️ На главную</button>
 </div>
 
 <!-- ADD PROJECT -->
@@ -797,7 +806,7 @@ async function init() {
 }
 
 // ── NAVIGATION ──
-function nav(pageId, addToHistory = true) {
+function navigate(pageId, addToHistory = true) {
   const current = document.querySelector('.page.active');
   if (current && addToHistory && current.id !== pageId) {
     APP.navHistory.push(current.id);
@@ -811,6 +820,7 @@ function nav(pageId, addToHistory = true) {
   if (btn) btn.classList.add('active');
 
   window.scrollTo(0, 0);
+  
 
   // Back button visibility
   if (APP.navHistory.length > 0) tg.BackButton.show();
@@ -819,13 +829,16 @@ function nav(pageId, addToHistory = true) {
   if (tg.HapticFeedback && tg.HapticFeedback.impactOccurred) tg.HapticFeedback.impactOccurred('light');
 }
 
+
+
+
 function goBack() {
   if (APP.navHistory.length > 0) {
     const prev = APP.navHistory.pop();
     nav(prev, false); // Не добавляем в историю при возврате назад
   } else {
     // Если истории нет — идём на главную
-    nav('home', false);
+    navigate('home', false);
   }
 }
 
@@ -1148,7 +1161,7 @@ async function submitReport() {
     // Обновляем статистику
     await loadDataFromAPI();
 
-    setTimeout(() => nav('home'), 1500);
+    setTimeout(() =>navigate('home'), 1500);
   } catch (error) {
     console.error('Submit report failed:', error);
   }
@@ -1297,7 +1310,7 @@ function renderAdminEmployees() {
   content.innerHTML = [...s.employees].sort((a,b)=>b.hours-a.hours).map(emp => `
     <div class="emp-card">
       <div class="emp-header">
-        <div class="emp-name">👤 ${emp.username || 'Unknown'}</div>
+        <div class="emp-name">👤 ${emp.name}</div>
         <div class="emp-hours">${emp.hours} ч</div>
       </div>
       <div style="font-size:13px;color:var(--hint);margin-bottom:8px">📝 Отчётов: ${emp.reports}</div>
@@ -1763,7 +1776,12 @@ function renderCreateReportScreen() {
       userSelect.innerHTML += `<option value="${u.id}" data-username="${u.username}">${u.username}</option>`;
     });
   }
-  
+  APP.allUsers = Object.entries(data.all_users || {}).map(([id, username]) => ({
+  id: Number(id),
+  username
+          }
+        )
+      );
   // Устанавливаем сегодняшнюю дату
   const dateInput = document.getElementById('createReportDate');
   if (dateInput) {
@@ -1911,6 +1929,20 @@ async function submitAdminReport() {
   }
 }
 
+</script>
+<script>
+function navigate(pageId) {
+  const pages = document.querySelectorAll('.page');
+  pages.forEach(page => page.classList.remove('active'));
+  const target = document.getElementById(pageId);
+  if (!target) return;
+  target.classList.add('active');
+  window.scrollTo(0, 0);
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  navigate('home');
+});
 </script>
 </body>
 </html>
