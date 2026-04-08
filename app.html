@@ -450,6 +450,34 @@ textarea:focus, input:focus {
 </head>
 <body>
 
+ <div id="navbar"></div>
+
+<div class="page active" id="home">
+  Главная
+  <button onclick="navigate('admin-create-report')">
+    ➕ Создать отчёт
+  </button>
+</div>
+
+<div class="page" id="admin-create-report">
+  <div class="page-title">➕ Создать отчёт за сотрудника</div>
+
+  <div style="background: white; border-radius: 12px; padding: 20px; margin-bottom: 20px;">
+    <div style="margin-bottom: 15px;">
+      <label class="form-label">👤 Сотрудник:</label>
+      <select id="createForUser" class="form-input">
+        <option value="">Выберите сотрудника</option>
+      </select>
+    </div>
+
+    <div style="margin-bottom: 15px;">
+      <label class="form-label">📅 Дата:</label>
+      <input type="date" id="reportDate" class="form-input">
+    </div>
+
+    <button onclick="submitAdminReport()">Отправить</button>
+  </div>
+</div>
 <!-- NAV -->
 <div class="nav" id="nav">
   <button class="nav-btn active" data-page="home">🏠 Главная</button>
@@ -1161,7 +1189,7 @@ async function submitReport() {
     // Обновляем статистику
     await loadDataFromAPI();
 
-    setTimeout(() =>navigate('home'), 1500);
+    setTimeout(() =>nav('home'), 1500);
   } catch (error) {
     console.error('Submit report failed:', error);
   }
@@ -1931,17 +1959,31 @@ async function submitAdminReport() {
 
 </script>
 <script>
-function nav(pageId) {
+function navigate(pageId) {
   const pages = document.querySelectorAll('.page');
   pages.forEach(page => page.classList.remove('active'));
+
   const target = document.getElementById(pageId);
   if (!target) return;
+
   target.classList.add('active');
   window.scrollTo(0, 0);
 }
 
+function submitAdminReport() {
+  const userId = document.getElementById('createForUser').value;
+  const date = document.getElementById('reportDate').value;
+
+  if (!userId || !date) {
+    alert('Заполните все поля');
+    return;
+  }
+
+  console.log('Отправка отчёта:', { userId, date });
+}
+
 document.addEventListener('DOMContentLoaded', () => {
-  nav('home');
+  navigate('home');
 });
 </script>
 </body>
