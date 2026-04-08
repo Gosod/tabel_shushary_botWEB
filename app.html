@@ -479,7 +479,11 @@ textarea:focus, input:focus {
 
   <div class="form-group">
     <div class="form-label">📁 Проект</div>
-    <div class="projects-grid" id="projectsGrid"></div>
+    <div style="margin-bottom: 12px;">
+    <input type="text" id="projectSearch" placeholder="🔍 Поиск проекта..." style="width: 100%; padding: 12px; border: 1px solid #e0e0e0; border-radius: 8px; font-size: 15px;" oninput="filterProjects()">
+  </div>
+  
+  <div class="projects-grid" id="projectsGrid"></div>
     <div class="error-msg" id="projError">Выберите хотя бы один проект</div>
   </div>
 
@@ -521,7 +525,15 @@ textarea:focus, input:focus {
   </div>
 
   <!-- Сводка -->
-  <div class="summary" id="summary" style="display:none">
+  
+  <!-- Выбор даты для ретроспективного ввода -->
+  <div id="dateSelector" style="display:none; margin-bottom: 16px; padding: 16px; background: #f5f5f5; border-radius: 12px;">
+    <div class="form-label">📅 Изменить дату отчёта</div>
+    <input type="date" id="reportDate" class="form-input" style="margin-bottom: 8px;">
+    <div style="font-size: 13px; color: #666;">По умолчанию: сегодня</div>
+  </div>
+
+<div class="summary" id="summary" style="display:none">
     <div class="summary-title">📋 Сводка отчёта</div>
     <div id="summaryRows"></div>
   </div>
@@ -553,9 +565,9 @@ textarea:focus, input:focus {
     <button class="stat-tab" onclick="adminTab('manage',this)">Управление</button>
   </div>
   
-  <!-- Навигация к другим админ-экранам -->
+  <!-- Навигация к админ-экранам -->
   <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin: 16px 0;">
-    <button class="btn" onclick="nav('admin-manage')" style="padding: 12px;">⚙️ Управление</button>
+    <button class="btn" onclick="nav('add-project')" style="padding: 12px;">⚙️ Управление</button>
     <button class="btn" onclick="nav('admin-reports')" style="padding: 12px;">📋 Отчёты</button>
     <button class="btn" onclick="nav('admin-create-report')" style="padding: 12px;">➕ Создать</button>
     <button class="btn" onclick="nav('admin-assign')" style="padding: 12px;">👥 Назначение</button>
@@ -656,49 +668,6 @@ textarea:focus, input:focus {
 </div>
 
 <script>
-// === НАВИГАЦИЯ (должна быть в начале) ===
-function nav(pageId, addToHistory = true) {
-  const current = document.querySelector('.page.active');
-  if (current && addToHistory && current.id !== pageId) {
-    APP.navHistory.push(current.id);
-  }
-
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-
-  const targetPage = document.getElementById(pageId);
-  if (!targetPage) {
-    console.error('[NAV ERROR] Page not found:', pageId);
-    console.log('Available pages:', Array.from(document.querySelectorAll('.page')).map(p => p.id));
-    return;
-  }
-  
-  targetPage.classList.add('active');
-  const btn = document.querySelector(`[data-page="${pageId}"]`);
-  if (btn) btn.classList.add('active');
-
-  window.scrollTo(0, 0);
-
-  // Back button visibility (с проверкой API)
-  if (tg.BackButton && tg.BackButton.show) {
-    if (APP.navHistory.length > 0) tg.BackButton.show();
-    else tg.BackButton.hide();
-  }
-
-  if (tg.HapticFeedback && tg.HapticFeedback.impactOccurred) tg.HapticFeedback.impactOccurred('light');
-}
-
-function goBack() {
-  if (APP.navHistory.length > 0) {
-    const prev = APP.navHistory.pop();
-    nav(prev, false); // Не добавляем в историю при возврате назад
-  } else {
-    // Если истории нет — идём на главную
-    nav('home', false);
-  }
-}
-
-
 const tg = window.Telegram.WebApp;
 tg.expand();
 
@@ -829,6 +798,8 @@ async function init() {
   if (APP.admin) {
     document.querySelectorAll('.admin-only').forEach(el => el.style.display = '');
     renderAdminReports();
+    renderAdminAssign();
+    renderAdminReports();
     renderCreateReportScreen();
   }
 
@@ -849,7 +820,42 @@ async function init() {
 }
 
 // ── NAVIGATION ──
+function nav(pageId, addToHistory = true) {
+  const current = document.querySelector('.page.active');
+  if (current && addToHistory && current.id !== pageId) {
+    APP.navHistory.push(current.id);
+  }
 
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+
+  const targetPage = document.getElementById(pageId);
+  if (!targetPage) {
+    console.error('[NAV] Page not found:', pageId);
+    return;
+  }
+  targetPage.classList.add('active');
+  const btn = document.querySelector(`[data-page="${pageId}"]`);
+  if (btn) btn.classList.add('active');
+
+  window.scrollTo(0, 0);
+
+  // Back button visibility
+  if (APP.navHistory.length > 0) tg.BackButton.show();
+  else tg.BackButton.hide();
+
+  if (tg.HapticFeedback && tg.HapticFeedback.impactOccurred) tg.HapticFeedback.impactOccurred('light');
+}
+
+function goBack() {
+  if (APP.navHistory.length > 0) {
+    const prev = APP.navHistory.pop();
+    nav(prev, false); // Не добавляем в историю при возврате назад
+  } else {
+    // Если истории нет — идём на главную
+    nav('home', false);
+  }
+}
 
 function initNav() {
   document.querySelectorAll('.nav-btn').forEach(btn => {
@@ -1933,6 +1939,366 @@ async function submitAdminReport() {
   }
 }
 
+
+
+// ══════════════════════════════════════════════════════
+// ADMIN REPORTS MANAGEMENT
+// ══════════════════════════════════════════════════════
+
+async function loadReportsTable() {
+  const user = document.getElementById('filterUser').value;
+  const project = document.getElementById('filterProject').value;
+  const date = document.getElementById('filterDate').value;
+  
+  let url = `/reports?admin_id=${APP.userId}`;
+  if (user) url += `&user_id=${user}`;
+  if (project) url += `&project=${encodeURIComponent(project)}`;
+  if (date) url += `&date=${date}`;
+  
+  try {
+    const data = await apiCall(url, 'GET');
+    renderReportsTable(data.reports);
+  } catch (error) {
+    console.error('Load reports failed:', error);
+  }
+}
+
+function getUsernameById(userId) {
+  if (!APP.allUsers || !userId) return null;
+  const user = APP.allUsers.find(u => u.id == userId);
+  return user ? user.username : null;
+}
+
+function renderReportsTable(reports) {
+  const wrap = document.getElementById('reportsTableWrap');
+  
+  if (!reports || reports.length === 0) {
+    wrap.innerHTML = '<p style="padding: 20px; text-align: center; color: #999;">Отчётов не найдено</p>';
+    return;
+  }
+  
+  // Фикс username для старых отчётов
+  reports = reports.map(r => ({
+    ...r,
+    username: r.username || getUsernameById(r.user_id) || 'Unknown'
+  }));
+  
+  let html = `
+    <table style="width: 100%; border-collapse: collapse;">
+      <thead>
+        <tr style="background: #f5f5f5; border-bottom: 2px solid #e0e0e0;">
+          <th style="padding: 12px; text-align: left;">Дата</th>
+          <th style="padding: 12px; text-align: left;">Сотрудник</th>
+          <th style="padding: 12px; text-align: left;">Проект</th>
+          <th style="padding: 12px; text-align: center;">Часы</th>
+          <th style="padding: 12px; text-align: left;">Комментарий</th>
+          <th style="padding: 12px; text-align: center;">Действия</th>
+        </tr>
+      </thead>
+      <tbody>
+  `;
+  
+  reports.forEach(r => {
+    html += `
+      <tr style="border-bottom: 1px solid #f0f0f0;">
+        <td style="padding: 12px;">${r.date}</td>
+        <td style="padding: 12px;">${r.username || 'Unknown'}</td>
+        <td style="padding: 12px;">${r.project}</td>
+        <td style="padding: 12px; text-align: center;"><b>${r.hours}ч</b></td>
+        <td style="padding: 12px; color: #666;">${r.comments || '-'}</td>
+        <td style="padding: 12px; text-align: center;">
+          <button onclick='editReport(${JSON.stringify(r)})' style="padding: 6px 12px; background: #4CAF50; color: white; border: none; border-radius: 6px; margin-right: 5px; cursor: pointer;">✏️</button>
+          <button onclick='deleteReport("${r.id}", "${r.username}", "${r.project}")' style="padding: 6px 12px; background: #f44336; color: white; border: none; border-radius: 6px; cursor: pointer;">🗑️</button>
+        </td>
+      </tr>
+    `;
+  });
+  
+  html += `
+      </tbody>
+    </table>
+    <p style="padding: 15px; text-align: center; color: #999; border-top: 1px solid #e0e0e0;">
+      Всего отчётов: <b>${reports.length}</b>
+    </p>
+  `;
+  
+  wrap.innerHTML = html;
+}
+
+function editReport(report) {
+  APP.editingReport = report;
+  
+  const modal = document.createElement('div');
+  modal.id = 'editModal';
+  modal.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 10000;';
+  
+  modal.innerHTML = `
+    <div style="background: white; border-radius: 16px; padding: 24px; max-width: 500px; width: 90%; max-height: 80vh; overflow-y: auto;">
+      <h3 style="margin-top: 0;">✏️ Редактировать отчёт</h3>
+      
+      <div style="margin-bottom: 15px;">
+        <label style="display: block; margin-bottom: 5px; font-weight: 500;">Сотрудник:</label>
+        <input type="text" value="${report.username || 'Unknown'}" disabled style="width: 100%; padding: 10px; border: 1px solid #e0e0e0; border-radius: 8px; background: #f5f5f5;">
+      </div>
+      
+      <div style="margin-bottom: 15px;">
+        <label style="display: block; margin-bottom: 5px; font-weight: 500;">Проект:</label>
+        <select id="editProject" style="width: 100%; padding: 10px; border: 1px solid #e0e0e0; border-radius: 8px;">
+          ${APP.allProjects.map(p => `<option value="${p.full}" ${p.full === report.project ? 'selected' : ''}>${p.full}</option>`).join('')}
+        </select>
+      </div>
+      
+      <div style="margin-bottom: 15px;">
+        <label style="display: block; margin-bottom: 5px; font-weight: 500;">Часы:</label>
+        <input type="number" id="editHours" value="${report.hours}" step="0.25" min="0" max="24" style="width: 100%; padding: 10px; border: 1px solid #e0e0e0; border-radius: 8px;">
+      </div>
+      
+      <div style="margin-bottom: 15px;">
+        <label style="display: block; margin-bottom: 5px; font-weight: 500;">Дата:</label>
+        <input type="date" id="editDate" value="${report.date}" style="width: 100%; padding: 10px; border: 1px solid #e0e0e0; border-radius: 8px;">
+      </div>
+      
+      <div style="margin-bottom: 20px;">
+        <label style="display: block; margin-bottom: 5px; font-weight: 500;">Комментарий:</label>
+        <textarea id="editComments" style="width: 100%; padding: 10px; border: 1px solid #e0e0e0; border-radius: 8px; min-height: 60px;">${report.comments || ''}</textarea>
+      </div>
+      
+      <div style="display: flex; gap: 10px;">
+        <button onclick="saveReportEdit()" style="flex: 1; padding: 12px; background: var(--primary); color: white; border: none; border-radius: 8px; font-weight: 500; cursor: pointer;">💾 Сохранить</button>
+        <button onclick="closeEditModal()" style="flex: 1; padding: 12px; background: #ccc; color: #333; border: none; border-radius: 8px; font-weight: 500; cursor: pointer;">✖ Отмена</button>
+      </div>
+    </div>
+  `;
+  
+  document.body.appendChild(modal);
+  if (tg.HapticFeedback && tg.HapticFeedback.impactOccurred) tg.HapticFeedback.impactOccurred('medium');
+}
+
+async function saveReportEdit() {
+  const report = APP.editingReport;
+  const project = document.getElementById('editProject').value;
+  const hours = parseFloat(document.getElementById('editHours').value);
+  const date = document.getElementById('editDate').value;
+  const comments = document.getElementById('editComments').value;
+  
+  if (hours <= 0 || hours > 24) {
+    showToast('⚠️ Часы должны быть от 0.25 до 24', 'error');
+    return;
+  }
+  
+  try {
+    await apiCall(`/report/${report.id}`, 'PUT', {
+      admin_id: APP.userId,
+      project: project,
+      hours: hours,
+      date: date,
+      comments: comments
+    });
+    
+    showToast('✅ Отчёт обновлён!', 'success');
+    closeEditModal();
+    loadReportsTable();
+    await loadDataFromAPI();
+  } catch (error) {
+    console.error('Save edit failed:', error);
+  }
+}
+
+function closeEditModal() {
+  const modal = document.getElementById('editModal');
+  if (modal) modal.remove();
+  APP.editingReport = null;
+}
+
+async function deleteReport(id, username, project) {
+  const displayName = username || 'Unknown';
+  if (!confirm(`Удалить отчёт?\n${displayName} — ${project}`)) return;
+  
+  try {
+    await apiCall(`/report/${id}`, 'DELETE', { admin_id: APP.userId });
+    
+    showToast('🗑️ Отчёт удалён', 'info');
+    if (tg.HapticFeedback && tg.HapticFeedback.notificationOccurred) tg.HapticFeedback.notificationOccurred('success');
+    
+    loadReportsTable();
+    await loadDataFromAPI();
+  } catch (error) {
+    console.error('Delete failed:', error);
+  }
+}
+
+function clearFilters() {
+  document.getElementById('filterUser').value = '';
+  document.getElementById('filterProject').value = '';
+  document.getElementById('filterDate').value = '';
+  document.getElementById('reportsTableWrap').innerHTML = '<p style="padding: 20px; text-align: center; color: #999;">Выберите фильтры и нажмите 🔍 Фильтр</p>';
+}
+
+function renderAdminReports() {
+  const userSelect = document.getElementById('filterUser');
+  if (!userSelect) return;
+  
+  userSelect.innerHTML = '<option value="">Все сотрудники</option>';
+  if (APP.allUsers) {
+    APP.allUsers.forEach(u => {
+      userSelect.innerHTML += `<option value="${u.id}">${u.username}</option>`;
+    });
+  }
+  
+  const projSelect = document.getElementById('filterProject');
+  if (projSelect && APP.allProjects) {
+    projSelect.innerHTML = '<option value="">Все проекты</option>';
+    APP.allProjects.forEach(p => {
+      projSelect.innerHTML += `<option value="${p.full}">${p.full}</option>`;
+    });
+  }
+}
+
+// ══════════════════════════════════════════════════════
+// ADMIN ASSIGN PROJECTS
+// ══════════════════════════════════════════════════════
+
+function renderAdminAssign() {
+  const userSelect = document.getElementById('assignUser');
+  if (!userSelect) return;
+  
+  userSelect.innerHTML = '<option value="">Выберите сотрудника</option>';
+  if (APP.allUsers) {
+    APP.allUsers.forEach(u => {
+      userSelect.innerHTML += `<option value="${u.id}">${u.username}</option>`;
+    });
+  }
+  
+  userSelect.onchange = loadUserProjects;
+}
+
+async function loadUserProjects() {
+  const userId = document.getElementById('assignUser').value;
+  if (!userId) return;
+  
+  const container = document.getElementById('assignProjectsList');
+  if (!container || !APP.allProjects) return;
+  
+  // Загружаем текущие проекты пользователя
+  try {
+    const data = await apiCall('/init', 'POST', { user_id: parseInt(userId) });
+    const userProjects = data.projects.map(p => p.abbr);
+    
+    let html = '';
+    APP.allProjects.forEach(p => {
+      const checked = userProjects.includes(p.abbr) ? 'checked' : '';
+      html += `
+        <div style="padding: 12px; background: #f5f5f5; border-radius: 8px; margin-bottom: 8px;">
+          <label style="display: flex; align-items: center; cursor: pointer;">
+            <input type="checkbox" value="${p.abbr}" ${checked} style="margin-right: 10px; width: 20px; height: 20px;">
+            <div>
+              <div style="font-weight: 500;">${p.full}</div>
+              <div style="font-size: 12px; color: #666;">${p.abbr}</div>
+            </div>
+          </label>
+        </div>
+      `;
+    });
+    
+    container.innerHTML = html;
+  } catch (error) {
+    console.error('Load user projects failed:', error);
+  }
+}
+
+async function submitAssign() {
+  const userId = document.getElementById('assignUser').value;
+  if (!userId) {
+    showToast('⚠️ Выберите сотрудника', 'error');
+    return;
+  }
+  
+  const checkboxes = document.querySelectorAll('#assignProjectsList input[type="checkbox"]:checked');
+  const abbrs = Array.from(checkboxes).map(cb => cb.value);
+  
+  if (abbrs.length === 0) {
+    showToast('⚠️ Выберите хотя бы один проект', 'error');
+    return;
+  }
+  
+  try {
+    await apiCall('/assign', 'POST', {
+      admin_id: APP.userId,
+      user_id: parseInt(userId),
+      abbrs: abbrs
+    });
+    
+    showToast('✅ Проекты назначены!', 'success');
+    if (tg.HapticFeedback && tg.HapticFeedback.notificationOccurred) tg.HapticFeedback.notificationOccurred('success');
+    
+    nav('admin-panel');
+  } catch (error) {
+    console.error('Assign failed:', error);
+  }
+}
+
+
+
+function filterProjects() {
+  const search = document.getElementById('projectSearch').value.toLowerCase();
+  const grid = document.getElementById('projectsGrid');
+  const cards = grid.querySelectorAll('.proj-card');
+  
+  cards.forEach(card => {
+    const text = card.textContent.toLowerCase();
+    card.style.display = text.includes(search) ? '' : 'none';
+  });
+}
+
 </script>
+
+<!-- ADMIN REPORTS MANAGEMENT -->
+<div class="page" id="admin-reports">
+  <div class="page-title">📋 Управление отчётами</div>
+  
+  <div style="margin-bottom: 20px; display: flex; gap: 10px; flex-wrap: wrap;">
+    <select id="filterUser" style="flex: 1; min-width: 150px; padding: 10px; border-radius: 8px; border: 1px solid #e0e0e0;">
+      <option value="">Все сотрудники</option>
+    </select>
+    
+    <select id="filterProject" style="flex: 1; min-width: 150px; padding: 10px; border-radius: 8px; border: 1px solid #e0e0e0;">
+      <option value="">Все проекты</option>
+    </select>
+    
+    <input type="date" id="filterDate" style="flex: 1; min-width: 150px; padding: 10px; border-radius: 8px; border: 1px solid #e0e0e0;">
+    
+    <button onclick="loadReportsTable()" class="btn" style="padding: 10px 20px;">🔍 Фильтр</button>
+    <button onclick="clearFilters()" class="btn btn-secondary" style="padding: 10px 20px;">✖ Сбросить</button>
+  </div>
+  
+  <div id="reportsTableWrap" style="overflow-x: auto; border-radius: 12px; background: white; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+    <p style="padding: 20px; text-align: center; color: #999;">Выберите фильтры и нажмите 🔍 Фильтр</p>
+  </div>
+  
+  <button class="btn btn-secondary" onclick="nav('admin-panel')" style="margin-top: 16px;">⬅️ Назад</button>
+</div>
+
+
+<!-- ADMIN ASSIGN PROJECTS -->
+<div class="page" id="admin-assign">
+  <div class="page-title">👥 Назначение проектов</div>
+  <div class="page-sub">Выберите сотрудника и проекты</div>
+  
+  <div class="form-group">
+    <div class="form-label">Сотрудник:</div>
+    <select id="assignUser" class="form-input">
+      <option value="">Выберите сотрудника</option>
+    </select>
+  </div>
+  
+  <div class="form-group">
+    <div class="form-label">Проекты:</div>
+    <div id="assignProjectsList" style="max-height: 400px; overflow-y: auto;"></div>
+  </div>
+  
+  <button class="btn btn-primary" onclick="submitAssign()">💾 Сохранить</button>
+  <button class="btn btn-secondary" onclick="nav('admin-panel')">⬅️ Назад</button>
+</div>
+
 </body>
 </html>
