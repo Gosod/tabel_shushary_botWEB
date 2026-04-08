@@ -442,7 +442,7 @@ textarea:focus, input:focus {
 <body>
 
 <!-- NAV -->
-<div class="nav" id="nav">
+<div class="nav" id="main-nav">
   <button class="nav-btn active" data-page="home">🏠 Главная</button>
   <button class="nav-btn" data-page="report">📝 Отчёт</button>
   <button class="nav-btn" data-page="my-stats">📊 Статистика</button>
@@ -647,6 +647,49 @@ textarea:focus, input:focus {
 </div>
 
 <script>
+// === НАВИГАЦИЯ (должна быть в начале) ===
+function nav(pageId, addToHistory = true) {
+  const current = document.querySelector('.page.active');
+  if (current && addToHistory && current.id !== pageId) {
+    APP.navHistory.push(current.id);
+  }
+
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+
+  const targetPage = document.getElementById(pageId);
+  if (!targetPage) {
+    console.error('[NAV ERROR] Page not found:', pageId);
+    console.log('Available pages:', Array.from(document.querySelectorAll('.page')).map(p => p.id));
+    return;
+  }
+  
+  targetPage.classList.add('active');
+  const btn = document.querySelector(`[data-page="${pageId}"]`);
+  if (btn) btn.classList.add('active');
+
+  window.scrollTo(0, 0);
+
+  // Back button visibility (с проверкой API)
+  if (tg.BackButton && tg.BackButton.show) {
+    if (APP.navHistory.length > 0) tg.BackButton.show();
+    else tg.BackButton.hide();
+  }
+
+  if (tg.HapticFeedback && tg.HapticFeedback.impactOccurred) tg.HapticFeedback.impactOccurred('light');
+}
+
+function goBack() {
+  if (APP.navHistory.length > 0) {
+    const prev = APP.navHistory.pop();
+    nav(prev, false); // Не добавляем в историю при возврате назад
+  } else {
+    // Если истории нет — идём на главную
+    nav('home', false);
+  }
+}
+
+
 const tg = window.Telegram.WebApp;
 tg.expand();
 
@@ -797,44 +840,7 @@ async function init() {
 }
 
 // ── NAVIGATION ──
-function nav(pageId, addToHistory = true) {
-  const current = document.querySelector('.page.active');
-  if (current && addToHistory && current.id !== pageId) {
-    APP.navHistory.push(current.id);
-  }
 
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-
-  // Проверка существования элемента перед добавлением класса
-  const targetPage = document.getElementById(pageId);
-  if (!targetPage) {
-    console.error('[NAV ERROR] Page not found:', pageId);
-    return;
-  }
-  
-  targetPage.classList.add('active');
-  const btn = document.querySelector(`[data-page="${pageId}"]`);
-  if (btn) btn.classList.add('active');
-
-  window.scrollTo(0, 0);
-
-  // Back button visibility
-  if (APP.navHistory.length > 0) tg.BackButton.show();
-  else tg.BackButton.hide();
-
-  if (tg.HapticFeedback && tg.HapticFeedback.impactOccurred) tg.HapticFeedback.impactOccurred('light');
-}
-
-function goBack() {
-  if (APP.navHistory.length > 0) {
-    const prev = APP.navHistory.pop();
-    nav(prev, false); // Не добавляем в историю при возврате назад
-  } else {
-    // Если истории нет — идём на главную
-    nav('home', false);
-  }
-}
 
 function initNav() {
   document.querySelectorAll('.nav-btn').forEach(btn => {
