@@ -649,18 +649,18 @@ textarea:focus, input:focus {
     <div class="info-card">💡 Аббревиатура — 2-5 символов, отображается на кнопке</div>
     <div class="form-group">
       <div class="form-label">🔤 Аббревиатура</div>
-      <input type="text" id="newAbbr" placeholder="Например: РС" maxlength="5">
-      <div class="error-msg" id="abbrErr">Заполните поле (мин. 2 символа)</div>
+      <input type="text" id="modalNewAbbr" placeholder="Например: РС" maxlength="5">
+      <div class="error-msg" id="modalAbbrErr">Заполните поле (мин. 2 символа)</div>
     </div>
     <div class="form-group">
       <div class="form-label">📝 Полное название</div>
-      <input type="text" id="newFull" placeholder="Например: Разработка сайта" maxlength="50">
-      <div class="error-msg" id="fullErr">Заполните поле (мин. 3 символа)</div>
+      <input type="text" id="modalNewFull" placeholder="Например: Разработка сайта" maxlength="50">
+      <div class="error-msg" id="modalFullErr">Заполните поле (мин. 3 символа)</div>
     </div>
-    <div id="projPreview" style="display:none;margin-bottom:16px">
+    <div id="modalProjPreview" style="display:none;margin-bottom:16px">
       <div class="proj-preview-box">
-        <div class="proj-preview-abbr" id="previewAbbr">РС</div>
-        <div class="proj-preview-name" id="previewFull">Разработка сайта</div>
+        <div class="proj-preview-abbr" id="modalPreviewAbbr">РС</div>
+        <div class="proj-preview-name" id="modalPreviewFull">Разработка сайта</div>
       </div>
     </div>
     <button class="btn btn-primary" onclick="submitAddProject()">✅ Добавить проект</button>
@@ -799,7 +799,6 @@ async function init() {
     document.querySelectorAll('.admin-only').forEach(el => el.style.display = '');
     renderAdminReports();
     renderAdminAssign();
-    renderAdminReports();
     renderCreateReportScreen();
   }
 
@@ -1184,21 +1183,21 @@ async function submitReport() {
 
 // ── ADD PROJECT FORM ──
 function initAddProjectForm() {
-  document.getElementById('newAbbr').addEventListener('input', e => {
+  document.getElementById('modalNewAbbr').addEventListener('input', e => {
     e.target.value = e.target.value.toUpperCase();
     updateProjPreview();
   });
-  document.getElementById('newFull').addEventListener('input', updateProjPreview);
+  document.getElementById('modalNewFull').addEventListener('input', updateProjPreview);
 }
 
 function updateProjPreview() {
   const a = document.getElementById('newAbbr').value.trim();
   const f = document.getElementById('newFull').value.trim();
-  const preview = document.getElementById('projPreview');
+  const preview = document.getElementById('modalProjPreview');
   if (a || f) {
     preview.style.display = 'block';
-    document.getElementById('previewAbbr').textContent = a || 'АБВ';
-    document.getElementById('previewFull').textContent = f || 'Название';
+    document.getElementById('modalPreviewAbbr').textContent = a || 'АБВ';
+    document.getElementById('modalPreviewFull').textContent = f || 'Название';
   } else {
     preview.style.display = 'none';
   }
@@ -1210,12 +1209,12 @@ async function submitAddProject() {
   let ok = true;
 
   if (abbr.length < 2) {
-    document.getElementById('abbrErr').textContent = 'Минимум 2 символа';
+    document.getElementById('modalAbbrErr').textContent = 'Минимум 2 символа';
     document.getElementById('abbrErr').classList.add('show'); ok = false;
   } else document.getElementById('abbrErr').classList.remove('show');
 
   if (full.length < 3) {
-    document.getElementById('fullErr').textContent = 'Минимум 3 символа';
+    document.getElementById('modalFullErr').textContent = 'Минимум 3 символа';
     document.getElementById('fullErr').classList.add('show'); ok = false;
   } else document.getElementById('fullErr').classList.remove('show');
 
@@ -1411,9 +1410,9 @@ async function removeProject(abbr) {
 }
 
 function renderAssignProjects() {
-  const uid = document.getElementById('assignUser').value;
+  const uid = document.getElementById('assignUserModal').value;
   if (!uid) return;
-  const list = document.getElementById('assignProjectsList');
+  const list = document.getElementById('assignProjectsListModal');
   list.innerHTML = APP.allProjects.map(p => `
     <label class="checkbox-item">
       <input type="checkbox" value="${p.abbr}" checked>
@@ -1711,10 +1710,10 @@ function editReport(report) {
 
 async function saveReportEdit() {
   const report = APP.editingReport;
-  const project = document.getElementById('editProject').value;
-  const hours = parseFloat(document.getElementById('editHours').value);
-  const date = document.getElementById('editDate').value;
-  const comments = document.getElementById('editComments').value;
+  const project = document.getElementById('modalEditProject').value;
+  const hours = parseFloat(document.getElementById('modalEditHours').value);
+  const date = document.getElementById('modalEditDate').value;
+  const comments = document.getElementById('modalEditComments').value;
   
   if (hours <= 0 || hours > 24) {
     showToast('⚠️ Часы должны быть от 0.25 до 24', 'error');
@@ -2083,24 +2082,24 @@ function editReport(report) {
       
       <div style="margin-bottom: 15px;">
         <label style="display: block; margin-bottom: 5px; font-weight: 500;">Проект:</label>
-        <select id="editProject" style="width: 100%; padding: 10px; border: 1px solid #e0e0e0; border-radius: 8px;">
+        <select id="modalEditProject" style="width: 100%; padding: 10px; border: 1px solid #e0e0e0; border-radius: 8px;">
           ${APP.allProjects.map(p => `<option value="${p.full}" ${p.full === report.project ? 'selected' : ''}>${p.full}</option>`).join('')}
         </select>
       </div>
       
       <div style="margin-bottom: 15px;">
         <label style="display: block; margin-bottom: 5px; font-weight: 500;">Часы:</label>
-        <input type="number" id="editHours" value="${report.hours}" step="0.25" min="0" max="24" style="width: 100%; padding: 10px; border: 1px solid #e0e0e0; border-radius: 8px;">
+        <input type="number" id="modalEditHours" value="${report.hours}" step="0.25" min="0" max="24" style="width: 100%; padding: 10px; border: 1px solid #e0e0e0; border-radius: 8px;">
       </div>
       
       <div style="margin-bottom: 15px;">
         <label style="display: block; margin-bottom: 5px; font-weight: 500;">Дата:</label>
-        <input type="date" id="editDate" value="${report.date}" style="width: 100%; padding: 10px; border: 1px solid #e0e0e0; border-radius: 8px;">
+        <input type="date" id="modalEditDate" value="${report.date}" style="width: 100%; padding: 10px; border: 1px solid #e0e0e0; border-radius: 8px;">
       </div>
       
       <div style="margin-bottom: 20px;">
         <label style="display: block; margin-bottom: 5px; font-weight: 500;">Комментарий:</label>
-        <textarea id="editComments" style="width: 100%; padding: 10px; border: 1px solid #e0e0e0; border-radius: 8px; min-height: 60px;">${report.comments || ''}</textarea>
+        <textarea id="modalEditComments" style="width: 100%; padding: 10px; border: 1px solid #e0e0e0; border-radius: 8px; min-height: 60px;">${report.comments || ''}</textarea>
       </div>
       
       <div style="display: flex; gap: 10px;">
@@ -2326,14 +2325,14 @@ function filterProjects() {
   
   <div class="form-group">
     <div class="form-label">Сотрудник:</div>
-    <select id="assignUser" class="form-input">
+    <select id="assignUserModal" class="form-input">
       <option value="">Выберите сотрудника</option>
     </select>
   </div>
   
   <div class="form-group">
     <div class="form-label">Проекты:</div>
-    <div id="assignProjectsList" style="max-height: 400px; overflow-y: auto;"></div>
+    <div id="assignProjectsListModal" style="max-height: 400px; overflow-y: auto;"></div>
   </div>
   
   <button class="btn btn-primary" onclick="submitAssign()">💾 Сохранить</button>
