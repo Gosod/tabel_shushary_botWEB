@@ -1592,50 +1592,70 @@ function renderReportsTable(reports) {
     return;
   }
   
-  // Фикс username для старых отчётов
+  // Фикс username
   reports = reports.map(r => ({
     ...r,
     username: r.username || getUsernameById(r.user_id) || 'Unknown'
   }));
   
-  let html = `
-    <table style="width: 100%; border-collapse: collapse;">
-      <thead>
-        <tr style="background: #f5f5f5; border-bottom: 2px solid #e0e0e0;">
-          <th style="padding: 12px; text-align: left;">Дата</th>
-          <th style="padding: 12px; text-align: left;">Сотрудник</th>
-          <th style="padding: 12px; text-align: left;">Проект</th>
-          <th style="padding: 12px; text-align: center;">Часы</th>
-          <th style="padding: 12px; text-align: left;">Комментарий</th>
-          <th style="padding: 12px; text-align: center;">Действия</th>
-        </tr>
-      </thead>
-      <tbody>
-  `;
-  
+  // Группировка по дням
+  const byDate = {};
   reports.forEach(r => {
+    const key = `${r.date}_${r.username}`;
+    if (!byDate[key]) {
+      byDate[key] = {
+        date: r.date,
+        username: r.username,
+        reports: []
+      };
+    }
+    byDate[key].reports.push(r);
+  });
+  
+  let html = '<div style="padding: 16px;">';
+  
+  Object.values(byDate).forEach(day => {
+    const totalHours = day.reports.reduce((sum, r) => sum + r.hours, 0);
+    
     html += `
-      <tr style="border-bottom: 1px solid #f0f0f0;">
-        <td style="padding: 12px;">${r.date}</td>
-        <td style="padding: 12px;">${r.username || 'Unknown'}</td>
-        <td style="padding: 12px;">${r.project}</td>
-        <td style="padding: 12px; text-align: center;"><b>${r.hours}ч</b></td>
-        <td style="padding: 12px; color: #666;">${r.comments || '-'}</td>
-        <td style="padding: 12px; text-align: center;">
-          <button onclick='editReport(${JSON.stringify(r)})' style="padding: 6px 12px; background: #4CAF50; color: white; border: none; border-radius: 6px; margin-right: 5px; cursor: pointer;">✏️</button>
-          <button onclick='deleteReport("${r.id}", "${r.username}", "${r.project}")' style="padding: 6px 12px; background: #f44336; color: white; border: none; border-radius: 6px; cursor: pointer;">🗑️</button>
-        </td>
-      </tr>
+      <div style="background: white; border-radius: 12px; padding: 16px; margin-bottom: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; padding-bottom: 12px; border-bottom: 2px solid #e0e0e0;">
+          <div>
+            <div style="font-size: 16px; font-weight: 600;">${day.date}</div>
+            <div style="font-size: 14px; color: #666;">${day.username}</div>
+          </div>
+          <div style="font-size: 20px; font-weight: 700; color: var(--primary);">${totalHours}ч</div>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 8px;">
+    `;
+    
+    day.reports.forEach(r => {
+      html += `
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px; background: #f5f5f5; border-radius: 8px;">
+          <div style="flex: 1;">
+            <div style="font-weight: 500;">${r.project}</div>
+            <div style="font-size: 13px; color: #666;">${r.comments || '-'}</div>
+          </div>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <div style="font-weight: 600; margin-right: 8px;">${r.hours}ч</div>
+            <button onclick='editReport(${JSON.stringify(r)})' style="padding: 6px 12px; background: #4CAF50; color: white; border: none; border-radius: 6px; cursor: pointer;">✏️</button>
+            <button onclick='deleteReport("${r.id}", "${r.username}", "${r.project}")' style="padding: 6px 12px; background: #f44336; color: white; border: none; border-radius: 6px; cursor: pointer;">🗑️</button>
+          </div>
+        </div>
+      `;
+    });
+    
+    html += `
+        </div>
+      </div>
     `;
   });
   
   html += `
-      </tbody>
-    </table>
-    <p style="padding: 15px; text-align: center; color: #999; border-top: 1px solid #e0e0e0;">
+    <p style="text-align: center; color: #999; margin-top: 16px;">
       Всего отчётов: <b>${reports.length}</b>
     </p>
-  `;
+  </div>`;
   
   wrap.innerHTML = html;
 }
@@ -1977,50 +1997,70 @@ function renderReportsTable(reports) {
     return;
   }
   
-  // Фикс username для старых отчётов
+  // Фикс username
   reports = reports.map(r => ({
     ...r,
     username: r.username || getUsernameById(r.user_id) || 'Unknown'
   }));
   
-  let html = `
-    <table style="width: 100%; border-collapse: collapse;">
-      <thead>
-        <tr style="background: #f5f5f5; border-bottom: 2px solid #e0e0e0;">
-          <th style="padding: 12px; text-align: left;">Дата</th>
-          <th style="padding: 12px; text-align: left;">Сотрудник</th>
-          <th style="padding: 12px; text-align: left;">Проект</th>
-          <th style="padding: 12px; text-align: center;">Часы</th>
-          <th style="padding: 12px; text-align: left;">Комментарий</th>
-          <th style="padding: 12px; text-align: center;">Действия</th>
-        </tr>
-      </thead>
-      <tbody>
-  `;
-  
+  // Группировка по дням
+  const byDate = {};
   reports.forEach(r => {
+    const key = `${r.date}_${r.username}`;
+    if (!byDate[key]) {
+      byDate[key] = {
+        date: r.date,
+        username: r.username,
+        reports: []
+      };
+    }
+    byDate[key].reports.push(r);
+  });
+  
+  let html = '<div style="padding: 16px;">';
+  
+  Object.values(byDate).forEach(day => {
+    const totalHours = day.reports.reduce((sum, r) => sum + r.hours, 0);
+    
     html += `
-      <tr style="border-bottom: 1px solid #f0f0f0;">
-        <td style="padding: 12px;">${r.date}</td>
-        <td style="padding: 12px;">${r.username || 'Unknown'}</td>
-        <td style="padding: 12px;">${r.project}</td>
-        <td style="padding: 12px; text-align: center;"><b>${r.hours}ч</b></td>
-        <td style="padding: 12px; color: #666;">${r.comments || '-'}</td>
-        <td style="padding: 12px; text-align: center;">
-          <button onclick='editReport(${JSON.stringify(r)})' style="padding: 6px 12px; background: #4CAF50; color: white; border: none; border-radius: 6px; margin-right: 5px; cursor: pointer;">✏️</button>
-          <button onclick='deleteReport("${r.id}", "${r.username}", "${r.project}")' style="padding: 6px 12px; background: #f44336; color: white; border: none; border-radius: 6px; cursor: pointer;">🗑️</button>
-        </td>
-      </tr>
+      <div style="background: white; border-radius: 12px; padding: 16px; margin-bottom: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; padding-bottom: 12px; border-bottom: 2px solid #e0e0e0;">
+          <div>
+            <div style="font-size: 16px; font-weight: 600;">${day.date}</div>
+            <div style="font-size: 14px; color: #666;">${day.username}</div>
+          </div>
+          <div style="font-size: 20px; font-weight: 700; color: var(--primary);">${totalHours}ч</div>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 8px;">
+    `;
+    
+    day.reports.forEach(r => {
+      html += `
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px; background: #f5f5f5; border-radius: 8px;">
+          <div style="flex: 1;">
+            <div style="font-weight: 500;">${r.project}</div>
+            <div style="font-size: 13px; color: #666;">${r.comments || '-'}</div>
+          </div>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <div style="font-weight: 600; margin-right: 8px;">${r.hours}ч</div>
+            <button onclick='editReport(${JSON.stringify(r)})' style="padding: 6px 12px; background: #4CAF50; color: white; border: none; border-radius: 6px; cursor: pointer;">✏️</button>
+            <button onclick='deleteReport("${r.id}", "${r.username}", "${r.project}")' style="padding: 6px 12px; background: #f44336; color: white; border: none; border-radius: 6px; cursor: pointer;">🗑️</button>
+          </div>
+        </div>
+      `;
+    });
+    
+    html += `
+        </div>
+      </div>
     `;
   });
   
   html += `
-      </tbody>
-    </table>
-    <p style="padding: 15px; text-align: center; color: #999; border-top: 1px solid #e0e0e0;">
+    <p style="text-align: center; color: #999; margin-top: 16px;">
       Всего отчётов: <b>${reports.length}</b>
     </p>
-  `;
+  </div>`;
   
   wrap.innerHTML = html;
 }
