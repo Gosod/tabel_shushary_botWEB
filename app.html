@@ -437,6 +437,10 @@ textarea:focus, input:focus {
 .proj-preview-abbr { font-size: 20px; font-weight: 700; color: var(--accent); margin-bottom: 4px; }
 .proj-preview-name { font-size: 12px; color: var(--hint); }
 
+
+  /* Utility classes */
+  .hidden { display: none !important; }
+  .visible { display: block !important; }
 </style>
 </head>
 <body>
@@ -898,7 +902,7 @@ function selectProject(proj, card) {
   }
 
   document.getElementById('projError').classList.remove('show');
-  document.getElementById('selectedProjectsWrap').style.display = 'block';
+  document.getElementById('selectedProjectsWrap').classList.remove('hidden');
   document.getElementById('hoursWrap').style.display = 'block';
   document.getElementById('hoursLabel').textContent = `⏱️ Часов для «${proj.full}»`;
   updateSummary();
@@ -931,8 +935,8 @@ function addCurrentProject() {
   document.getElementById('hoursLabel').textContent = '⏱️ Часов для выбранного проекта';
 
   // Показываем кнопки действий
-  document.getElementById('commentWrap').style.display = 'block';
-  document.getElementById('submitBtn').style.display = 'block';
+  document.getElementById('commentWrap').classList.remove('hidden');
+  document.getElementById('submitBtn').classList.remove('hidden');
   updateTotalHours();
 
   showToast(`➕ ${APP.reportItems[APP.reportItems.length-1].project} добавлен`, 'info');
@@ -953,9 +957,9 @@ function removeItem(idx) {
   renderSelectedList();
   updateSummary();
   if (!APP.reportItems.length && !APP.selectedProject) {
-    document.getElementById('commentWrap').style.display = 'none';
-    document.getElementById('submitBtn').style.display = 'none';
-    document.getElementById('summary').style.display = 'none';
+    document.getElementById('commentWrap').classList.add('hidden');
+    document.getElementById('submitBtn').classList.add('hidden');
+    document.getElementById('summary').classList.add('hidden');
   }
 }
 
@@ -997,9 +1001,9 @@ function updateSummary() {
   const rows = document.getElementById('summaryRows');
   const allItems = [...APP.reportItems];
   if (APP.selectedProject) allItems.push({ project: APP.selectedProject.full, hours: APP.currentHours });
-  if (!allItems.length) { s.style.display = 'none'; return; }
+  if (!allItems.length) { s.classList.add('hidden'); return; }
 
-  s.style.display = 'block';
+  s.classList.remove('hidden');
   const total = allItems.reduce((s, i) => s + i.hours, 0);
   rows.innerHTML = allItems.map(i => `
     <div class="summary-row">
@@ -1008,8 +1012,8 @@ function updateSummary() {
     </div>`).join('')
     + `<div class="summary-row"><span class="summary-key" style="font-weight:700">Итого</span><span class="summary-val" style="color:var(--accent);font-weight:700">${total} ч</span></div>`;
 
-  document.getElementById('commentWrap').style.display = 'block';
-  document.getElementById('submitBtn').style.display = 'block';
+  document.getElementById('commentWrap').classList.remove('hidden');
+  document.getElementById('submitBtn').classList.remove('hidden');
 }
 
 // ── HOURS SLIDER ──
@@ -1131,10 +1135,7 @@ async function submitReport() {
   };
 
   // Добавляем pending actions если есть
-  if (APP.pendingActions && APP.pendingActions.length) {
-    data.pending = APP.pendingActions;
-    APP.pendingActions = [];
-  }
+  
   try {
     // Отправляем через API
     await apiCall('/report', 'POST', {
@@ -1152,12 +1153,12 @@ async function submitReport() {
   APP.reportItems = [];
   APP.selectedProject = null;
   document.querySelectorAll('.proj-card').forEach(c => c.classList.remove('selected'));
-  document.getElementById('selectedProjectsWrap').style.display = 'none';
-  document.getElementById('commentWrap').style.display = 'none';
-  document.getElementById('summary').style.display = 'none';
+  document.getElementById('selectedProjectsWrap').classList.add('hidden');
+  document.getElementById('commentWrap').classList.add('hidden');
+  document.getElementById('summary').classList.add('hidden');
   document.getElementById('comment').value = '';
   document.getElementById('selectedProjectsList').innerHTML = '';
-  document.getElementById('submitBtn').style.display = 'none';
+  document.getElementById('submitBtn').classList.add('hidden');
 
   // Обновляем локальную статистику сразу (не ждём перезапуска /start)
   data.projects.forEach(item => {
@@ -2288,7 +2289,6 @@ function filterProjects() {
     card.style.display = text.includes(search) ? '' : 'none';
   });
 }
-
 </script>
 
 <!-- ADMIN REPORTS MANAGEMENT -->
