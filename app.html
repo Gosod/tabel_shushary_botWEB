@@ -484,7 +484,7 @@ textarea:focus, input:focus {
   <div class="form-group">
     <div class="form-label">📁 Проект</div>
     <div style="margin-bottom: 12px;">
-    <input type="text" id="projectSearch" placeholder="🔍 Поиск проекта..." style="width: 100%; padding: 12px; border: 1px solid #e0e0e0; border-radius: 8px; font-size: 15px;" oninput="filterProjects()">
+    <input type="text" id="projectSearch" placeholder="🔍 Поиск проекта..." style="width: 100%; padding: 12px; border: 1px solid #e0e0e0; border-radius: 8px; font-size: 15px;" oninput="debouncedFilterProjects()">
   </div>
   
   <div class="projects-grid" id="projectsGrid"></div>
@@ -672,6 +672,49 @@ textarea:focus, input:focus {
 </div>
 
 <script>
+// === КОНСТАНТЫ ===
+const DEFAULTS = {
+  HOURS: 4,
+  MIN_HOURS: 0.25,
+  MAX_HOURS: 12,
+  HOURS_STEP: 0.25
+};
+
+
+// === DOM HELPERS ===
+function safeGetElement(id) {
+  const el = document.getElementById(id);
+  if (!el) console.warn('[DOM] Element not found:', id);
+// === UTILITIES ===
+function debounce(func, wait) {
+  let timeout;
+  return function executedFunction(...args) {
+    const later = () => {
+      clearTimeout(timeout);
+      func(...args);
+    };
+    clearTimeout(timeout);
+    timeout = setTimeout(later, wait);
+  };
+}
+
+// === SECURITY ===
+function escapeHtml(text) {
+  if (!text) return '';
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+
+
+
+const debouncedFilterProjects = debounce(filterProjects, 300);
+
+
+  return el;
+}
+
+
 const tg = window.Telegram.WebApp;
 tg.expand();
 
@@ -800,7 +843,7 @@ async function init() {
   }
 
   if (APP.admin) {
-    document.querySelectorAll('.admin-only').forEach(el => el.style.display = '');
+    document.querySelectorAll('.admin-only').forEach(el => el.classList.remove('hidden'));
     renderAdminReports();
     renderAdminAssign();
     renderCreateReportScreen();
@@ -825,8 +868,17 @@ async function init() {
 // ── NAVIGATION ──
 function nav(pageId, addToHistory = true) {
   const current = document.querySelector('.page.active');
+  
+  // Защита от повторного клика
+  if (current && current.id === pageId && !addToHistory) {
+    return;
+  }
   if (current && addToHistory && current.id !== pageId) {
     APP.navHistory.push(current.id);
+    // Ограничиваем размер истории
+    if (APP.navHistory.length > 20) {
+      APP.navHistory.shift();
+    }
   }
 
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
@@ -1124,13 +1176,7 @@ async function submitReport() {
   }
 
   const generalComment = document.getElementById('comment').value || '';
-  const data = {
-    type: 'report',
-    projects: APP.reportItems.map(i => ({ 
-      project: i.project, 
-      hours: i.hours,
-      comment: i.comment || ''
-    })),
+  )),
     comments: generalComment || '-'
   };
 
@@ -1192,8 +1238,8 @@ function initAddProjectForm() {
 }
 
 function updateProjPreview() {
-  const a = document.getElementById('newAbbr').value.trim();
-  const f = document.getElementById('newFull').value.trim();
+  const a = document.getElementById('modalNewAbbr').value.trim();
+  const f = document.getElementById('modalNewFull').value.trim();
   const preview = document.getElementById('modalProjPreview');
   if (a || f) {
     preview.style.display = 'block';
@@ -1205,23 +1251,23 @@ function updateProjPreview() {
 }
 
 async function submitAddProject() {
-  const abbr = document.getElementById('newAbbr').value.trim().toUpperCase();
-  const full = document.getElementById('newFull').value.trim();
+  const abbr = document.getElementById('modalNewAbbr').value.trim().toUpperCase();
+  const full = document.getElementById('modalNewFull').value.trim();
   let ok = true;
 
   if (abbr.length < 2) {
     document.getElementById('modalAbbrErr').textContent = 'Минимум 2 символа';
-    document.getElementById('abbrErr').classList.add('show'); ok = false;
-  } else document.getElementById('abbrErr').classList.remove('show');
+    document.getElementById('modalAbbrErr').classList.add('show'); ok = false;
+  } else document.getElementById('modalAbbrErr').classList.remove('show');
 
   if (full.length < 3) {
     document.getElementById('modalFullErr').textContent = 'Минимум 3 символа';
-    document.getElementById('fullErr').classList.add('show'); ok = false;
-  } else document.getElementById('fullErr').classList.remove('show');
+    document.getElementById('modalFullErr').classList.add('show'); ok = false;
+  } else document.getElementById('modalFullErr').classList.remove('show');
 
   if (APP.allProjects.find(p => p.abbr === abbr)) {
-    document.getElementById('abbrErr').textContent = 'Аббревиатура уже используется';
-    document.getElementById('abbrErr').classList.add('show'); ok = false;
+    document.getElementById('modalAbbrErr').textContent = 'Аббревиатура уже используется';
+    document.getElementById('modalAbbrErr').classList.add('show'); ok = false;
   }
 
   if (!ok) { if (tg.HapticFeedback && tg.HapticFeedback.impactOccurred) tg.HapticFeedback.notificationOccurred('error'); return; }
@@ -1235,11 +1281,11 @@ async function submitAddProject() {
   APP.projects.push(newProj);
 
   // Сбрасываем форму
-  document.getElementById('newAbbr').value = '';
-  document.getElementById('newFull').value = '';
+  document.getElementById('modalNewAbbr').value = '';
+  document.getElementById('modalNewFull').value = '';
   document.getElementById('projPreview').style.display = 'none';
-  document.getElementById('abbrErr').classList.remove('show');
-  document.getElementById('fullErr').classList.remove('show');
+  document.getElementById('modalAbbrErr').classList.remove('show');
+  document.getElementById('modalFullErr').classList.remove('show');
 
   // Обновляем UI
   buildProjectsGrid();
@@ -1445,11 +1491,11 @@ async function submitAssign() {
 
 // ── MODAL ──
 function openModal() {
-  document.getElementById('newAbbr').value = '';
-  document.getElementById('newFull').value = '';
+  document.getElementById('modalNewAbbr').value = '';
+  document.getElementById('modalNewFull').value = '';
   document.getElementById('projPreview').style.display = 'none';
-  document.getElementById('abbrErr').classList.remove('show');
-  document.getElementById('fullErr').classList.remove('show');
+  document.getElementById('modalAbbrErr').classList.remove('show');
+  document.getElementById('modalFullErr').classList.remove('show');
   document.getElementById('addProjModal').classList.add('open');
 }
 
