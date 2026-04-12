@@ -441,6 +441,93 @@ textarea:focus, input:focus {
   /* Utility classes */
   .hidden { display: none !important; }
   .visible { display: block !important; }
+
+  /* Report table styles */
+  .report-card {
+    background: white;
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 16px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  }
+  
+  .report-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+    padding-bottom: 12px;
+    border-bottom: 2px solid #e0e0e0;
+  }
+  
+  .report-date {
+    font-size: 16px;
+    font-weight: 600;
+  }
+  
+  .report-username {
+    font-size: 14px;
+    color: #666;
+  }
+  
+  .report-total {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--primary);
+  }
+  
+  .report-items {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .report-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px;
+    background: #f5f5f5;
+    border-radius: 8px;
+  }
+  
+  .report-project {
+    font-weight: 500;
+  }
+  
+  .report-comment {
+    font-size: 13px;
+    color: #666;
+  }
+  
+  .report-hours {
+    font-weight: 600;
+    margin-right: 8px;
+  }
+  
+  .report-actions {
+    display: flex;
+    gap: 8px;
+  }
+  
+  .btn-edit {
+    padding: 6px 12px;
+    background: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+  }
+  
+  .btn-delete {
+    padding: 6px 12px;
+    background: #f44336;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+  }
+  
 </style>
 </head>
 <body>
@@ -698,6 +785,16 @@ function debounce(func, wait) {
   };
 }
 
+// Безопасное получение выбранного значения
+function getSelectedValue(selectId) {
+  const select = document.getElementById(selectId);
+  if (!select) return null;
+  const options = select.selectedOptions;
+  return options && options[0] ? options[0].value : null;
+}
+
+
+
 // === SECURITY ===
 function escapeHtml(text) {
   if (!text) return '';
@@ -717,6 +814,186 @@ const debouncedFilterProjects = debounce(filterProjects, 300);
 
 const tg = window.Telegram.WebApp;
 tg.expand();
+
+// === HAPTIC FEEDBACK HELPER ===
+const Haptic = {
+  impact(style = 'light') {
+    if (tg.HapticFeedback?.impactOccurred) {
+      tg.HapticFeedback.impactOccurred(style);
+    }
+  },
+  
+  notification(type = 'success') {
+    if (tg.HapticFeedback?.notificationOccurred) {
+      tg.HapticFeedback.notificationOccurred(type);
+    }
+  },
+  
+  selection() {
+    if (tg.HapticFeedback?.selectionChanged) {
+      tg.HapticFeedback.selectionChanged();
+    }
+  }
+};
+
+// === ERROR HANDLING ===
+const ErrorHandler = {
+  handle(error, context = '') {
+    console.error(`[ERROR ${context}]`, error);
+    
+    let message = 'Произошла ошибка';
+    
+    if (error.message) {
+      message = error.message;
+    }
+    
+    if (error.name === 'TypeError') {
+      message = 'Ошибка сети. Проверьте подключение.';
+    } else if (error.name === 'SyntaxError') {
+      message = 'Ошибка данных от сервера';
+    }
+    
+    showToast(`⚠️ ${message}`, 'error');
+    
+    // Опционально отправляем в систему мониторинга
+    // this.log(error, context);
+  },
+  
+  log(error, context) {
+    // TODO: отправка в систему мониторинга
+    console.log('[LOG]', context, error);
+  }
+};
+
+// === SUBMIT GUARD ===
+const SubmitGuard = {
+  submitting: false,
+  
+  async execute(fn) {
+    if (this.submitting) {
+      console.warn('[SUBMIT] Already submitting');
+      return;
+    }
+    
+    this.submitting = true;
+    try {
+      await fn();
+    } finally {
+      this.submitting = false;
+    }
+  }
+};
+
+// === FORM VALIDATION ===
+const Validator = {
+  hours(value) {
+    const num = parseFloat(value);
+    if (isNaN(num)) return { valid: false, error: 'Введите число' };
+    if (num < 0.25) return { valid: false, error: 'Минимум 0.25 часа' };
+    if (num > 24) return { valid: false, error: 'Максимум 24 часа' };
+    return { valid: true, value: num };
+  },
+  
+  required(value, fieldName) {
+    if (!value || value.trim() === '') {
+      return { valid: false, error: `${fieldName} обязательно` };
+    }
+    return { valid: true, value: value.trim() };
+  }
+};
+
+// === MODAL MANAGER ===
+const ModalManager = {
+  activeModal: null,
+  
+  create(id, content) {
+    // Удаляем старую модалку если есть
+    this.close();
+    
+    const modal = document.createElement('div');
+    modal.id = id;
+    modal.className = 'modal-overlay';
+    modal.innerHTML = content;
+    
+    // Закрытие по клику на overlay
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) {
+        this.close();
+      }
+    });
+    
+    // Закрытие по ESC
+    const escHandler = (e) => {
+      if (e.key === 'Escape') {
+        this.close();
+        document.removeEventListener('keydown', escHandler);
+      }
+    };
+    document.addEventListener('keydown', escHandler);
+    
+    ModalManager.create('editModal', modalContent);
+    this.activeModal = modal;
+    
+    return modal;
+  },
+  
+  close() {
+    if (this.activeModal) {
+      this.activeModal.remove();
+      this.activeModal = null;
+    }
+  },
+  
+  isOpen() {
+    return this.activeModal !== null;
+  }
+};
+
+// === DOM UPDATE HELPERS ===
+const DomUpdater = {
+  updateText(elementId, text) {
+    const el = document.getElementById(elementId);
+    if (el && el.textContent !== text) {
+      el.textContent = text;
+    }
+  },
+  
+  updateHtml(elementId, html) {
+    const el = document.getElementById(elementId);
+    if (el && el.innerHTML !== html) {
+      el.innerHTML = html;
+    }
+  },
+  
+  updateClass(elementId, className, add = true) {
+    const el = document.getElementById(elementId);
+    if (!el) return;
+    if (add) {
+      el.classList.add(className);
+    } else {
+      el.classList.remove(className);
+    }
+  }
+};
+
+// === VIRTUALIZATION ===
+// Примечание: для списков >100 элементов рекомендуется виртуализация
+// Текущая реализация подходит для <500 элементов
+// TODO: Добавить виртуализацию при росте данных
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 // ── STATE ──
 // Версия приложения
@@ -768,6 +1045,31 @@ let APP = {
 // ══════════════════════════════════════════════════════
 // API FUNCTIONS
 // ══════════════════════════════════════════════════════
+
+
+// Fetch с timeout
+async function fetchWithTimeout(url, options = {}, timeout = 10000) {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeout);
+  
+  try {
+    const response = await fetch(url, {
+      ...options,
+      signal: controller.signal
+    });
+    clearTimeout(timeoutId);
+    return response;
+  } catch (error) {
+    clearTimeout(timeoutId);
+    if (error.name === 'AbortError') {
+      throw new Error('Превышено время ожидания');
+    }
+    throw error;
+  }
+}
+
+// ========== API MODULE ==========
+
 async function apiCall(endpoint, method = 'POST', data = {}) {
   try {
     console.log('API Call:', method, endpoint, data);
@@ -899,7 +1201,7 @@ function nav(pageId, addToHistory = true) {
   if (APP.navHistory.length > 0) tg.BackButton.show();
   else tg.BackButton.hide();
 
-  if (tg.HapticFeedback && tg.HapticFeedback.impactOccurred) tg.HapticFeedback.impactOccurred('light');
+  Haptic.impact('light');
 }
 
 function goBack() {
@@ -923,12 +1225,17 @@ function initNav() {
 
 // ── PROJECTS GRID ──
 function buildProjectsGrid() {
-  const grid = document.getElementById('projectsGrid');
+  const grid = safeGetElement('projectsGrid');
+  if (!grid) return;
+  if (!APP.projects || APP.projects.length === 0) {
+    grid.innerHTML = '<p style="text-align: center; color: #999;">Нет доступных проектов</p>';
+    return;
+  }
   grid.innerHTML = '';
   APP.projects.forEach(proj => {
     const card = document.createElement('div');
     card.className = 'proj-card';
-    card.innerHTML = `<div class="proj-abbr">${proj.abbr}</div><div class="proj-name">${proj.full}</div>`;
+    card.innerHTML = `<div class="proj-abbr">${escapeHtml(proj.abbr)}</div><div class="proj-name">${escapeHtml(proj.full)}</div>`;
     card.onclick = () => selectProject(proj, card);
     grid.appendChild(card);
   });
@@ -944,25 +1251,25 @@ function selectProject(proj, card) {
   // Сбрасываем часы только для первого проекта, для последующих сохраняем последнее значение
   if (APP.reportItems.length === 0) {
     APP.currentHours = 4;
-    document.getElementById('hoursRange').value = 4;
-    document.getElementById('hoursDisplay').value = 4;
+    safeGetElement('hoursRange').value = 4;
+    safeGetElement('hoursDisplay').value = 4;
     updateQuickBtns(4);
   } else {
-    document.getElementById('hoursDisplay').value = APP.currentHours;
-    document.getElementById('hoursRange').value = APP.currentHours;
+    safeGetElement('hoursDisplay').value = APP.currentHours;
+    safeGetElement('hoursRange').value = APP.currentHours;
     updateQuickBtns(APP.currentHours);
   }
 
-  document.getElementById('projError').classList.remove('show');
-  document.getElementById('selectedProjectsWrap').classList.remove('hidden');
-  document.getElementById('hoursWrap').style.display = 'block';
-  document.getElementById('hoursLabel').textContent = `⏱️ Часов для «${proj.full}»`;
+  safeGetElement('projError').classList.remove('show');
+  safeGetElement('selectedProjectsWrap').classList.remove('hidden');
+  safeGetElement('hoursWrap').style.display = 'block';
+  safeGetElement('hoursLabel').textContent = `⏱️ Часов для «${proj.full}»`;
   updateSummary();
 
-  if (tg.HapticFeedback && tg.HapticFeedback.impactOccurred) tg.HapticFeedback.impactOccurred('light');
+  Haptic.impact('light');
 
   // Скроллим к слайдеру
-  setTimeout(() => document.getElementById('hoursWrap').scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 100);
+  setTimeout(() => safeGetElement('hoursWrap').scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 100);
 }
 
 function addCurrentProject() {
@@ -983,12 +1290,12 @@ function addCurrentProject() {
   updateSummary();
 
   // Прячем слайдер, но оставляем грид — пользователь может выбрать ещё
-  document.getElementById('hoursWrap').style.display = 'none';
-  document.getElementById('hoursLabel').textContent = '⏱️ Часов для выбранного проекта';
+  safeGetElement('hoursWrap').style.display = 'none';
+  safeGetElement('hoursLabel').textContent = '⏱️ Часов для выбранного проекта';
 
   // Показываем кнопки действий
-  document.getElementById('commentWrap').classList.remove('hidden');
-  document.getElementById('submitBtn').classList.remove('hidden');
+  safeGetElement('commentWrap').classList.remove('hidden');
+  safeGetElement('submitBtn').classList.remove('hidden');
   updateTotalHours();
 
   showToast(`➕ ${APP.reportItems[APP.reportItems.length-1].project} добавлен`, 'info');
@@ -1009,14 +1316,14 @@ function removeItem(idx) {
   renderSelectedList();
   updateSummary();
   if (!APP.reportItems.length && !APP.selectedProject) {
-    document.getElementById('commentWrap').classList.add('hidden');
-    document.getElementById('submitBtn').classList.add('hidden');
-    document.getElementById('summary').classList.add('hidden');
+    safeGetElement('commentWrap').classList.add('hidden');
+    safeGetElement('submitBtn').classList.add('hidden');
+    safeGetElement('summary').classList.add('hidden');
   }
 }
 
 function renderSelectedList() {
-  const list = document.getElementById('selectedProjectsList');
+  const list = safeGetElement('selectedProjectsList');
   list.innerHTML = '';
   APP.reportItems.forEach((item, idx) => {
     const el = document.createElement('div');
@@ -1045,11 +1352,11 @@ function renderSelectedList() {
 
 function updateTotalHours() {
   const total = APP.reportItems.reduce((s, i) => s + i.hours, 0) + (APP.selectedProject ? APP.currentHours : 0);
-  document.getElementById('totalHoursDisplay').textContent = total;
+  safeGetElement('totalHoursDisplay').textContent = total;
 }
 
 function updateSummary() {
-  const s = document.getElementById('summary');
+  const s = safeGetElement('summary');
   const rows = document.getElementById('summaryRows');
   const allItems = [...APP.reportItems];
   if (APP.selectedProject) allItems.push({ project: APP.selectedProject.full, hours: APP.currentHours });
@@ -1064,16 +1371,16 @@ function updateSummary() {
     </div>`).join('')
     + `<div class="summary-row"><span class="summary-key" style="font-weight:700">Итого</span><span class="summary-val" style="color:var(--accent);font-weight:700">${total} ч</span></div>`;
 
-  document.getElementById('commentWrap').classList.remove('hidden');
-  document.getElementById('submitBtn').classList.remove('hidden');
+  safeGetElement('commentWrap').classList.remove('hidden');
+  safeGetElement('submitBtn').classList.remove('hidden');
 }
 
 // ── HOURS SLIDER ──
 function initHoursSlider() {
-  const range = document.getElementById('hoursRange');
+  const range = safeGetElement('hoursRange');
   range.addEventListener('input', e => {
     APP.currentHours = parseFloat(e.target.value);
-    document.getElementById('hoursDisplay').value = APP.currentHours;
+    safeGetElement('hoursDisplay').value = APP.currentHours;
     updateQuickBtns(APP.currentHours);
     updateSummary(); updateTotalHours();
   });
@@ -1081,10 +1388,10 @@ function initHoursSlider() {
     btn.addEventListener('click', () => {
       APP.currentHours = parseFloat(btn.dataset.h);
       range.value = APP.currentHours;
-      document.getElementById('hoursDisplay').value = APP.currentHours;
+      safeGetElement('hoursDisplay').value = APP.currentHours;
       updateQuickBtns(APP.currentHours);
       updateSummary(); updateTotalHours();
-      if (tg.HapticFeedback && tg.HapticFeedback.impactOccurred) tg.HapticFeedback.impactOccurred('light');
+      Haptic.impact('light');
     });
   });
   updateQuickBtns(4);
@@ -1099,7 +1406,7 @@ function updateQuickBtns(val) {
 
 
 function updateHoursFromInput() {
-  let val = parseFloat(document.getElementById('hoursDisplay').value);
+  let val = parseFloat(safeGetElement('hoursDisplay').value);
   if (isNaN(val)) val = 0.25;
   if (val < 0.25) val = 0.25;
   if (val > 12) val = 12;
@@ -1108,8 +1415,8 @@ function updateHoursFromInput() {
   val = Math.round(val * 4) / 4;
   
   APP.currentHours = val;
-  document.getElementById('hoursDisplay').value = val;
-  document.getElementById('hoursRange').value = val;
+  safeGetElement('hoursDisplay').value = val;
+  safeGetElement('hoursRange').value = val;
   updateQuickBtns(val);
   updateSummary();
   updateTotalHours();
@@ -1118,7 +1425,7 @@ function updateHoursFromInput() {
 // ── CONFIRM DIALOG ──
 function showConfirm(message, onConfirm) {
   // Удаляем старый если есть
-  const old = document.getElementById('confirmDialog');
+  const old = safeGetElement('confirmDialog');
   if (old) old.remove();
   
   const dialog = document.createElement('div');
@@ -1133,7 +1440,7 @@ function showConfirm(message, onConfirm) {
       <div style="font-weight:600;font-size:16px;margin-bottom:8px">Подтверждение</div>
       <div style="color:var(--hint);font-size:14px;margin-bottom:20px">${message}</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-        <button onclick="document.getElementById('confirmDialog').remove()" 
+        <button onclick="safeGetElement('confirmDialog').remove()" 
           style="padding:12px;border:1.5px solid var(--border);border-radius:10px;background:transparent;color:var(--text);font:600 14px inherit;cursor:pointer">
           Отмена
         </button>
@@ -1145,7 +1452,7 @@ function showConfirm(message, onConfirm) {
     </div>
   `;
   document.body.appendChild(dialog);
-  document.getElementById('confirmOkBtn').onclick = () => {
+  safeGetElement('confirmOkBtn').onclick = () => {
     dialog.remove();
     onConfirm();
   };
@@ -1153,7 +1460,7 @@ function showConfirm(message, onConfirm) {
 
 // ── TOAST ──
 function showToast(msg, type = 'success') {
-  const existing = document.getElementById('toast');
+  const existing = safeGetElement('toast');
   if (existing) existing.remove();
   const toast = document.createElement('div');
   toast.id = 'toast';
@@ -1165,17 +1472,18 @@ function showToast(msg, type = 'success') {
 
 // ── SUBMIT REPORT ──
 async function submitReport() {
+  await SubmitGuard.execute(async () => {
   if (APP.selectedProject) {
     APP.reportItems.push({ project: APP.selectedProject.full, abbr: APP.selectedProject.abbr, hours: APP.currentHours });
     APP.selectedProject = null;
   }
   if (!APP.reportItems.length) {
-    document.getElementById('projError').classList.add('show');
+    safeGetElement('projError').classList.add('show');
     if (tg.HapticFeedback && tg.HapticFeedback.impactOccurred) tg.HapticFeedback.notificationOccurred('error');
     return;
   }
 
-  const generalComment = document.getElementById('comment').value || '';
+  const generalComment = safeGetElement('comment').value || '';
   )),
     comments: generalComment || '-'
   };
@@ -1199,12 +1507,12 @@ async function submitReport() {
   APP.reportItems = [];
   APP.selectedProject = null;
   document.querySelectorAll('.proj-card').forEach(c => c.classList.remove('selected'));
-  document.getElementById('selectedProjectsWrap').classList.add('hidden');
-  document.getElementById('commentWrap').classList.add('hidden');
-  document.getElementById('summary').classList.add('hidden');
-  document.getElementById('comment').value = '';
-  document.getElementById('selectedProjectsList').innerHTML = '';
-  document.getElementById('submitBtn').classList.add('hidden');
+  safeGetElement('selectedProjectsWrap').classList.add('hidden');
+  safeGetElement('commentWrap').classList.add('hidden');
+  safeGetElement('summary').classList.add('hidden');
+  safeGetElement('comment').value = '';
+  safeGetElement('selectedProjectsList').innerHTML = '';
+  safeGetElement('submitBtn').classList.add('hidden');
 
   // Обновляем локальную статистику сразу (не ждём перезапуска /start)
   data.projects.forEach(item => {
@@ -1226,48 +1534,49 @@ async function submitReport() {
   } catch (error) {
     console.error('Submit report failed:', error);
   }
+  });
 }
 
 // ── ADD PROJECT FORM ──
 function initAddProjectForm() {
-  document.getElementById('modalNewAbbr').addEventListener('input', e => {
+  safeGetElement('modalNewAbbr').addEventListener('input', e => {
     e.target.value = e.target.value.toUpperCase();
     updateProjPreview();
   });
-  document.getElementById('modalNewFull').addEventListener('input', updateProjPreview);
+  safeGetElement('modalNewFull').addEventListener('input', updateProjPreview);
 }
 
 function updateProjPreview() {
-  const a = document.getElementById('modalNewAbbr').value.trim();
-  const f = document.getElementById('modalNewFull').value.trim();
-  const preview = document.getElementById('modalProjPreview');
+  const a = safeGetElement('modalNewAbbr').value.trim();
+  const f = safeGetElement('modalNewFull').value.trim();
+  const preview = safeGetElement('modalProjPreview');
   if (a || f) {
     preview.style.display = 'block';
-    document.getElementById('modalPreviewAbbr').textContent = a || 'АБВ';
-    document.getElementById('modalPreviewFull').textContent = f || 'Название';
+    safeGetElement('modalPreviewAbbr').textContent = a || 'АБВ';
+    safeGetElement('modalPreviewFull').textContent = f || 'Название';
   } else {
     preview.style.display = 'none';
   }
 }
 
 async function submitAddProject() {
-  const abbr = document.getElementById('modalNewAbbr').value.trim().toUpperCase();
-  const full = document.getElementById('modalNewFull').value.trim();
+  const abbr = safeGetElement('modalNewAbbr').value.trim().toUpperCase();
+  const full = safeGetElement('modalNewFull').value.trim();
   let ok = true;
 
   if (abbr.length < 2) {
-    document.getElementById('modalAbbrErr').textContent = 'Минимум 2 символа';
-    document.getElementById('modalAbbrErr').classList.add('show'); ok = false;
-  } else document.getElementById('modalAbbrErr').classList.remove('show');
+    safeGetElement('modalAbbrErr').textContent = 'Минимум 2 символа';
+    safeGetElement('modalAbbrErr').classList.add('show'); ok = false;
+  } else safeGetElement('modalAbbrErr').classList.remove('show');
 
   if (full.length < 3) {
-    document.getElementById('modalFullErr').textContent = 'Минимум 3 символа';
-    document.getElementById('modalFullErr').classList.add('show'); ok = false;
-  } else document.getElementById('modalFullErr').classList.remove('show');
+    safeGetElement('modalFullErr').textContent = 'Минимум 3 символа';
+    safeGetElement('modalFullErr').classList.add('show'); ok = false;
+  } else safeGetElement('modalFullErr').classList.remove('show');
 
   if (APP.allProjects.find(p => p.abbr === abbr)) {
-    document.getElementById('modalAbbrErr').textContent = 'Аббревиатура уже используется';
-    document.getElementById('modalAbbrErr').classList.add('show'); ok = false;
+    safeGetElement('modalAbbrErr').textContent = 'Аббревиатура уже используется';
+    safeGetElement('modalAbbrErr').classList.add('show'); ok = false;
   }
 
   if (!ok) { if (tg.HapticFeedback && tg.HapticFeedback.impactOccurred) tg.HapticFeedback.notificationOccurred('error'); return; }
@@ -1281,11 +1590,11 @@ async function submitAddProject() {
   APP.projects.push(newProj);
 
   // Сбрасываем форму
-  document.getElementById('modalNewAbbr').value = '';
-  document.getElementById('modalNewFull').value = '';
-  document.getElementById('projPreview').style.display = 'none';
-  document.getElementById('modalAbbrErr').classList.remove('show');
-  document.getElementById('modalFullErr').classList.remove('show');
+  safeGetElement('modalNewAbbr').value = '';
+  safeGetElement('modalNewFull').value = '';
+  safeGetElement('projPreview').style.display = 'none';
+  safeGetElement('modalAbbrErr').classList.remove('show');
+  safeGetElement('modalFullErr').classList.remove('show');
 
   // Обновляем UI
   buildProjectsGrid();
@@ -1300,14 +1609,14 @@ async function submitAddProject() {
 
 // ── MY STATS ──
 function renderMyStats() {
-  const content = document.getElementById('myStatsContent');
+  const content = safeGetElement('myStatsContent');
   const s = APP.userStats;
   if (!s || !s.total_reports) {
-    document.getElementById('myStatsSubtitle').textContent = 'Ещё нет отчётов';
+    safeGetElement('myStatsSubtitle').textContent = 'Ещё нет отчётов';
     content.innerHTML = `<div class="empty"><div class="empty-icon">📭</div><div>Создайте первый отчёт!</div></div>`;
     return;
   }
-  document.getElementById('myStatsSubtitle').textContent = `Всего за всё время`;
+  safeGetElement('myStatsSubtitle').textContent = `Всего за всё время`;
   let html = `
     <div class="card"><div class="card-row"><div class="card-label">⏱️ Всего часов</div><div class="card-value">${s.total_hours}</div></div></div>
     <div class="card"><div class="card-row"><div class="card-label">📝 Отчётов</div><div class="card-value">${s.total_reports}</div></div></div>
@@ -1337,9 +1646,9 @@ function renderAdminTab(tab) {
 }
 
 function renderAdminOverview() {
-  if (!document.getElementById('admin-panel').classList.contains('active') && currentAdminTab !== 'overview') return;
+  if (!safeGetElement('admin-panel').classList.contains('active') && currentAdminTab !== 'overview') return;
   const s = APP.adminStats;
-  const content = document.getElementById('adminContent');
+  const content = safeGetElement('adminContent');
   if (!s) {
     content.innerHTML = `<div class="empty"><div class="empty-icon">📊</div><div>Нет данных</div></div>`;
     return;
@@ -1352,7 +1661,7 @@ function renderAdminOverview() {
   `;
   if (s.employees?.length && typeof Chart !== 'undefined') {
     if (APP.adminChart) APP.adminChart.destroy();
-    const ctx = document.getElementById('overviewChart');
+    const ctx = safeGetElement('overviewChart');
     APP.adminChart = new Chart(ctx, {
       type: 'bar',
       data: {
@@ -1366,7 +1675,7 @@ function renderAdminOverview() {
 
 function renderAdminEmployees() {
   const s = APP.adminStats;
-  const content = document.getElementById('adminContent');
+  const content = safeGetElement('adminContent');
   if (!s?.employees?.length) { content.innerHTML = `<div class="empty"><div class="empty-icon">👥</div><div>Нет данных</div></div>`; return; }
   content.innerHTML = [...s.employees].sort((a,b)=>b.hours-a.hours).map(emp => `
     <div class="emp-card">
@@ -1382,14 +1691,14 @@ function renderAdminEmployees() {
 
 function renderAdminProjects() {
   const s = APP.adminStats;
-  const content = document.getElementById('adminContent');
+  const content = safeGetElement('adminContent');
   if (!s?.projects) { content.innerHTML = `<div class="empty"><div class="empty-icon">📁</div><div>Нет данных</div></div>`; return; }
   const sorted = Object.entries(s.projects).sort((a,b)=>b[1]-a[1]);
-  content.innerHTML = sorted.map(([p,h])=>`<div class="card"><div class="card-row"><span>${p}</span><span style="font-weight:700;color:var(--accent)">${h} ч</span></div></div>`).join('')
+  content.innerHTML = sorted.map(([p,h])=>`<div class="card"><div class="card-row"><span>${escapeHtml(p)}</span><span style="font-weight:700;color:var(--accent)">${escapeHtml(h)} ч</span></div></div>`).join('')
     + `<div class="chart-wrap"><canvas id="projChart"></canvas></div>`;
   if (sorted.length && typeof Chart !== 'undefined') {
     if (APP.projChart) APP.projChart.destroy();
-    APP.projChart = new Chart(document.getElementById('projChart'), {
+    APP.projChart = new Chart(safeGetElement('projChart'), {
       type: 'doughnut',
       data: {
         labels: sorted.map(([p])=>p),
@@ -1402,7 +1711,7 @@ function renderAdminProjects() {
 
 function renderAdminReports() {
   const s = APP.adminStats;
-  const content = document.getElementById('adminContent');
+  const content = safeGetElement('adminContent');
   if (!s?.recent_reports?.length) { content.innerHTML = `<div class="empty"><div class="empty-icon">📝</div><div>Нет отчётов</div></div>`; return; }
   content.innerHTML = s.recent_reports.map(r=>`
     <div class="report-item">
@@ -1410,14 +1719,14 @@ function renderAdminReports() {
         <span class="report-emp">👤 ${r.employee}</span>
         <span class="report-date">${r.date} ${r.time}</span>
       </div>
-      <div class="report-proj">📁 ${r.project} — ${r.hours} ч</div>
+      <div class="report-proj">📁 ${escapeHtml(r.project)} — ${r.hours} ч</div>
       ${r.comment && r.comment !== '-' ? `<div class="report-comment">💬 ${r.comment}</div>` : ''}
     </div>
   `).join('');
 }
 
 function renderAdminManage() {
-  const content = document.getElementById('adminContent');
+  const content = safeGetElement('adminContent');
   const projs = APP.allProjects;
   const users = APP.allUsers;
 
@@ -1457,20 +1766,20 @@ async function removeProject(abbr) {
 }
 
 function renderAssignProjects() {
-  const uid = document.getElementById('assignUserModal').value;
+  const uid = safeGetElement('assignUserModal').value;
   if (!uid) return;
-  const list = document.getElementById('assignProjectsListModal');
+  const list = safeGetElement('assignProjectsListModal');
   list.innerHTML = APP.allProjects.map(p => `
     <label class="checkbox-item">
       <input type="checkbox" value="${p.abbr}" checked>
       <span>${p.abbr} — ${p.full}</span>
     </label>
   `).join('');
-  document.getElementById('assignBtn').style.display = 'block';
+  safeGetElement('assignBtn').style.display = 'block';
 }
 
 async function submitAssign() {
-  const uid = parseInt(document.getElementById('assignUser').value);
+  const uid = parseInt(document.getElementById('assignUser', 10).value);
   if (!uid) { showToast('Выберите сотрудника', 'error'); return; }
   const uname = APP.allUsers.find(u=>u.id===uid)?.username || '';
   const checked = [...document.querySelectorAll('#assignProjectsList input:checked')].map(c=>c.value);
@@ -1484,23 +1793,23 @@ async function submitAssign() {
   if (tg.HapticFeedback && tg.HapticFeedback.impactOccurred) tg.HapticFeedback.notificationOccurred('success');
 
   // Сбрасываем форму
-  document.getElementById('assignUser').value = '';
-  document.getElementById('assignProjectsList').innerHTML = '';
-  document.getElementById('assignBtn').style.display = 'none';
+  safeGetElement('assignUser').value = '';
+  safeGetElement('assignProjectsList').innerHTML = '';
+  safeGetElement('assignBtn').style.display = 'none';
 }
 
 // ── MODAL ──
 function openModal() {
   document.getElementById('modalNewAbbr').value = '';
-  document.getElementById('modalNewFull').value = '';
-  document.getElementById('projPreview').style.display = 'none';
-  document.getElementById('modalAbbrErr').classList.remove('show');
-  document.getElementById('modalFullErr').classList.remove('show');
-  document.getElementById('addProjModal').classList.add('open');
+  safeGetElement('modalNewFull').value = '';
+  safeGetElement('projPreview').style.display = 'none';
+  safeGetElement('modalAbbrErr').classList.remove('show');
+  safeGetElement('modalFullErr').classList.remove('show');
+  safeGetElement('addProjModal').classList.add('open');
 }
 
 function closeModal() {
-  document.getElementById('addProjModal').classList.remove('open');
+  safeGetElement('addProjModal').classList.remove('open');
 }
 
 // Закрыть по клику на overlay
@@ -1605,9 +1914,9 @@ init();
 // ══════════════════════════════════════════════════════
 
 async function loadReportsTable() {
-  const user = document.getElementById('filterUser').value;
-  const project = document.getElementById('filterProject').value;
-  const date = document.getElementById('filterDate').value;
+  const user = safeGetElement('filterUser').value;
+  const project = safeGetElement('filterProject').value;
+  const date = safeGetElement('filterDate').value;
   
   let url = `/reports?admin_id=${APP.userId}`;
   if (user) url += `&user_id=${user}`;
@@ -1630,8 +1939,11 @@ function getUsernameById(userId) {
   return user ? user.username : null;
 }
 
+
+// ========== UI MODULE ==========
+
 function renderReportsTable(reports) {
-  const wrap = document.getElementById('reportsTableWrap');
+  const wrap = safeGetElement('reportsTableWrap');
   
   if (!reports || reports.length === 0) {
     wrap.innerHTML = '<p style="padding: 20px; text-align: center; color: #999;">Отчётов не найдено</p>';
@@ -1647,7 +1959,7 @@ function renderReportsTable(reports) {
   // Группировка по дням
   const byDate = {};
   reports.forEach(r => {
-    const key = `${r.date}_${r.username}`;
+    const key = `${r.date}_${escapeHtml(r.username)}`;
     if (!byDate[key]) {
       byDate[key] = {
         date: r.date,
@@ -1679,13 +1991,13 @@ function renderReportsTable(reports) {
       html += `
         <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px; background: #f5f5f5; border-radius: 8px;">
           <div style="flex: 1;">
-            <div style="font-weight: 500;">${r.project}</div>
+            <div style="font-weight: 500;">${escapeHtml(r.project)}</div>
             <div style="font-size: 13px; color: #666;">${r.comments || '-'}</div>
           </div>
           <div style="display: flex; align-items: center; gap: 8px;">
             <div style="font-weight: 600; margin-right: 8px;">${r.hours}ч</div>
-            <button onclick='editReport(${JSON.stringify(r)})' style="padding: 6px 12px; background: #4CAF50; color: white; border: none; border-radius: 6px; cursor: pointer;">✏️</button>
-            <button onclick='deleteReport("${r.id}", "${r.username}", "${r.project}")' style="padding: 6px 12px; background: #f44336; color: white; border: none; border-radius: 6px; cursor: pointer;">🗑️</button>
+            <button data-action="edit" data-report-id="${r.id}" style="padding: 6px 12px; background: #4CAF50; color: white; border: none; border-radius: 6px; cursor: pointer;">✏️</button>
+            <button data-action="delete" data-report-id="${r.id}" data-username="${escapeHtml(r.username)}" data-project="${escapeHtml(r.project)}" style="padding: 6px 12px; background: #f44336; color: white; border: none; border-radius: 6px; cursor: pointer;">🗑️</button>
           </div>
         </div>
       `;
@@ -1709,11 +2021,7 @@ function renderReportsTable(reports) {
 function editReport(report) {
   APP.editingReport = report;
   
-  const modal = document.createElement('div');
-  modal.id = 'editModal';
-  modal.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 10000;';
-  
-  modal.innerHTML = `
+  const modalContent = `
     <div style="background: white; border-radius: 16px; padding: 24px; max-width: 500px; width: 90%; max-height: 80vh; overflow-y: auto;">
       <h3 style="margin-top: 0;">✏️ Редактировать отчёт</h3>
       
@@ -1752,15 +2060,15 @@ function editReport(report) {
   `;
   
   document.body.appendChild(modal);
-  if (tg.HapticFeedback && tg.HapticFeedback.impactOccurred) tg.HapticFeedback.impactOccurred('medium');
+  Haptic.impact('medium');
 }
 
 async function saveReportEdit() {
   const report = APP.editingReport;
-  const project = document.getElementById('modalEditProject').value;
-  const hours = parseFloat(document.getElementById('modalEditHours').value);
+  const project = safeGetElement('modalEditProject').value;
+  const hours = parseFloat(safeGetElement('modalEditHours').value);
   const date = document.getElementById('modalEditDate').value;
-  const comments = document.getElementById('modalEditComments').value;
+  const comments = safeGetElement('modalEditComments').value;
   
   if (hours <= 0 || hours > 24) {
     showToast('⚠️ Часы должны быть от 0.25 до 24', 'error');
@@ -1786,8 +2094,7 @@ async function saveReportEdit() {
 }
 
 function closeEditModal() {
-  const modal = document.getElementById('editModal');
-  if (modal) modal.remove();
+  ModalManager.close();
   APP.editingReport = null;
 }
 
@@ -1810,30 +2117,30 @@ ${displayName} — ${project}`)) return;
 }
 
 function clearFilters() {
-  document.getElementById('filterUser').value = '';
-  document.getElementById('filterProject').value = '';
-  document.getElementById('filterDate').value = '';
-  document.getElementById('reportsTableWrap').innerHTML = '<p style="padding: 20px; text-align: center; color: #999;">Выберите фильтры и нажмите 🔍 Фильтр</p>';
+  safeGetElement('filterUser').value = '';
+  safeGetElement('filterProject').value = '';
+  safeGetElement('filterDate').value = '';
+  safeGetElement('reportsTableWrap').innerHTML = '<p style="padding: 20px; text-align: center; color: #999;">Выберите фильтры и нажмите 🔍 Фильтр</p>';
 }
 
 function renderAdminReports() {
   // Заполняем фильтры пользователями
-  const userSelect = document.getElementById('filterUser');
+  const userSelect = safeGetElement('filterUser');
   if (!userSelect) return;
   
   userSelect.innerHTML = '<option value="">Все сотрудники</option>';
   if (APP.allUsers) {
     APP.allUsers.forEach(u => {
-      userSelect.innerHTML += `<option value="${u.id}">${u.username}</option>`;
+      userSelect.innerHTML += `<option value="${escapeHtml(u.id)}">${escapeHtml(u.username)}</option>`;
     });
   }
   
   // Заполняем фильтры проектами
-  const projSelect = document.getElementById('filterProject');
+  const projSelect = safeGetElement('filterProject');
   projSelect.innerHTML = '<option value="">Все проекты</option>';
   if (APP.allProjects) {
     APP.allProjects.forEach(p => {
-      projSelect.innerHTML += `<option value="${p.full}">${p.full}</option>`;
+      projSelect.innerHTML += `<option value="${escapeHtml(p.full)}">${escapeHtml(p.full)}</option>`;
     });
   }
 }
@@ -1848,18 +2155,18 @@ APP.adminReportProjects = [];
 
 function renderCreateReportScreen() {
   // Заполняем список сотрудников
-  const userSelect = document.getElementById('createForUser');
+  const userSelect = safeGetElement('createForUser');
   if (!userSelect) return;
   
   userSelect.innerHTML = '<option value="">Выберите сотрудника</option>';
   if (APP.allUsers) {
     APP.allUsers.forEach(u => {
-      userSelect.innerHTML += `<option value="${u.id}" data-username="${u.username}">${u.username}</option>`;
+      userSelect.innerHTML += `<option value="${escapeHtml(u.id)}" data-username="${escapeHtml(u.username)}">${escapeHtml(u.username)}</option>`;
     });
   }
   
   // Устанавливаем сегодняшнюю дату
-  const dateInput = document.getElementById('createReportDate');
+  const dateInput = safeGetElement('createReportDate');
   if (dateInput) {
     const today = new Date().toISOString().split('T')[0];
     dateInput.value = today;
@@ -1906,9 +2213,9 @@ function addProjectToAdminReport() {
 }
 
 function confirmAddProjectToAdmin() {
-  const project = document.getElementById('modalProject').value;
-  const hours = parseFloat(document.getElementById('modalHours').value);
-  const comment = document.getElementById('modalComment').value;
+  const project = safeGetElement('modalProject').value;
+  const hours = parseFloat(safeGetElement('modalHours').value);
+  const comment = safeGetElement('modalComment').value;
   
   if (hours <= 0 || hours > 24) {
     showToast('⚠️ Часы должны быть от 0.25 до 24', 'error');
@@ -1923,7 +2230,7 @@ function confirmAddProjectToAdmin() {
 }
 
 function renderAdminReportProjects() {
-  const container = document.getElementById('createReportProjects');
+  const container = safeGetElement('createReportProjects');
   if (!container) return;
   
   if (APP.adminReportProjects.length === 0) {
@@ -1953,11 +2260,11 @@ function removeAdminReportProject(index) {
 }
 
 async function submitAdminReport() {
-  const userSelect = document.getElementById('createForUser');
+  const userSelect = safeGetElement('createForUser');
   const userId = userSelect.value;
   const username = userSelect.selectedOptions[0]?.getAttribute('data-username');
-  const date = document.getElementById('createReportDate').value;
-  const generalComment = document.getElementById('createReportComment').value;
+  const date = safeGetElement('createReportDate').value;
+  const generalComment = safeGetElement('createReportComment').value;
   
   if (!userId) {
     showToast('⚠️ Выберите сотрудника', 'error');
@@ -1977,7 +2284,7 @@ async function submitAdminReport() {
   try {
     await apiCall('/report', 'POST', {
       user_id: APP.userId,  // Админ который создаёт
-      on_behalf_of_user_id: parseInt(userId),  // За кого создаём
+      on_behalf_of_user_id: parseInt(userId, 10),  // За кого создаём
       on_behalf_of_username: username,
       custom_date: date,
       projects: APP.adminReportProjects.map(p => ({
@@ -1994,8 +2301,8 @@ async function submitAdminReport() {
     // Очищаем форму
     APP.adminReportProjects = [];
     renderAdminReportProjects();
-    document.getElementById('createForUser').value = '';
-    document.getElementById('createReportComment').value = '';
+    safeGetElement('createForUser').value = '';
+    safeGetElement('createReportComment').value = '';
     
     // Обновляем данные
     await loadDataFromAPI();
@@ -2012,9 +2319,9 @@ async function submitAdminReport() {
 // ══════════════════════════════════════════════════════
 
 async function loadReportsTable() {
-  const user = document.getElementById('filterUser').value;
-  const project = document.getElementById('filterProject').value;
-  const date = document.getElementById('filterDate').value;
+  const user = safeGetElement('filterUser').value;
+  const project = safeGetElement('filterProject').value;
+  const date = safeGetElement('filterDate').value;
   
   let url = `/reports?admin_id=${APP.userId}`;
   if (user) url += `&user_id=${user}`;
@@ -2035,90 +2342,12 @@ function getUsernameById(userId) {
   return user ? user.username : null;
 }
 
-function renderReportsTable(reports) {
-  const wrap = document.getElementById('reportsTableWrap');
-  
-  if (!reports || reports.length === 0) {
-    wrap.innerHTML = '<p style="padding: 20px; text-align: center; color: #999;">Отчётов не найдено</p>';
-    return;
-  }
-  
-  // Фикс username
-  reports = reports.map(r => ({
-    ...r,
-    username: r.username || getUsernameById(r.user_id) || 'Unknown'
-  }));
-  
-  // Группировка по дням
-  const byDate = {};
-  reports.forEach(r => {
-    const key = `${r.date}_${r.username}`;
-    if (!byDate[key]) {
-      byDate[key] = {
-        date: r.date,
-        username: r.username,
-        reports: []
-      };
-    }
-    byDate[key].reports.push(r);
-  });
-  
-  let html = '<div style="padding: 16px;">';
-  
-  Object.values(byDate).forEach(day => {
-    const totalHours = day.reports.reduce((sum, r) => sum + r.hours, 0);
-    
-    html += `
-      <div style="background: white; border-radius: 12px; padding: 16px; margin-bottom: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; padding-bottom: 12px; border-bottom: 2px solid #e0e0e0;">
-          <div>
-            <div style="font-size: 16px; font-weight: 600;">${day.date}</div>
-            <div style="font-size: 14px; color: #666;">${day.username}</div>
-          </div>
-          <div style="font-size: 20px; font-weight: 700; color: var(--primary);">${totalHours}ч</div>
-        </div>
-        <div style="display: flex; flex-direction: column; gap: 8px;">
-    `;
-    
-    day.reports.forEach(r => {
-      html += `
-        <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px; background: #f5f5f5; border-radius: 8px;">
-          <div style="flex: 1;">
-            <div style="font-weight: 500;">${r.project}</div>
-            <div style="font-size: 13px; color: #666;">${r.comments || '-'}</div>
-          </div>
-          <div style="display: flex; align-items: center; gap: 8px;">
-            <div style="font-weight: 600; margin-right: 8px;">${r.hours}ч</div>
-            <button onclick='editReport(${JSON.stringify(r)})' style="padding: 6px 12px; background: #4CAF50; color: white; border: none; border-radius: 6px; cursor: pointer;">✏️</button>
-            <button onclick='deleteReport("${r.id}", "${r.username}", "${r.project}")' style="padding: 6px 12px; background: #f44336; color: white; border: none; border-radius: 6px; cursor: pointer;">🗑️</button>
-          </div>
-        </div>
-      `;
-    });
-    
-    html += `
-        </div>
-      </div>
-    `;
-  });
-  
-  html += `
-    <p style="text-align: center; color: #999; margin-top: 16px;">
-      Всего отчётов: <b>${reports.length}</b>
-    </p>
-  </div>`;
-  
-  wrap.innerHTML = html;
-}
+
 
 function editReport(report) {
   APP.editingReport = report;
   
-  const modal = document.createElement('div');
-  modal.id = 'editModal';
-  modal.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 10000;';
-  
-  modal.innerHTML = `
+  const modalContent = `
     <div style="background: white; border-radius: 16px; padding: 24px; max-width: 500px; width: 90%; max-height: 80vh; overflow-y: auto;">
       <h3 style="margin-top: 0;">✏️ Редактировать отчёт</h3>
       
@@ -2157,15 +2386,15 @@ function editReport(report) {
   `;
   
   document.body.appendChild(modal);
-  if (tg.HapticFeedback && tg.HapticFeedback.impactOccurred) tg.HapticFeedback.impactOccurred('medium');
+  Haptic.impact('medium');
 }
 
 async function saveReportEdit() {
   const report = APP.editingReport;
-  const project = document.getElementById('editProject').value;
-  const hours = parseFloat(document.getElementById('editHours').value);
-  const date = document.getElementById('editDate').value;
-  const comments = document.getElementById('editComments').value;
+  const project = safeGetElement('editProject').value;
+  const hours = parseFloat(safeGetElement('editHours').value);
+  const date = safeGetElement('editDate').value;
+  const comments = safeGetElement('editComments').value;
   
   if (hours <= 0 || hours > 24) {
     showToast('⚠️ Часы должны быть от 0.25 до 24', 'error');
@@ -2191,8 +2420,7 @@ async function saveReportEdit() {
 }
 
 function closeEditModal() {
-  const modal = document.getElementById('editModal');
-  if (modal) modal.remove();
+  ModalManager.close();
   APP.editingReport = null;
 }
 
@@ -2204,7 +2432,7 @@ async function deleteReport(id, username, project) {
     await apiCall(`/report/${id}`, 'DELETE', { admin_id: APP.userId });
     
     showToast('🗑️ Отчёт удалён', 'info');
-    if (tg.HapticFeedback && tg.HapticFeedback.notificationOccurred) tg.HapticFeedback.notificationOccurred('success');
+    Haptic.notification('success');
     
     loadReportsTable();
     await loadDataFromAPI();
@@ -2214,20 +2442,20 @@ async function deleteReport(id, username, project) {
 }
 
 function clearFilters() {
-  document.getElementById('filterUser').value = '';
-  document.getElementById('filterProject').value = '';
+  safeGetElement('filterUser').value = '';
+  safeGetElement('filterProject').value = '';
   document.getElementById('filterDate').value = '';
-  document.getElementById('reportsTableWrap').innerHTML = '<p style="padding: 20px; text-align: center; color: #999;">Выберите фильтры и нажмите 🔍 Фильтр</p>';
+  safeGetElement('reportsTableWrap').innerHTML = '<p style="padding: 20px; text-align: center; color: #999;">Выберите фильтры и нажмите 🔍 Фильтр</p>';
 }
 
 function renderAdminReports() {
-  const userSelect = document.getElementById('filterUser');
+  const userSelect = safeGetElement('filterUser');
   if (!userSelect) return;
   
   userSelect.innerHTML = '<option value="">Все сотрудники</option>';
   if (APP.allUsers) {
     APP.allUsers.forEach(u => {
-      userSelect.innerHTML += `<option value="${u.id}">${u.username}</option>`;
+      userSelect.innerHTML += `<option value="${escapeHtml(u.id)}">${escapeHtml(u.username)}</option>`;
     });
   }
   
@@ -2235,7 +2463,7 @@ function renderAdminReports() {
   if (projSelect && APP.allProjects) {
     projSelect.innerHTML = '<option value="">Все проекты</option>';
     APP.allProjects.forEach(p => {
-      projSelect.innerHTML += `<option value="${p.full}">${p.full}</option>`;
+      projSelect.innerHTML += `<option value="${escapeHtml(p.full)}">${escapeHtml(p.full)}</option>`;
     });
   }
 }
@@ -2245,13 +2473,13 @@ function renderAdminReports() {
 // ══════════════════════════════════════════════════════
 
 function renderAdminAssign() {
-  const userSelect = document.getElementById('assignUser');
+  const userSelect = safeGetElement('assignUser');
   if (!userSelect) return;
   
   userSelect.innerHTML = '<option value="">Выберите сотрудника</option>';
   if (APP.allUsers) {
     APP.allUsers.forEach(u => {
-      userSelect.innerHTML += `<option value="${u.id}">${u.username}</option>`;
+      userSelect.innerHTML += `<option value="${escapeHtml(u.id)}">${escapeHtml(u.username)}</option>`;
     });
   }
   
@@ -2259,15 +2487,15 @@ function renderAdminAssign() {
 }
 
 async function loadUserProjects() {
-  const userId = document.getElementById('assignUser').value;
+  const userId = safeGetElement('assignUser').value;
   if (!userId) return;
   
-  const container = document.getElementById('assignProjectsList');
+  const container = safeGetElement('assignProjectsList');
   if (!container || !APP.allProjects) return;
   
   // Загружаем текущие проекты пользователя
   try {
-    const data = await apiCall('/init', 'POST', { user_id: parseInt(userId) });
+    const data = await apiCall('/init', 'POST', { user_id: parseInt(userId, 10) });
     const userProjects = data.projects.map(p => p.abbr);
     
     let html = '';
@@ -2293,7 +2521,7 @@ async function loadUserProjects() {
 }
 
 async function submitAssign() {
-  const userId = document.getElementById('assignUser').value;
+  const userId = safeGetElement('assignUser').value;
   if (!userId) {
     showToast('⚠️ Выберите сотрудника', 'error');
     return;
@@ -2310,12 +2538,12 @@ async function submitAssign() {
   try {
     await apiCall('/assign', 'POST', {
       admin_id: APP.userId,
-      user_id: parseInt(userId),
+      user_id: parseInt(userId, 10),
       abbrs: abbrs
     });
     
     showToast('✅ Проекты назначены!', 'success');
-    if (tg.HapticFeedback && tg.HapticFeedback.notificationOccurred) tg.HapticFeedback.notificationOccurred('success');
+    Haptic.notification('success');
     
     nav('admin-panel');
   } catch (error) {
@@ -2335,6 +2563,48 @@ function filterProjects() {
     card.style.display = text.includes(search) ? '' : 'none';
   });
 }
+
+
+
+// Проверка синхронизации
+function syncProjectState() {
+  // Убираем selectedProject из reportItems если он там есть
+  if (APP.selectedProject) {
+    const exists = APP.reportItems.find(item => 
+      item.abbr === APP.selectedProject.abbr
+    );
+    if (exists) {
+      console.warn('[SYNC] selectedProject already in reportItems');
+      APP.selectedProject = null;
+    }
+  }
+}
+
+
+// === EVENT DELEGATION ===
+document.addEventListener('DOMContentLoaded', () => {
+  // Делегирование для таблицы отчётов
+  document.body.addEventListener('click', (e) => {
+    const target = e.target.closest('[data-action]');
+    if (!target) return;
+    
+    const action = target.dataset.action;
+    const reportId = target.dataset.reportId;
+    
+    if (action === 'edit' && reportId) {
+      // Находим отчёт по ID
+      const report = APP.adminStats?.recent_reports?.find(r => r.id === reportId);
+      if (report) editReport(report);
+    }
+    
+    if (action === 'delete' && reportId) {
+      const username = target.dataset.username || 'Unknown';
+      const project = target.dataset.project || '';
+      deleteReport(reportId, username, project);
+    }
+  });
+});
+
 </script>
 
 <!-- ADMIN REPORTS MANAGEMENT -->
