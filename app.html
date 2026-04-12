@@ -1,1536 +1,3442 @@
- (cd "$(git rev-parse --show-toplevel)" && git apply --3way <<'EOF' 
 diff --git a/app.html b/app.html
-index 666a990ffbc124f13df781f4c3207f95874e5136..e64fb2c0c2ce897442d4b70bdc506930b220c27d 100644
+index 111e9627b8ebcbc62d554ff1ec1b01667725418c..95acf3d09fb403be78d629e58f83ef26600da08e 100644
 --- a/app.html
 +++ b/app.html
-@@ -1,38 +1,40 @@
- <!DOCTYPE html>
- <html lang="ru">
- <head>
- <meta charset="UTF-8">
- <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
- <title>Учёт времени</title>
- <script src="https://telegram.org/js/telegram-web-app.js?56"></script>
- <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
- <style>
- @import url('https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&display=swap');
- 
- :root {
-   --accent: var(--tg-theme-button-color, #2563eb);
+@@ -1,1536 +1,1901 @@
+- (cd "$(git rev-parse --show-toplevel)" && git apply --3way <<'EOF' 
+-diff --git a/app.html b/app.html
+-index 666a990ffbc124f13df781f4c3207f95874e5136..e64fb2c0c2ce897442d4b70bdc506930b220c27d 100644
+---- a/app.html
+-+++ b/app.html
+-@@ -1,38 +1,40 @@
+- <!DOCTYPE html>
+- <html lang="ru">
+- <head>
+- <meta charset="UTF-8">
+- <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+- <title>Учёт времени</title>
+- <script src="https://telegram.org/js/telegram-web-app.js?56"></script>
+- <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+- <style>
+- @import url('https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&display=swap');
+- 
+- :root {
+-   --accent: var(--tg-theme-button-color, #2563eb);
+-+  --primary: var(--accent);
+-+  --accent-light: rgba(37, 99, 235, 0.12);
+-   --accent-light: color-mix(in srgb, var(--accent) 12%, transparent);
+-   --bg: var(--tg-theme-bg-color, #f8fafc);
+-   --bg2: var(--tg-theme-secondary-bg-color, #ffffff);
+-   --text: var(--tg-theme-text-color, #0f172a);
+-   --hint: var(--tg-theme-hint-color, #94a3b8);
+-   --border: color-mix(in srgb, var(--hint) 25%, transparent);
+-   --danger: #ef4444;
+-   --success: #22c55e;
+-   --radius: 14px;
+-   --shadow: 0 1px 3px rgba(0,0,0,0.08);
+- }
+- 
+- * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+- 
+- body {
+-   font-family: 'Golos Text', system-ui, sans-serif;
+-   background: var(--bg);
+-   color: var(--text);
+-   min-height: 100vh;
+-   padding-bottom: 24px;
+- }
+- 
+- /* NAV */
+- .nav {
+-   position: sticky; top: 0; z-index: 100;
+-@@ -156,66 +158,50 @@ body {
+- .hours-box {
+-   background: var(--bg2);
+-   border-radius: var(--radius);
+-   padding: 16px;
+-   margin-bottom: 14px;
+-   display: flex; align-items: center; justify-content: space-between;
+-   box-shadow: var(--shadow);
+- }
+- .hours-big { font-size: 40px; font-weight: 700; color: var(--accent); line-height: 1; }
+- .hours-big-input {
+-   font-size: 40px; font-weight: 700; color: var(--accent);
+-   line-height: 1; width: 80px; text-align: center;
+-   border: none; background: transparent; outline: none;
+-   font-family: inherit; padding: 0;
+-   -moz-appearance: textfield;
+- }
+- .hours-big-input::-webkit-outer-spin-button,
+- .hours-big-input::-webkit-inner-spin-button {
+-   -webkit-appearance: none; margin: 0;
+- }
+- .hours-big-input:focus {
+-   background: var(--accent-light);
+-   border-radius: 8px;
+-   padding: 4px 8px;
+- }
+--.hours-big-input {
+--  font-size: 40px; font-weight: 700; color: var(--accent);
+--  line-height: 1; width: 80px; text-align: center;
+--  border: none; background: transparent; outline: none;
+--  font-family: inherit; padding: 0;
+--  -moz-appearance: textfield;
+--}
+--.hours-big-input::-webkit-outer-spin-button,
+--.hours-big-input::-webkit-inner-spin-button {
+--  -webkit-appearance: none; margin: 0;
+--}
+--.hours-big-input:focus {
+--  background: var(--accent-light);
+--  border-radius: 8px;
+--  padding: 4px 8px;
+--}
+- .hours-unit { font-size: 14px; color: var(--hint); margin-top: 4px; }
+- 
+- input[type="range"] {
+-   width: 100%; height: 6px;
+-   border-radius: 3px;
+-   background: var(--border);
+-   outline: none;
+-   -webkit-appearance: none;
+-   padding: 0; margin-bottom: 12px;
+- }
+- input[type="range"]::-webkit-slider-thumb {
+-   -webkit-appearance: none;
+-   width: 26px; height: 26px;
+-   border-radius: 50%;
+-   background: var(--accent);
+-   cursor: pointer;
+-   box-shadow: 0 2px 8px rgba(0,0,0,.2);
+- }
+- input[type="range"]::-moz-range-thumb {
+-   width: 26px; height: 26px;
+-   border-radius: 50%;
+-   background: var(--accent);
+-   border: none;
+-   cursor: pointer;
+- }
+-@@ -429,95 +415,95 @@ textarea:focus, input:focus {
+- .proj-preview-box {
+-   display: inline-block;
+-   border: 2px solid var(--accent);
+-   border-radius: var(--radius);
+-   padding: 18px 20px; text-align: center;
+-   min-width: 130px; margin-top: 12px;
+-   background: var(--bg2);
+- }
+- .proj-preview-abbr { font-size: 20px; font-weight: 700; color: var(--accent); margin-bottom: 4px; }
+- .proj-preview-name { font-size: 12px; color: var(--hint); }
+- 
+- 
+-   /* Utility classes */
+-   .hidden { display: none !important; }
+-   .visible { display: block !important; }
+- 
+-   /* Report table styles */
+-   .report-card {
+-     background: white;
+-     border-radius: 12px;
+-     padding: 16px;
+-     margin-bottom: 16px;
+-     box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+-   }
+-   
+--  .report-header {
+-+  .admin-report-header {
+-     display: flex;
+-     justify-content: space-between;
+-     align-items: center;
+-     margin-bottom: 12px;
+-     padding-bottom: 12px;
+-     border-bottom: 2px solid #e0e0e0;
+-   }
+-   
+-   .report-date {
+-     font-size: 16px;
+-     font-weight: 600;
+-   }
+-   
+-   .report-username {
+-     font-size: 14px;
+-     color: #666;
+-   }
+-   
+-   .report-total {
+-     font-size: 20px;
+-     font-weight: 700;
+-     color: var(--primary);
+-   }
+-   
+-   .report-items {
+-     display: flex;
+-     flex-direction: column;
+-     gap: 8px;
+-   }
+-   
+--  .report-item {
+-+  .admin-report-item {
+-     display: flex;
+-     justify-content: space-between;
+-     align-items: center;
+-     padding: 8px;
+-     background: #f5f5f5;
+-     border-radius: 8px;
+-   }
+-   
+-   .report-project {
+-     font-weight: 500;
+-   }
+-   
+--  .report-comment {
+-+  .admin-report-comment {
+-     font-size: 13px;
+-     color: #666;
+-   }
+-   
+-   .report-hours {
+-     font-weight: 600;
+-     margin-right: 8px;
+-   }
+-   
+-   .report-actions {
+-     display: flex;
+-     gap: 8px;
+-   }
+-   
+-   .btn-edit {
+-     padding: 6px 12px;
+-     background: #4CAF50;
+-     color: white;
+-     border: none;
+-     border-radius: 6px;
+-     cursor: pointer;
+-   }
+-   
+-   .btn-delete {
+-     padding: 6px 12px;
+-@@ -742,266 +728,267 @@ textarea:focus, input:focus {
+-       <div class="form-label">🔤 Аббревиатура</div>
+-       <input type="text" id="modalNewAbbr" placeholder="Например: РС" maxlength="5">
+-       <div class="error-msg" id="modalAbbrErr">Заполните поле (мин. 2 символа)</div>
+-     </div>
+-     <div class="form-group">
+-       <div class="form-label">📝 Полное название</div>
+-       <input type="text" id="modalNewFull" placeholder="Например: Разработка сайта" maxlength="50">
+-       <div class="error-msg" id="modalFullErr">Заполните поле (мин. 3 символа)</div>
+-     </div>
+-     <div id="modalProjPreview" style="display:none;margin-bottom:16px">
+-       <div class="proj-preview-box">
+-         <div class="proj-preview-abbr" id="modalPreviewAbbr">РС</div>
+-         <div class="proj-preview-name" id="modalPreviewFull">Разработка сайта</div>
+-       </div>
+-     </div>
+-     <button class="btn btn-primary" onclick="submitAddProject()">✅ Добавить проект</button>
+-   </div>
+- </div>
+- 
+- <script>
+- // === КОНСТАНТЫ ===
+- const DEFAULTS = {
+-   HOURS: 4,
+-   MIN_HOURS: 0.25,
+-   MAX_HOURS: 12,
+--  HOURS_STEP: 0.25
+-+  HOURS_STEP: 0.25,
+-+  API_TIMEOUT: 10000
+- };
+- 
+- 
+- // === DOM HELPERS ===
+- function safeGetElement(id) {
+-   const el = document.getElementById(id);
+-   if (!el) console.warn('[DOM] Element not found:', id);
+-+  return el;
+-+}
+-+
+- // === UTILITIES ===
+- function debounce(func, wait) {
+-   let timeout;
+-   return function executedFunction(...args) {
+-     const later = () => {
+-       clearTimeout(timeout);
+-       func(...args);
+-     };
+-     clearTimeout(timeout);
+-     timeout = setTimeout(later, wait);
+-   };
+- }
+- 
+--// Безопасное получение выбранного значения
+- function getSelectedValue(selectId) {
+--  const select = document.getElementById(selectId);
+-+  const select = safeGetElement(selectId);
+-   if (!select) return null;
+-   const options = select.selectedOptions;
+-   return options && options[0] ? options[0].value : null;
+- }
+- 
+- 
+--
+- // === SECURITY ===
+- function escapeHtml(text) {
+-   if (!text) return '';
+-   const div = document.createElement('div');
+-   div.textContent = text;
+-   return div.innerHTML;
+- }
+- 
+-+const debouncedFilterProjects = debounce(() => filterProjects(), 300);
+- 
+--
+--const debouncedFilterProjects = debounce(filterProjects, 300);
+--
+--
+--  return el;
+-+const tg = window.Telegram?.WebApp || null;
+-+if (tg?.expand) {
+-+  tg.expand();
+- }
+- 
+--
+--const tg = window.Telegram.WebApp;
+--tg.expand();
+--
+- // === HAPTIC FEEDBACK HELPER ===
+- const Haptic = {
+-   impact(style = 'light') {
+-     if (tg.HapticFeedback?.impactOccurred) {
+-       tg.HapticFeedback.impactOccurred(style);
+-     }
+-   },
+-   
+-   notification(type = 'success') {
+-     if (tg.HapticFeedback?.notificationOccurred) {
+-       tg.HapticFeedback.notificationOccurred(type);
+-     }
+-   },
+-   
+-   selection() {
+-     if (tg.HapticFeedback?.selectionChanged) {
+-       tg.HapticFeedback.selectionChanged();
+-     }
+-   }
+- };
+- 
+- // === ERROR HANDLING ===
+- const ErrorHandler = {
+-   handle(error, context = '') {
+-     console.error(`[ERROR ${context}]`, error);
+-     
+-     let message = 'Произошла ошибка';
+-     
+-     if (error.message) {
+-       message = error.message;
+-     }
+-     
+-     if (error.name === 'TypeError') {
+-       message = 'Ошибка сети. Проверьте подключение.';
+-     } else if (error.name === 'SyntaxError') {
+-       message = 'Ошибка данных от сервера';
+-     }
+-     
+-     showToast(`⚠️ ${message}`, 'error');
+-     
+-     // Опционально отправляем в систему мониторинга
+-     // this.log(error, context);
+-   },
+-   
+-   log(error, context) {
+--    // TODO: отправка в систему мониторинга
+-     console.log('[LOG]', context, error);
+-   }
+- };
+- 
+- // === SUBMIT GUARD ===
+- const SubmitGuard = {
+-   submitting: false,
+-   
+-   async execute(fn) {
+-     if (this.submitting) {
+-       console.warn('[SUBMIT] Already submitting');
+-       return;
+-     }
+-     
+-     this.submitting = true;
+-     try {
+-       await fn();
+-     } finally {
+-       this.submitting = false;
+-     }
+-   }
+- };
+- 
+- // === FORM VALIDATION ===
+- const Validator = {
+-   hours(value) {
+-     const num = parseFloat(value);
+-     if (isNaN(num)) return { valid: false, error: 'Введите число' };
+--    if (num < 0.25) return { valid: false, error: 'Минимум 0.25 часа' };
+--    if (num > 24) return { valid: false, error: 'Максимум 24 часа' };
+-+    if (num < DEFAULTS.MIN_HOURS) return { valid: false, error: `Минимум ${DEFAULTS.MIN_HOURS} часа` };
+-+    if (num > DEFAULTS.MAX_HOURS) return { valid: false, error: `Максимум ${DEFAULTS.MAX_HOURS} часов` };
+-     return { valid: true, value: num };
+-   },
+-   
+-   required(value, fieldName) {
+-     if (!value || value.trim() === '') {
+-       return { valid: false, error: `${fieldName} обязательно` };
+-     }
+-     return { valid: true, value: value.trim() };
+-   }
+- };
+- 
+- // === MODAL MANAGER ===
+- const ModalManager = {
+-   activeModal: null,
+-+  escHandler: null,
+-   
+-   create(id, content) {
+--    // Удаляем старую модалку если есть
+-+    if (!content) {
+-+      console.warn('[MODAL] Empty modal content');
+-+      return null;
+-+    }
+-+
+-     this.close();
+-     
+-     const modal = document.createElement('div');
+-     modal.id = id;
+--    modal.className = 'modal-overlay';
+-+    modal.className = 'modal-overlay open';
+-     modal.innerHTML = content;
+-     
+--    // Закрытие по клику на overlay
+-     modal.addEventListener('click', (e) => {
+-       if (e.target === modal) {
+-         this.close();
+-       }
+-     });
+-     
+--    // Закрытие по ESC
+--    const escHandler = (e) => {
+-+    this.escHandler = (e) => {
+-       if (e.key === 'Escape') {
+-         this.close();
+--        document.removeEventListener('keydown', escHandler);
+-       }
+-     };
+--    document.addEventListener('keydown', escHandler);
+--    
+--    ModalManager.create('editModal', modalContent);
+-+    document.addEventListener('keydown', this.escHandler);
+-+
+-+    document.body.appendChild(modal);
+-     this.activeModal = modal;
+-     
+-     return modal;
+-   },
+-   
+-   close() {
+-     if (this.activeModal) {
+-       this.activeModal.remove();
+-       this.activeModal = null;
+-     }
+-+    if (this.escHandler) {
+-+      document.removeEventListener('keydown', this.escHandler);
+-+      this.escHandler = null;
+-+    }
+-   },
+-   
+-   isOpen() {
+-     return this.activeModal !== null;
+-   }
+- };
+- 
+- // === DOM UPDATE HELPERS ===
+- const DomUpdater = {
+-   updateText(elementId, text) {
+-     const el = document.getElementById(elementId);
+-     if (el && el.textContent !== text) {
+-       el.textContent = text;
+-     }
+-   },
+-   
+-   updateHtml(elementId, html) {
+-     const el = document.getElementById(elementId);
+-     if (el && el.innerHTML !== html) {
+-       el.innerHTML = html;
+-     }
+-   },
+-   
+-   updateClass(elementId, className, add = true) {
+-     const el = document.getElementById(elementId);
+-     if (!el) return;
+-     if (add) {
+-       el.classList.add(className);
+-     } else {
+-       el.classList.remove(className);
+-     }
+-   }
+- };
+- 
+- // === VIRTUALIZATION ===
+- // Примечание: для списков >100 элементов рекомендуется виртуализация
+- // Текущая реализация подходит для <500 элементов
+--// TODO: Добавить виртуализацию при росте данных
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- // ── STATE ──
+- // Версия приложения
+- const APP_VERSION = '1.1.0';
+- 
+- // API Configuration
+- const API_URL = 'https://telegrambot-shyshariki.ru/tgbot/api';
+- const VERSION_KEY = 'app_version';
+- const CHANGELOG = {
+-   '1.1.0': {
+-     title: 'API интеграция! ⚡',
+-@@ -1050,395 +1037,440 @@ let APP = {
+- // Fetch с timeout
+- async function fetchWithTimeout(url, options = {}, timeout = 10000) {
+-   const controller = new AbortController();
+-   const timeoutId = setTimeout(() => controller.abort(), timeout);
+-   
+-   try {
+-     const response = await fetch(url, {
+-       ...options,
+-       signal: controller.signal
+-     });
+-     clearTimeout(timeoutId);
+-     return response;
+-   } catch (error) {
+-     clearTimeout(timeoutId);
+-     if (error.name === 'AbortError') {
+-       throw new Error('Превышено время ожидания');
+-     }
+-     throw error;
+-   }
+- }
+- 
+- // ========== API MODULE ==========
+- 
+- async function apiCall(endpoint, method = 'POST', data = {}) {
+-   try {
+--    console.log('API Call:', method, endpoint, data);
+--    const response = await fetch(`${API_URL}${endpoint}`, {
+--      method: method,
+-+    const response = await fetchWithTimeout(`${API_URL}${endpoint}`, {
+-+      method,
+-       headers: { 'Content-Type': 'application/json' },
+-       body: method !== 'GET' ? JSON.stringify(data) : undefined
+--    });
+-+    }, DEFAULTS.API_TIMEOUT);
+-     
+-     if (!response.ok) {
+--      const error = await response.json();
+--      throw new Error(error.error || 'API Error');
+-+      let apiError = 'API Error';
+-+      try {
+-+        const error = await response.json();
+-+        apiError = error.error || apiError;
+-+      } catch {
+-+        apiError = `HTTP ${response.status}`;
+-+      }
+-+      throw new Error(apiError);
+-     }
+--    
+-+
+-     return await response.json();
+-   } catch (error) {
+--    console.error('API Call failed:', error);
+--    showToast(`❌ ${error.message}`, 'error');
+-+    if (error.name === 'TypeError') {
+-+      showToast('❌ Ошибка сети. Проверьте интернет-соединение.', 'error');
+-+    } else {
+-+      showToast(`❌ ${error.message}`, 'error');
+-+    }
+-     throw error;
+-   }
+- }
+- 
+- async function loadDataFromAPI() {
+--  console.log('[DEBUG] Loading data from API, user_id:', APP.userId);
+--  
+-   try {
+-     const data = await apiCall('/init', 'POST', { user_id: APP.userId });
+--    
+--    APP.admin = data.admin;
+-+    if (!data || typeof data !== 'object') {
+-+      throw new Error('Некорректный ответ сервера');
+-+    }
+-+
+-+    APP.admin = Boolean(data.admin);
+-     APP.username = data.username || 'User';
+--    console.log('[DEBUG] Username loaded:', APP.username);
+--    console.log('[DEBUG] All users:', data.all_users);
+--    APP.projects = data.projects || [];
+--    APP.allProjects = data.all_projects || [];
+--    APP.allUsers = data.all_users || [];
+--    APP.userStats = data.user_stats || {};
+--    APP.adminStats = data.admin_stats || null;
+--    
+--    buildProjectsGrid();
+--    renderMyStats();
+--    if (APP.admin) renderAdminOverview();
+--    
+-+    APP.projects = Array.isArray(data.projects) ? data.projects : [];
+-+    APP.allProjects = Array.isArray(data.all_projects) ? data.all_projects : [];
+-+    APP.allUsers = Array.isArray(data.all_users) ? data.all_users : [];
+-+    APP.userStats = data.user_stats && typeof data.user_stats === 'object' ? data.user_stats : {};
+-+    APP.adminStats = data.admin_stats && typeof data.admin_stats === 'object' ? data.admin_stats : null;
+-+
+-     return true;
+-   } catch (error) {
+--    console.error('Load data failed:', error);
+-+    ErrorHandler.handle(error, 'loadDataFromAPI');
+-     return false;
+-   }
+- }
+- // ── INIT ──
+- async function init() {
+-   const params = new URLSearchParams(window.location.search);
+-   const raw = params.get('data');
+-   
+--  // Получаем минимальные данные из URL
+-   if (raw) {
+-     try {
+-       const d = JSON.parse(decodeURIComponent(raw));
+-       APP.userId = d.user_id || 0;
+-       APP.admin = !!d.admin;
+-       APP.username = d.username || 'User';
+-     } catch(e) { 
+-       console.error('Init error', e);
+-       APP.userId = 0;
+-     }
+-   }
+- 
+--  // Загружаем полные данные через API
+-+  let loaded = false;
+-   if (APP.userId) {
+--    await loadDataFromAPI();
+--  } else {
+--    // Demo data для локального тестирования
+-+    loaded = await loadDataFromAPI();
+-+  }
+-+
+-+  if (!loaded) {
+-     APP.projects = [{abbr:'DEMO',full:'Demo проект'}];
+-+    APP.allProjects = [...APP.projects];
+-+    APP.allUsers = [];
+-+    APP.userStats = {};
+-+    APP.adminStats = null;
+-   }
+- 
+-   if (APP.admin) {
+-     document.querySelectorAll('.admin-only').forEach(el => el.classList.remove('hidden'));
+-     renderAdminReports();
+-     renderAdminAssign();
+-     renderCreateReportScreen();
+-   }
+- 
+-   buildProjectsGrid();
+-   renderMyStats();
+--  renderAdminOverview();
+-+  if (APP.admin) {
+-+    renderAdminOverview();
+-+  }
+-   initHoursSlider();
+-   initAddProjectForm();
+-   initNav();
+- 
+--  // Back button (с проверкой версии)
+--  if (tg.BackButton && tg.BackButton.onClick) {
+-+  if (tg?.BackButton?.onClick) {
+-     tg.BackButton.onClick(() => goBack());
+-   }
+- 
+--  // Проверка версии и показ уведомления
+-   checkVersion();
+- }
+- 
+- // ── NAVIGATION ──
+- function nav(pageId, addToHistory = true) {
+-   const current = document.querySelector('.page.active');
+-   
+-   // Защита от повторного клика
+-   if (current && current.id === pageId && !addToHistory) {
+-     return;
+-   }
+-   if (current && addToHistory && current.id !== pageId) {
+-     APP.navHistory.push(current.id);
+-     // Ограничиваем размер истории
+-     if (APP.navHistory.length > 20) {
+-       APP.navHistory.shift();
+-     }
+-   }
+- 
+-   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+-   document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+- 
+-   const targetPage = document.getElementById(pageId);
+-   if (!targetPage) {
+-     console.error('[NAV] Page not found:', pageId);
+-     return;
+-   }
+-   targetPage.classList.add('active');
+-   const btn = document.querySelector(`[data-page="${pageId}"]`);
+-   if (btn) btn.classList.add('active');
+- 
+-   window.scrollTo(0, 0);
+- 
+-   // Back button visibility
+--  if (APP.navHistory.length > 0) tg.BackButton.show();
+--  else tg.BackButton.hide();
+-+  if (tg?.BackButton) {
+-+    if (APP.navHistory.length > 0) tg.BackButton.show();
+-+    else tg.BackButton.hide();
+-+  }
+- 
+-   Haptic.impact('light');
+- }
+- 
+- function goBack() {
+-   if (APP.navHistory.length > 0) {
+-     const prev = APP.navHistory.pop();
+-     nav(prev, false); // Не добавляем в историю при возврате назад
+-   } else {
+-     // Если истории нет — идём на главную
+-     nav('home', false);
+-   }
+- }
+- 
+- function initNav() {
+-   document.querySelectorAll('.nav-btn').forEach(btn => {
+-     btn.addEventListener('click', () => {
+-       const p = btn.dataset.page;
+-       if (p) { APP.navHistory = []; nav(p); }
+-     });
+-   });
+- }
+- 
+- // ── PROJECTS GRID ──
+- function buildProjectsGrid() {
+-   const grid = safeGetElement('projectsGrid');
+-   if (!grid) return;
+-   if (!APP.projects || APP.projects.length === 0) {
+-     grid.innerHTML = '<p style="text-align: center; color: #999;">Нет доступных проектов</p>';
+-     return;
+-   }
+-   grid.innerHTML = '';
+-   APP.projects.forEach(proj => {
+-     const card = document.createElement('div');
+-     card.className = 'proj-card';
+-+    card.dataset.projectAbbr = proj.abbr;
+-+    card.dataset.projectFull = proj.full;
+-     card.innerHTML = `<div class="proj-abbr">${escapeHtml(proj.abbr)}</div><div class="proj-name">${escapeHtml(proj.full)}</div>`;
+-     card.onclick = () => selectProject(proj, card);
+-     grid.appendChild(card);
+-   });
+- }
+- 
+- function selectProject(proj, card) {
+--  if (APP.reportItems.find(i => i.project === proj.full)) return;
+-+  if (APP.reportItems.find(i => i.abbr === proj.abbr)) return;
+- 
+-   document.querySelectorAll('.proj-card').forEach(c => c.classList.remove('selected'));
+-   card.classList.add('selected');
+-   APP.selectedProject = proj;
+- 
+-   // Сбрасываем часы только для первого проекта, для последующих сохраняем последнее значение
+-   if (APP.reportItems.length === 0) {
+--    APP.currentHours = 4;
+--    safeGetElement('hoursRange').value = 4;
+--    safeGetElement('hoursDisplay').value = 4;
+--    updateQuickBtns(4);
+-+    APP.currentHours = DEFAULTS.HOURS;
+-+    const rangeEl = safeGetElement('hoursRange');
+-+    const displayEl = safeGetElement('hoursDisplay');
+-+    if (rangeEl) rangeEl.value = DEFAULTS.HOURS;
+-+    if (displayEl) displayEl.value = DEFAULTS.HOURS;
+-+    updateQuickBtns(DEFAULTS.HOURS);
+-   } else {
+--    safeGetElement('hoursDisplay').value = APP.currentHours;
+--    safeGetElement('hoursRange').value = APP.currentHours;
+-+    const displayEl = safeGetElement('hoursDisplay');
+-+    const rangeEl = safeGetElement('hoursRange');
+-+    if (displayEl) displayEl.value = APP.currentHours;
+-+    if (rangeEl) rangeEl.value = APP.currentHours;
+-     updateQuickBtns(APP.currentHours);
+-   }
+- 
+-   safeGetElement('projError').classList.remove('show');
+-   safeGetElement('selectedProjectsWrap').classList.remove('hidden');
+--  safeGetElement('hoursWrap').style.display = 'block';
+-+  safeGetElement('hoursWrap')?.classList.remove('hidden');
+-   safeGetElement('hoursLabel').textContent = `⏱️ Часов для «${proj.full}»`;
+-   updateSummary();
+- 
+-   Haptic.impact('light');
+- 
+-   // Скроллим к слайдеру
+-   setTimeout(() => safeGetElement('hoursWrap').scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 100);
+- }
+- 
+- function addCurrentProject() {
+-   if (!APP.selectedProject) return;
+-   APP.reportItems.push({ project: APP.selectedProject.full, abbr: APP.selectedProject.abbr, hours: APP.currentHours, comment: '' });
+-   APP.selectedProject = null;
+- 
+-   // Снимаем выделение, разблокируем все карточки для следующего выбора
+-   document.querySelectorAll('.proj-card').forEach(c => {
+-     c.classList.remove('selected');
+-     // Серым отмечаем уже добавленные
+--    const alreadyAdded = APP.reportItems.find(i => i.abbr === c.querySelector('.proj-abbr').textContent);
+-+    const alreadyAdded = APP.reportItems.find(i => i.abbr === c.dataset.projectAbbr);
+-     c.style.opacity = alreadyAdded ? '0.4' : '1';
+-     c.style.pointerEvents = alreadyAdded ? 'none' : 'auto';
+-   });
+- 
+-   renderSelectedList();
+-   updateSummary();
+- 
+-   // Прячем слайдер, но оставляем грид — пользователь может выбрать ещё
+--  safeGetElement('hoursWrap').style.display = 'none';
+-+  safeGetElement('hoursWrap')?.classList.add('hidden');
+-   safeGetElement('hoursLabel').textContent = '⏱️ Часов для выбранного проекта';
+- 
+-   // Показываем кнопки действий
+-   safeGetElement('commentWrap').classList.remove('hidden');
+-   safeGetElement('submitBtn').classList.remove('hidden');
+-   updateTotalHours();
+- 
+-   showToast(`➕ ${APP.reportItems[APP.reportItems.length-1].project} добавлен`, 'info');
+- }
+- 
+- function removeItem(idx) {
+-   const removed = APP.reportItems[idx];
+-   APP.reportItems.splice(idx, 1);
+- 
+-   // Восстанавливаем карточку проекта
+-   document.querySelectorAll('.proj-card').forEach(c => {
+--    if (c.querySelector('.proj-abbr').textContent === removed.abbr) {
+-+    if (c.dataset.projectAbbr === removed.abbr) {
+-       c.style.opacity = '1';
+-       c.style.pointerEvents = 'auto';
+-     }
+-   });
+- 
+-   renderSelectedList();
+-   updateSummary();
+-   if (!APP.reportItems.length && !APP.selectedProject) {
+-     safeGetElement('commentWrap').classList.add('hidden');
+-     safeGetElement('submitBtn').classList.add('hidden');
+-     safeGetElement('summary').classList.add('hidden');
+-   }
+- }
+- 
+- function renderSelectedList() {
+-   const list = safeGetElement('selectedProjectsList');
+-+  if (!list) return;
+-+
+-   list.innerHTML = '';
+-   APP.reportItems.forEach((item, idx) => {
+-     const el = document.createElement('div');
+-     el.style.cssText = 'background:var(--bg2);border-radius:12px;padding:12px 14px;margin-bottom:10px;box-shadow:var(--shadow)';
+--    el.innerHTML = `
+--      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+--        <span style="font-weight:600;font-size:14px;flex:1;margin-right:8px">${item.abbr} — ${item.project}</span>
+--        <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
+--          <span style="font-weight:700;color:var(--accent);font-size:15px">${item.hours} ч</span>
+--          <button onclick="removeItem(${idx})" style="background:none;border:none;color:var(--danger);font-size:18px;cursor:pointer;padding:0;line-height:1">✕</button>
+--        </div>
+--      </div>
+--      <input type="text"
+--        placeholder="Комментарий к ${item.project} (необязательно)"
+--        value="${(item.comment || '').replace(/"/g, '&quot;')}"
+--        oninput="APP.reportItems[${idx}].comment = this.value; updateSummary()"
+--        style="width:100%;padding:8px 10px;border:1.5px solid var(--border);border-radius:8px;font:14px 'Golos Text',sans-serif;background:var(--bg);color:var(--text);box-sizing:border-box;outline:none"
+--        onfocus="this.style.borderColor='var(--accent)'"
+--        onblur="this.style.borderColor='var(--border)'"
+--      >
+--    `;
+-+
+-+    const row = document.createElement('div');
+-+    row.style.cssText = 'display:flex;justify-content:space-between;align-items:center;margin-bottom:8px';
+-+
+-+    const title = document.createElement('span');
+-+    title.style.cssText = 'font-weight:600;font-size:14px;flex:1;margin-right:8px';
+-+    title.textContent = `${item.abbr} — ${item.project}`;
+-+
+-+    const right = document.createElement('div');
+-+    right.style.cssText = 'display:flex;align-items:center;gap:8px;flex-shrink:0';
+-+
+-+    const hours = document.createElement('span');
+-+    hours.style.cssText = 'font-weight:700;color:var(--accent);font-size:15px';
+-+    hours.textContent = `${item.hours} ч`;
+-+
+-+    const removeBtn = document.createElement('button');
+-+    removeBtn.type = 'button';
+-+    removeBtn.style.cssText = 'background:none;border:none;color:var(--danger);font-size:18px;cursor:pointer;padding:0;line-height:1';
+-+    removeBtn.textContent = '✕';
+-+    removeBtn.addEventListener('click', () => removeItem(idx));
+-+
+-+    right.append(hours, removeBtn);
+-+    row.append(title, right);
+-+
+-+    const input = document.createElement('input');
+-+    input.type = 'text';
+-+    input.placeholder = `Комментарий к ${item.project} (необязательно)`;
+-+    input.value = item.comment || '';
+-+    input.style.cssText = "width:100%;padding:8px 10px;border:1.5px solid var(--border);border-radius:8px;font:14px 'Golos Text',sans-serif;background:var(--bg);color:var(--text);box-sizing:border-box;outline:none";
+-+    input.addEventListener('input', (event) => {
+-+      APP.reportItems[idx].comment = event.target.value;
+-+      updateSummary();
+-+    });
+-+    input.addEventListener('focus', () => { input.style.borderColor = 'var(--accent)'; });
+-+    input.addEventListener('blur', () => { input.style.borderColor = 'var(--border)'; });
+-+
+-+    el.append(row, input);
+-     list.appendChild(el);
+-   });
+-+
+-   updateTotalHours();
+- }
+- 
+- function updateTotalHours() {
+-   const total = APP.reportItems.reduce((s, i) => s + i.hours, 0) + (APP.selectedProject ? APP.currentHours : 0);
+-   safeGetElement('totalHoursDisplay').textContent = total;
+- }
+- 
+- function updateSummary() {
+-   const s = safeGetElement('summary');
+--  const rows = document.getElementById('summaryRows');
+-+  const rows = safeGetElement('summaryRows');
+-   const allItems = [...APP.reportItems];
+-   if (APP.selectedProject) allItems.push({ project: APP.selectedProject.full, hours: APP.currentHours });
+-+  if (!s || !rows) return;
+-   if (!allItems.length) { s.classList.add('hidden'); return; }
+- 
+-   s.classList.remove('hidden');
+-   const total = allItems.reduce((s, i) => s + i.hours, 0);
+-   rows.innerHTML = allItems.map(i => `
+-     <div class="summary-row">
+-       <span class="summary-key">${i.project}</span>
+-       <span class="summary-val">${i.hours} ч${i.comment ? ' · ' + i.comment : ''}</span>
+-     </div>`).join('')
+-     + `<div class="summary-row"><span class="summary-key" style="font-weight:700">Итого</span><span class="summary-val" style="color:var(--accent);font-weight:700">${total} ч</span></div>`;
+- 
+-   safeGetElement('commentWrap').classList.remove('hidden');
+-   safeGetElement('submitBtn').classList.remove('hidden');
+- }
+- 
+- // ── HOURS SLIDER ──
+- function initHoursSlider() {
+-   const range = safeGetElement('hoursRange');
+-+  if (!range) return;
+-+
+-   range.addEventListener('input', e => {
+-     APP.currentHours = parseFloat(e.target.value);
+-     safeGetElement('hoursDisplay').value = APP.currentHours;
+-     updateQuickBtns(APP.currentHours);
+-     updateSummary(); updateTotalHours();
+-   });
+-   document.querySelectorAll('.quick-btn').forEach(btn => {
+-     btn.addEventListener('click', () => {
+-       APP.currentHours = parseFloat(btn.dataset.h);
+-       range.value = APP.currentHours;
+-       safeGetElement('hoursDisplay').value = APP.currentHours;
+-       updateQuickBtns(APP.currentHours);
+-       updateSummary(); updateTotalHours();
+-       Haptic.impact('light');
+-     });
+-   });
+--  updateQuickBtns(4);
+-+  updateQuickBtns(DEFAULTS.HOURS);
+- }
+- 
+- function updateQuickBtns(val) {
+-   document.querySelectorAll('.quick-btn').forEach(b => {
+-     b.classList.toggle('active', parseFloat(b.dataset.h) === val);
+-   });
+- }
+- 
+- 
+- 
+- function updateHoursFromInput() {
+--  let val = parseFloat(safeGetElement('hoursDisplay').value);
+--  if (isNaN(val)) val = 0.25;
+--  if (val < 0.25) val = 0.25;
+--  if (val > 12) val = 12;
+-+  const displayEl = safeGetElement('hoursDisplay');
+-+  const rangeEl = safeGetElement('hoursRange');
+-+  if (!displayEl || !rangeEl) return;
+-+
+-+  let val = parseFloat(displayEl.value);
+-+  if (isNaN(val)) val = DEFAULTS.MIN_HOURS;
+-+  if (val < DEFAULTS.MIN_HOURS) val = DEFAULTS.MIN_HOURS;
+-+  if (val > DEFAULTS.MAX_HOURS) val = DEFAULTS.MAX_HOURS;
+-   
+-   // Округляем до ближайшего 0.25
+-   val = Math.round(val * 4) / 4;
+-   
+-   APP.currentHours = val;
+--  safeGetElement('hoursDisplay').value = val;
+--  safeGetElement('hoursRange').value = val;
+-+  displayEl.value = val;
+-+  rangeEl.value = val;
+-   updateQuickBtns(val);
+-   updateSummary();
+-   updateTotalHours();
+- }
+- 
+- // ── CONFIRM DIALOG ──
+- function showConfirm(message, onConfirm) {
+-   // Удаляем старый если есть
+-   const old = safeGetElement('confirmDialog');
+-   if (old) old.remove();
+-   
+-   const dialog = document.createElement('div');
+-   dialog.id = 'confirmDialog';
+-   dialog.style.cssText = `
+-     position:fixed; inset:0; background:rgba(0,0,0,.5);
+-     display:flex; align-items:center; justify-content:center;
+-     z-index:10000; padding:16px;
+-   `;
+-   dialog.innerHTML = `
+-     <div style="background:var(--bg2);border-radius:16px;padding:20px;max-width:320px;width:100%;box-shadow:0 8px 32px rgba(0,0,0,.2)">
+-       <div style="font-weight:600;font-size:16px;margin-bottom:8px">Подтверждение</div>
+-       <div style="color:var(--hint);font-size:14px;margin-bottom:20px">${message}</div>
+-       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+-         <button onclick="safeGetElement('confirmDialog').remove()" 
+-           style="padding:12px;border:1.5px solid var(--border);border-radius:10px;background:transparent;color:var(--text);font:600 14px inherit;cursor:pointer">
+-@@ -1451,160 +1483,158 @@ function showConfirm(message, onConfirm) {
+-       </div>
+-     </div>
+-   `;
+-   document.body.appendChild(dialog);
+-   safeGetElement('confirmOkBtn').onclick = () => {
+-     dialog.remove();
+-     onConfirm();
+-   };
+- }
+- 
+- // ── TOAST ──
+- function showToast(msg, type = 'success') {
+-   const existing = safeGetElement('toast');
+-   if (existing) existing.remove();
+-   const toast = document.createElement('div');
+-   toast.id = 'toast';
+-   toast.style.cssText = `position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:${type==='success'?'#22c55e':type==='error'?'#ef4444':'var(--accent)'};color:#fff;padding:12px 20px;border-radius:12px;font-size:14px;font-weight:600;z-index:9999;box-shadow:0 4px 12px rgba(0,0,0,.2);max-width:80vw;text-align:center;`;
+-   toast.textContent = msg;
+-   document.body.appendChild(toast);
+-   setTimeout(() => toast.remove(), 2500);
+- }
+- 
+- // ── SUBMIT REPORT ──
+- async function submitReport() {
+-   await SubmitGuard.execute(async () => {
+--  if (APP.selectedProject) {
+--    APP.reportItems.push({ project: APP.selectedProject.full, abbr: APP.selectedProject.abbr, hours: APP.currentHours });
+--    APP.selectedProject = null;
+--  }
+--  if (!APP.reportItems.length) {
+--    safeGetElement('projError').classList.add('show');
+--    if (tg.HapticFeedback && tg.HapticFeedback.impactOccurred) tg.HapticFeedback.notificationOccurred('error');
+--    return;
+--  }
+--
+--  const generalComment = safeGetElement('comment').value || '';
+--  )),
+--    comments: generalComment || '-'
+--  };
+--
+--  // Добавляем pending actions если есть
+--  
+--  try {
+--    // Отправляем через API
+--    await apiCall('/report', 'POST', {
+--      user_id: APP.userId,
+--      username: APP.username,
+--      projects: APP.reportItems.map(i => ({ 
+--        project: i.project, 
+--        hours: i.hours,
+--        comment: i.comment || ''
+--      })),
+--      comments: generalComment || '-'
+--    });
+--
+--  // Сбрасываем форму БЕЗ закрытия
+--  APP.reportItems = [];
+--  APP.selectedProject = null;
+--  document.querySelectorAll('.proj-card').forEach(c => c.classList.remove('selected'));
+--  safeGetElement('selectedProjectsWrap').classList.add('hidden');
+--  safeGetElement('commentWrap').classList.add('hidden');
+--  safeGetElement('summary').classList.add('hidden');
+--  safeGetElement('comment').value = '';
+--  safeGetElement('selectedProjectsList').innerHTML = '';
+--  safeGetElement('submitBtn').classList.add('hidden');
+--
+--  // Обновляем локальную статистику сразу (не ждём перезапуска /start)
+--  data.projects.forEach(item => {
+--    APP.userStats = APP.userStats || { total_hours: 0, total_reports: 0, by_project: {} };
+--    APP.userStats.total_hours = (APP.userStats.total_hours || 0) + item.hours;
+--    APP.userStats.total_reports = (APP.userStats.total_reports || 0) + 1;
+--    APP.userStats.by_project = APP.userStats.by_project || {};
+--    APP.userStats.by_project[item.project] = (APP.userStats.by_project[item.project] || 0) + item.hours;
+--  });
+--  renderMyStats();
+-+    if (APP.selectedProject) {
+-+      APP.reportItems.push({
+-+        project: APP.selectedProject.full,
+-+        abbr: APP.selectedProject.abbr,
+-+        hours: APP.currentHours,
+-+        comment: ''
+-+      });
+-+      APP.selectedProject = null;
+-+    }
+- 
+--    showToast('✅ Отчёт сохранён!');
+--    if (tg.HapticFeedback && tg.HapticFeedback.impactOccurred) tg.HapticFeedback.notificationOccurred('success');
+-+    if (!APP.reportItems.length) {
+-+      safeGetElement('projError')?.classList.add('show');
+-+      if (tg?.HapticFeedback?.notificationOccurred) tg.HapticFeedback.notificationOccurred('error');
+-+      return;
+-+    }
+- 
+--    // Обновляем статистику
+--    await loadDataFromAPI();
+-+    const generalComment = safeGetElement('comment')?.value || '';
+- 
+--    setTimeout(() => nav('home'), 1500);
+--  } catch (error) {
+--    console.error('Submit report failed:', error);
+--  }
+-+    try {
+-+      await apiCall('/report', 'POST', {
+-+        user_id: APP.userId,
+-+        username: APP.username,
+-+        projects: APP.reportItems.map(i => ({
+-+          project: i.project,
+-+          hours: i.hours,
+-+          comment: i.comment || ''
+-+        })),
+-+        comments: generalComment || '-'
+-+      });
+-+
+-+      APP.reportItems = [];
+-+      APP.selectedProject = null;
+-+      document.querySelectorAll('.proj-card').forEach(c => {
+-+        c.classList.remove('selected');
+-+        c.style.opacity = '1';
+-+        c.style.pointerEvents = 'auto';
+-+      });
+-+
+-+      safeGetElement('selectedProjectsWrap')?.classList.add('hidden');
+-+      safeGetElement('commentWrap')?.classList.add('hidden');
+-+      safeGetElement('summary')?.classList.add('hidden');
+-+      if (safeGetElement('comment')) safeGetElement('comment').value = '';
+-+      if (safeGetElement('selectedProjectsList')) safeGetElement('selectedProjectsList').innerHTML = '';
+-+      safeGetElement('submitBtn')?.classList.add('hidden');
+-+      safeGetElement('hoursWrap')?.classList.add('hidden');
+-+
+-+      updateTotalHours();
+-+      renderMyStats();
+-+
+-+      showToast('✅ Отчёт сохранён!');
+-+      if (tg?.HapticFeedback?.notificationOccurred) tg.HapticFeedback.notificationOccurred('success');
+-+
+-+      await loadDataFromAPI();
+-+      setTimeout(() => nav('home'), 1500);
+-+    } catch (error) {
+-+      console.error('Submit report failed:', error);
+-+    }
+-   });
+- }
+- 
+- // ── ADD PROJECT FORM ──
+- function initAddProjectForm() {
+-   safeGetElement('modalNewAbbr').addEventListener('input', e => {
+-     e.target.value = e.target.value.toUpperCase();
+-     updateProjPreview();
+-   });
+-   safeGetElement('modalNewFull').addEventListener('input', updateProjPreview);
+- }
+- 
+- function updateProjPreview() {
+-   const a = safeGetElement('modalNewAbbr').value.trim();
+-   const f = safeGetElement('modalNewFull').value.trim();
+-   const preview = safeGetElement('modalProjPreview');
+-   if (a || f) {
+-     preview.style.display = 'block';
+-     safeGetElement('modalPreviewAbbr').textContent = a || 'АБВ';
+-     safeGetElement('modalPreviewFull').textContent = f || 'Название';
+-   } else {
+-     preview.style.display = 'none';
+-   }
+- }
+- 
+- async function submitAddProject() {
+-   const abbr = safeGetElement('modalNewAbbr').value.trim().toUpperCase();
+-   const full = safeGetElement('modalNewFull').value.trim();
+-   let ok = true;
+- 
+-   if (abbr.length < 2) {
+-     safeGetElement('modalAbbrErr').textContent = 'Минимум 2 символа';
+-     safeGetElement('modalAbbrErr').classList.add('show'); ok = false;
+-   } else safeGetElement('modalAbbrErr').classList.remove('show');
+- 
+-   if (full.length < 3) {
+-     safeGetElement('modalFullErr').textContent = 'Минимум 3 символа';
+-     safeGetElement('modalFullErr').classList.add('show'); ok = false;
+-   } else safeGetElement('modalFullErr').classList.remove('show');
+- 
+-   if (APP.allProjects.find(p => p.abbr === abbr)) {
+-     safeGetElement('modalAbbrErr').textContent = 'Аббревиатура уже используется';
+-     safeGetElement('modalAbbrErr').classList.add('show'); ok = false;
+-   }
+- 
+--  if (!ok) { if (tg.HapticFeedback && tg.HapticFeedback.impactOccurred) tg.HapticFeedback.notificationOccurred('error'); return; }
+-+  if (!ok) { if (tg?.HapticFeedback?.notificationOccurred) tg.HapticFeedback.notificationOccurred('error'); return; }
+- 
+-   // Отправляем боту БЕЗ закрытия (sendData не закрывает если не вызван tg.close)
+--  tg.sendData(JSON.stringify({ type: 'add_project', abbr, full }));
+-+  if (tg?.sendData) {
+-+    tg.sendData(JSON.stringify({ type: 'add_project', abbr, full }));
+-+  }
+- 
+-   // Добавляем локально сразу
+-   const newProj = { abbr, full };
+-   APP.allProjects.push(newProj);
+-   APP.projects.push(newProj);
+- 
+-   // Сбрасываем форму
+-   safeGetElement('modalNewAbbr').value = '';
+-   safeGetElement('modalNewFull').value = '';
+-   safeGetElement('projPreview').style.display = 'none';
+-   safeGetElement('modalAbbrErr').classList.remove('show');
+-   safeGetElement('modalFullErr').classList.remove('show');
+- 
+-   // Обновляем UI
+-   buildProjectsGrid();
+-   renderAdminManage();
+- 
+-   showToast(`✅ Проект ${abbr} добавлен!`);
+-   if (tg.HapticFeedback && tg.HapticFeedback.impactOccurred) tg.HapticFeedback.notificationOccurred('success');
+- 
+-   // Закрываем модальное окно
+-   closeModal();
+- }
+- 
+- // ── MY STATS ──
+-@@ -2037,99 +2067,105 @@ function editReport(report) {
+-         </select>
+-       </div>
+-       
+-       <div style="margin-bottom: 15px;">
+-         <label style="display: block; margin-bottom: 5px; font-weight: 500;">Часы:</label>
+-         <input type="number" id="editHours" value="${report.hours}" step="0.25" min="0" max="24" style="width: 100%; padding: 10px; border: 1px solid #e0e0e0; border-radius: 8px;">
+-       </div>
+-       
+-       <div style="margin-bottom: 15px;">
+-         <label style="display: block; margin-bottom: 5px; font-weight: 500;">Дата:</label>
+-         <input type="date" id="editDate" value="${report.date}" style="width: 100%; padding: 10px; border: 1px solid #e0e0e0; border-radius: 8px;">
+-       </div>
+-       
+-       <div style="margin-bottom: 20px;">
+-         <label style="display: block; margin-bottom: 5px; font-weight: 500;">Комментарий:</label>
+-         <textarea id="editComments" style="width: 100%; padding: 10px; border: 1px solid #e0e0e0; border-radius: 8px; min-height: 60px;">${report.comments || ''}</textarea>
+-       </div>
+-       
+-       <div style="display: flex; gap: 10px;">
+-         <button onclick="saveReportEdit()" style="flex: 1; padding: 12px; background: var(--primary); color: white; border: none; border-radius: 8px; font-weight: 500; cursor: pointer;">💾 Сохранить</button>
+-         <button onclick="closeEditModal()" style="flex: 1; padding: 12px; background: #ccc; color: #333; border: none; border-radius: 8px; font-weight: 500; cursor: pointer;">✖ Отмена</button>
+-       </div>
+-     </div>
+-   `;
+-   
+--  document.body.appendChild(modal);
+-+  ModalManager.create('editModal', modalContent);
+-   Haptic.impact('medium');
+- }
+- 
+- async function saveReportEdit() {
+-   const report = APP.editingReport;
+--  const project = safeGetElement('modalEditProject').value;
+--  const hours = parseFloat(safeGetElement('modalEditHours').value);
+--  const date = document.getElementById('modalEditDate').value;
+--  const comments = safeGetElement('modalEditComments').value;
+-+  const projectEl = safeGetElement('modalEditProject');
+-+  const hoursEl = safeGetElement('modalEditHours');
+-+  const dateEl = safeGetElement('modalEditDate');
+-+  const commentsEl = safeGetElement('modalEditComments');
+-+  if (!projectEl || !hoursEl || !dateEl || !commentsEl) return;
+-+
+-+  const project = projectEl.value;
+-+  const hours = parseFloat(hoursEl.value);
+-+  const date = dateEl.value;
+-+  const comments = commentsEl.value;
+-   
+-   if (hours <= 0 || hours > 24) {
+-     showToast('⚠️ Часы должны быть от 0.25 до 24', 'error');
+-     return;
+-   }
+-   
+-   try {
+-     await apiCall(`/report/${report.id}`, 'PUT', {
+-       admin_id: APP.userId,
+-       project: project,
+-       hours: hours,
+-       date: date,
+-       comments: comments
+-     });
+-     
+-     showToast('✅ Отчёт обновлён!', 'success');
+-     closeEditModal();
+-     loadReportsTable();
+-     await loadDataFromAPI(); // Обновляем статистику
+-   } catch (error) {
+-     console.error('Save edit failed:', error);
+-   }
+- }
+- 
+- function closeEditModal() {
+-   ModalManager.close();
+-   APP.editingReport = null;
+- }
+- 
+- async function deleteReport(id, username, project) {
+-   const displayName = username || 'Unknown';
+-   if (!confirm(`Удалить отчёт?
+- ${displayName} — ${project}`)) return;
+-   
+-   try {
+-     await apiCall(`/report/${id}`, 'DELETE', { admin_id: APP.userId });
+-     
+-     showToast('🗑️ Отчёт удалён', 'info');
+--    if (tg.HapticFeedback && tg.HapticFeedback.impactOccurred) tg.HapticFeedback.notificationOccurred('success');
+-+    if (tg?.HapticFeedback?.notificationOccurred) tg.HapticFeedback.notificationOccurred('success');
+-     
+-     loadReportsTable();
+-     await loadDataFromAPI(); // Обновляем статистику
+-   } catch (error) {
+-     console.error('Delete failed:', error);
+-   }
+- }
+- 
+- function clearFilters() {
+-   safeGetElement('filterUser').value = '';
+-   safeGetElement('filterProject').value = '';
+-   safeGetElement('filterDate').value = '';
+-   safeGetElement('reportsTableWrap').innerHTML = '<p style="padding: 20px; text-align: center; color: #999;">Выберите фильтры и нажмите 🔍 Фильтр</p>';
+- }
+- 
+- function renderAdminReports() {
+-   // Заполняем фильтры пользователями
+-   const userSelect = safeGetElement('filterUser');
+-   if (!userSelect) return;
+-   
+-   userSelect.innerHTML = '<option value="">Все сотрудники</option>';
+-   if (APP.allUsers) {
+-     APP.allUsers.forEach(u => {
+-       userSelect.innerHTML += `<option value="${escapeHtml(u.id)}">${escapeHtml(u.username)}</option>`;
+-     });
+-@@ -2274,51 +2310,51 @@ async function submitAdminReport() {
+-   if (!date) {
+-     showToast('⚠️ Укажите дату', 'error');
+-     return;
+-   }
+-   
+-   if (APP.adminReportProjects.length === 0) {
+-     showToast('⚠️ Добавьте хотя бы один проект', 'error');
+-     return;
+-   }
+-   
+-   try {
+-     await apiCall('/report', 'POST', {
+-       user_id: APP.userId,  // Админ который создаёт
+-       on_behalf_of_user_id: parseInt(userId, 10),  // За кого создаём
+-       on_behalf_of_username: username,
+-       custom_date: date,
+-       projects: APP.adminReportProjects.map(p => ({
+-         project: p.project,
+-         hours: p.hours,
+-         comment: p.comment || ''
+-       })),
+-       comments: generalComment || '-'
+-     });
+-     
+-     showToast(`✅ Отчёт создан для ${username}`, 'success');
+--    if (tg.HapticFeedback && tg.HapticFeedback.impactOccurred) tg.HapticFeedback.notificationOccurred('success');
+-+    if (tg?.HapticFeedback?.notificationOccurred) tg.HapticFeedback.notificationOccurred('success');
+-     
+-     // Очищаем форму
+-     APP.adminReportProjects = [];
+-     renderAdminReportProjects();
+-     safeGetElement('createForUser').value = '';
+-     safeGetElement('createReportComment').value = '';
+-     
+-     // Обновляем данные
+-     await loadDataFromAPI();
+-     
+-   } catch (error) {
+-     console.error('Create report failed:', error);
+-   }
+- }
+- 
+- 
+- 
+- // ══════════════════════════════════════════════════════
+- // ADMIN REPORTS MANAGEMENT
+- // ══════════════════════════════════════════════════════
+- 
+- async function loadReportsTable() {
+-   const user = safeGetElement('filterUser').value;
+-   const project = safeGetElement('filterProject').value;
+-   const date = safeGetElement('filterDate').value;
+-@@ -2363,60 +2399,66 @@ function editReport(report) {
+-         </select>
+-       </div>
+-       
+-       <div style="margin-bottom: 15px;">
+-         <label style="display: block; margin-bottom: 5px; font-weight: 500;">Часы:</label>
+-         <input type="number" id="modalEditHours" value="${report.hours}" step="0.25" min="0" max="24" style="width: 100%; padding: 10px; border: 1px solid #e0e0e0; border-radius: 8px;">
+-       </div>
+-       
+-       <div style="margin-bottom: 15px;">
+-         <label style="display: block; margin-bottom: 5px; font-weight: 500;">Дата:</label>
+-         <input type="date" id="modalEditDate" value="${report.date}" style="width: 100%; padding: 10px; border: 1px solid #e0e0e0; border-radius: 8px;">
+-       </div>
+-       
+-       <div style="margin-bottom: 20px;">
+-         <label style="display: block; margin-bottom: 5px; font-weight: 500;">Комментарий:</label>
+-         <textarea id="modalEditComments" style="width: 100%; padding: 10px; border: 1px solid #e0e0e0; border-radius: 8px; min-height: 60px;">${report.comments || ''}</textarea>
+-       </div>
+-       
+-       <div style="display: flex; gap: 10px;">
+-         <button onclick="saveReportEdit()" style="flex: 1; padding: 12px; background: var(--primary); color: white; border: none; border-radius: 8px; font-weight: 500; cursor: pointer;">💾 Сохранить</button>
+-         <button onclick="closeEditModal()" style="flex: 1; padding: 12px; background: #ccc; color: #333; border: none; border-radius: 8px; font-weight: 500; cursor: pointer;">✖ Отмена</button>
+-       </div>
+-     </div>
+-   `;
+-   
+--  document.body.appendChild(modal);
+-+  ModalManager.create('editModal', modalContent);
+-   Haptic.impact('medium');
+- }
+- 
+- async function saveReportEdit() {
+-   const report = APP.editingReport;
+--  const project = safeGetElement('editProject').value;
+--  const hours = parseFloat(safeGetElement('editHours').value);
+--  const date = safeGetElement('editDate').value;
+--  const comments = safeGetElement('editComments').value;
+-+  const projectEl = safeGetElement('modalEditProject');
+-+  const hoursEl = safeGetElement('modalEditHours');
+-+  const dateEl = safeGetElement('modalEditDate');
+-+  const commentsEl = safeGetElement('modalEditComments');
+-+  if (!projectEl || !hoursEl || !dateEl || !commentsEl) return;
+-+
+-+  const project = projectEl.value;
+-+  const hours = parseFloat(hoursEl.value);
+-+  const date = dateEl.value;
+-+  const comments = commentsEl.value;
+-   
+-   if (hours <= 0 || hours > 24) {
+-     showToast('⚠️ Часы должны быть от 0.25 до 24', 'error');
+-     return;
+-   }
+-   
+-   try {
+-     await apiCall(`/report/${report.id}`, 'PUT', {
+-       admin_id: APP.userId,
+-       project: project,
+-       hours: hours,
+-       date: date,
+-       comments: comments
+-     });
+-     
+-     showToast('✅ Отчёт обновлён!', 'success');
+-     closeEditModal();
+-     loadReportsTable();
+-     await loadDataFromAPI();
+-   } catch (error) {
+-     console.error('Save edit failed:', error);
+-   }
+- }
+- 
+- function closeEditModal() {
+-@@ -2532,52 +2574,54 @@ async function submitAssign() {
+-   
+-   if (abbrs.length === 0) {
+-     showToast('⚠️ Выберите хотя бы один проект', 'error');
+-     return;
+-   }
+-   
+-   try {
+-     await apiCall('/assign', 'POST', {
+-       admin_id: APP.userId,
+-       user_id: parseInt(userId, 10),
+-       abbrs: abbrs
+-     });
+-     
+-     showToast('✅ Проекты назначены!', 'success');
+-     Haptic.notification('success');
+-     
+-     nav('admin-panel');
+-   } catch (error) {
+-     console.error('Assign failed:', error);
+-   }
+- }
+- 
+- 
+- 
+- function filterProjects() {
+--  const search = document.getElementById('projectSearch').value.toLowerCase();
+--  const grid = document.getElementById('projectsGrid');
+-+  const searchInput = safeGetElement('projectSearch');
+-+  const grid = safeGetElement('projectsGrid');
+-+  if (!searchInput || !grid) return;
+-+  const search = searchInput.value.toLowerCase();
+-   const cards = grid.querySelectorAll('.proj-card');
+-   
+-   cards.forEach(card => {
+-     const text = card.textContent.toLowerCase();
+-     card.style.display = text.includes(search) ? '' : 'none';
+-   });
+- }
+- 
+- 
+- 
+- // Проверка синхронизации
+- function syncProjectState() {
+-   // Убираем selectedProject из reportItems если он там есть
+-   if (APP.selectedProject) {
+-     const exists = APP.reportItems.find(item => 
+-       item.abbr === APP.selectedProject.abbr
+-     );
+-     if (exists) {
+-       console.warn('[SYNC] selectedProject already in reportItems');
+-       APP.selectedProject = null;
+-     }
+-   }
+- }
+- 
+- 
+- 
+-EOF
+-)
++<!DOCTYPE html>
++<html lang="ru">
++<head>
++<meta charset="UTF-8">
++<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
++<title>Учёт времени</title>
++<script src="https://telegram.org/js/telegram-web-app.js?56"></script>
++<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
++<style>
++@import url('https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&display=swap');
++
++:root {
++  --accent: var(--tg-theme-button-color, #2563eb);
 +  --primary: var(--accent);
-+  --accent-light: rgba(37, 99, 235, 0.12);
-   --accent-light: color-mix(in srgb, var(--accent) 12%, transparent);
-   --bg: var(--tg-theme-bg-color, #f8fafc);
-   --bg2: var(--tg-theme-secondary-bg-color, #ffffff);
-   --text: var(--tg-theme-text-color, #0f172a);
-   --hint: var(--tg-theme-hint-color, #94a3b8);
-   --border: color-mix(in srgb, var(--hint) 25%, transparent);
-   --danger: #ef4444;
-   --success: #22c55e;
-   --radius: 14px;
-   --shadow: 0 1px 3px rgba(0,0,0,0.08);
- }
- 
- * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
- 
- body {
-   font-family: 'Golos Text', system-ui, sans-serif;
-   background: var(--bg);
-   color: var(--text);
-   min-height: 100vh;
-   padding-bottom: 24px;
- }
- 
- /* NAV */
- .nav {
-   position: sticky; top: 0; z-index: 100;
-@@ -156,66 +158,50 @@ body {
- .hours-box {
-   background: var(--bg2);
-   border-radius: var(--radius);
-   padding: 16px;
-   margin-bottom: 14px;
-   display: flex; align-items: center; justify-content: space-between;
-   box-shadow: var(--shadow);
- }
- .hours-big { font-size: 40px; font-weight: 700; color: var(--accent); line-height: 1; }
- .hours-big-input {
-   font-size: 40px; font-weight: 700; color: var(--accent);
-   line-height: 1; width: 80px; text-align: center;
-   border: none; background: transparent; outline: none;
-   font-family: inherit; padding: 0;
-   -moz-appearance: textfield;
- }
- .hours-big-input::-webkit-outer-spin-button,
- .hours-big-input::-webkit-inner-spin-button {
-   -webkit-appearance: none; margin: 0;
- }
- .hours-big-input:focus {
-   background: var(--accent-light);
-   border-radius: 8px;
-   padding: 4px 8px;
- }
--.hours-big-input {
--  font-size: 40px; font-weight: 700; color: var(--accent);
--  line-height: 1; width: 80px; text-align: center;
--  border: none; background: transparent; outline: none;
--  font-family: inherit; padding: 0;
--  -moz-appearance: textfield;
--}
--.hours-big-input::-webkit-outer-spin-button,
--.hours-big-input::-webkit-inner-spin-button {
--  -webkit-appearance: none; margin: 0;
--}
--.hours-big-input:focus {
--  background: var(--accent-light);
--  border-radius: 8px;
--  padding: 4px 8px;
--}
- .hours-unit { font-size: 14px; color: var(--hint); margin-top: 4px; }
- 
- input[type="range"] {
-   width: 100%; height: 6px;
-   border-radius: 3px;
-   background: var(--border);
-   outline: none;
-   -webkit-appearance: none;
-   padding: 0; margin-bottom: 12px;
- }
- input[type="range"]::-webkit-slider-thumb {
-   -webkit-appearance: none;
-   width: 26px; height: 26px;
-   border-radius: 50%;
-   background: var(--accent);
-   cursor: pointer;
-   box-shadow: 0 2px 8px rgba(0,0,0,.2);
- }
- input[type="range"]::-moz-range-thumb {
-   width: 26px; height: 26px;
-   border-radius: 50%;
-   background: var(--accent);
-   border: none;
-   cursor: pointer;
- }
-@@ -429,95 +415,95 @@ textarea:focus, input:focus {
- .proj-preview-box {
-   display: inline-block;
-   border: 2px solid var(--accent);
-   border-radius: var(--radius);
-   padding: 18px 20px; text-align: center;
-   min-width: 130px; margin-top: 12px;
-   background: var(--bg2);
- }
- .proj-preview-abbr { font-size: 20px; font-weight: 700; color: var(--accent); margin-bottom: 4px; }
- .proj-preview-name { font-size: 12px; color: var(--hint); }
- 
- 
-   /* Utility classes */
-   .hidden { display: none !important; }
-   .visible { display: block !important; }
- 
-   /* Report table styles */
-   .report-card {
-     background: white;
-     border-radius: 12px;
-     padding: 16px;
-     margin-bottom: 16px;
-     box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-   }
-   
--  .report-header {
-+  .admin-report-header {
-     display: flex;
-     justify-content: space-between;
-     align-items: center;
-     margin-bottom: 12px;
-     padding-bottom: 12px;
-     border-bottom: 2px solid #e0e0e0;
-   }
-   
-   .report-date {
-     font-size: 16px;
-     font-weight: 600;
-   }
-   
-   .report-username {
-     font-size: 14px;
-     color: #666;
-   }
-   
-   .report-total {
-     font-size: 20px;
-     font-weight: 700;
-     color: var(--primary);
-   }
-   
-   .report-items {
-     display: flex;
-     flex-direction: column;
-     gap: 8px;
-   }
-   
--  .report-item {
-+  .admin-report-item {
-     display: flex;
-     justify-content: space-between;
-     align-items: center;
-     padding: 8px;
-     background: #f5f5f5;
-     border-radius: 8px;
-   }
-   
-   .report-project {
-     font-weight: 500;
-   }
-   
--  .report-comment {
-+  .admin-report-comment {
-     font-size: 13px;
-     color: #666;
-   }
-   
-   .report-hours {
-     font-weight: 600;
-     margin-right: 8px;
-   }
-   
-   .report-actions {
-     display: flex;
-     gap: 8px;
-   }
-   
-   .btn-edit {
-     padding: 6px 12px;
-     background: #4CAF50;
-     color: white;
-     border: none;
-     border-radius: 6px;
-     cursor: pointer;
-   }
-   
-   .btn-delete {
-     padding: 6px 12px;
-@@ -742,266 +728,267 @@ textarea:focus, input:focus {
-       <div class="form-label">🔤 Аббревиатура</div>
-       <input type="text" id="modalNewAbbr" placeholder="Например: РС" maxlength="5">
-       <div class="error-msg" id="modalAbbrErr">Заполните поле (мин. 2 символа)</div>
-     </div>
-     <div class="form-group">
-       <div class="form-label">📝 Полное название</div>
-       <input type="text" id="modalNewFull" placeholder="Например: Разработка сайта" maxlength="50">
-       <div class="error-msg" id="modalFullErr">Заполните поле (мин. 3 символа)</div>
-     </div>
-     <div id="modalProjPreview" style="display:none;margin-bottom:16px">
-       <div class="proj-preview-box">
-         <div class="proj-preview-abbr" id="modalPreviewAbbr">РС</div>
-         <div class="proj-preview-name" id="modalPreviewFull">Разработка сайта</div>
-       </div>
-     </div>
-     <button class="btn btn-primary" onclick="submitAddProject()">✅ Добавить проект</button>
-   </div>
- </div>
- 
- <script>
- // === КОНСТАНТЫ ===
- const DEFAULTS = {
-   HOURS: 4,
-   MIN_HOURS: 0.25,
-   MAX_HOURS: 12,
--  HOURS_STEP: 0.25
-+  HOURS_STEP: 0.25,
-+  API_TIMEOUT: 10000
- };
- 
- 
- // === DOM HELPERS ===
- function safeGetElement(id) {
-   const el = document.getElementById(id);
-   if (!el) console.warn('[DOM] Element not found:', id);
-+  return el;
++  --accent-light: color-mix(in srgb, var(--accent) 12%, transparent);
++  --bg: var(--tg-theme-bg-color, #f8fafc);
++  --bg2: var(--tg-theme-secondary-bg-color, #ffffff);
++  --text: var(--tg-theme-text-color, #0f172a);
++  --hint: var(--tg-theme-hint-color, #94a3b8);
++  --border: color-mix(in srgb, var(--hint) 25%, transparent);
++  --danger: #ef4444;
++  --success: #22c55e;
++  --radius: 14px;
++  --shadow: 0 1px 3px rgba(0,0,0,0.08);
 +}
 +
- // === UTILITIES ===
- function debounce(func, wait) {
-   let timeout;
-   return function executedFunction(...args) {
-     const later = () => {
-       clearTimeout(timeout);
-       func(...args);
-     };
-     clearTimeout(timeout);
-     timeout = setTimeout(later, wait);
-   };
- }
- 
--// Безопасное получение выбранного значения
- function getSelectedValue(selectId) {
--  const select = document.getElementById(selectId);
-+  const select = safeGetElement(selectId);
-   if (!select) return null;
-   const options = select.selectedOptions;
-   return options && options[0] ? options[0].value : null;
- }
- 
- 
--
- // === SECURITY ===
- function escapeHtml(text) {
-   if (!text) return '';
-   const div = document.createElement('div');
-   div.textContent = text;
-   return div.innerHTML;
- }
- 
-+const debouncedFilterProjects = debounce(() => filterProjects(), 300);
- 
--
--const debouncedFilterProjects = debounce(filterProjects, 300);
--
--
--  return el;
-+const tg = window.Telegram?.WebApp || null;
-+if (tg?.expand) {
-+  tg.expand();
- }
- 
--
--const tg = window.Telegram.WebApp;
--tg.expand();
--
- // === HAPTIC FEEDBACK HELPER ===
- const Haptic = {
-   impact(style = 'light') {
-     if (tg.HapticFeedback?.impactOccurred) {
-       tg.HapticFeedback.impactOccurred(style);
-     }
-   },
-   
-   notification(type = 'success') {
-     if (tg.HapticFeedback?.notificationOccurred) {
-       tg.HapticFeedback.notificationOccurred(type);
-     }
-   },
-   
-   selection() {
-     if (tg.HapticFeedback?.selectionChanged) {
-       tg.HapticFeedback.selectionChanged();
-     }
-   }
- };
- 
- // === ERROR HANDLING ===
- const ErrorHandler = {
-   handle(error, context = '') {
-     console.error(`[ERROR ${context}]`, error);
-     
-     let message = 'Произошла ошибка';
-     
-     if (error.message) {
-       message = error.message;
-     }
-     
-     if (error.name === 'TypeError') {
-       message = 'Ошибка сети. Проверьте подключение.';
-     } else if (error.name === 'SyntaxError') {
-       message = 'Ошибка данных от сервера';
-     }
-     
-     showToast(`⚠️ ${message}`, 'error');
-     
-     // Опционально отправляем в систему мониторинга
-     // this.log(error, context);
-   },
-   
-   log(error, context) {
--    // TODO: отправка в систему мониторинга
-     console.log('[LOG]', context, error);
-   }
- };
- 
- // === SUBMIT GUARD ===
- const SubmitGuard = {
-   submitting: false,
-   
-   async execute(fn) {
-     if (this.submitting) {
-       console.warn('[SUBMIT] Already submitting');
-       return;
-     }
-     
-     this.submitting = true;
-     try {
-       await fn();
-     } finally {
-       this.submitting = false;
-     }
-   }
- };
- 
- // === FORM VALIDATION ===
- const Validator = {
-   hours(value) {
-     const num = parseFloat(value);
-     if (isNaN(num)) return { valid: false, error: 'Введите число' };
--    if (num < 0.25) return { valid: false, error: 'Минимум 0.25 часа' };
--    if (num > 24) return { valid: false, error: 'Максимум 24 часа' };
-+    if (num < DEFAULTS.MIN_HOURS) return { valid: false, error: `Минимум ${DEFAULTS.MIN_HOURS} часа` };
-+    if (num > DEFAULTS.MAX_HOURS) return { valid: false, error: `Максимум ${DEFAULTS.MAX_HOURS} часов` };
-     return { valid: true, value: num };
-   },
-   
-   required(value, fieldName) {
-     if (!value || value.trim() === '') {
-       return { valid: false, error: `${fieldName} обязательно` };
-     }
-     return { valid: true, value: value.trim() };
-   }
- };
- 
- // === MODAL MANAGER ===
- const ModalManager = {
-   activeModal: null,
-+  escHandler: null,
-   
-   create(id, content) {
--    // Удаляем старую модалку если есть
-+    if (!content) {
-+      console.warn('[MODAL] Empty modal content');
-+      return null;
-+    }
++* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
 +
-     this.close();
-     
-     const modal = document.createElement('div');
-     modal.id = id;
--    modal.className = 'modal-overlay';
-+    modal.className = 'modal-overlay open';
-     modal.innerHTML = content;
-     
--    // Закрытие по клику на overlay
-     modal.addEventListener('click', (e) => {
-       if (e.target === modal) {
-         this.close();
-       }
-     });
-     
--    // Закрытие по ESC
--    const escHandler = (e) => {
-+    this.escHandler = (e) => {
-       if (e.key === 'Escape') {
-         this.close();
--        document.removeEventListener('keydown', escHandler);
-       }
-     };
--    document.addEventListener('keydown', escHandler);
--    
--    ModalManager.create('editModal', modalContent);
-+    document.addEventListener('keydown', this.escHandler);
++body {
++  font-family: 'Golos Text', system-ui, sans-serif;
++  background: var(--bg);
++  color: var(--text);
++  min-height: 100vh;
++  padding-bottom: 24px;
++}
 +
-+    document.body.appendChild(modal);
-     this.activeModal = modal;
-     
-     return modal;
-   },
-   
-   close() {
-     if (this.activeModal) {
-       this.activeModal.remove();
-       this.activeModal = null;
-     }
-+    if (this.escHandler) {
-+      document.removeEventListener('keydown', this.escHandler);
-+      this.escHandler = null;
-+    }
-   },
-   
-   isOpen() {
-     return this.activeModal !== null;
-   }
- };
- 
- // === DOM UPDATE HELPERS ===
- const DomUpdater = {
-   updateText(elementId, text) {
-     const el = document.getElementById(elementId);
-     if (el && el.textContent !== text) {
-       el.textContent = text;
-     }
-   },
-   
-   updateHtml(elementId, html) {
-     const el = document.getElementById(elementId);
-     if (el && el.innerHTML !== html) {
-       el.innerHTML = html;
-     }
-   },
-   
-   updateClass(elementId, className, add = true) {
-     const el = document.getElementById(elementId);
-     if (!el) return;
-     if (add) {
-       el.classList.add(className);
-     } else {
-       el.classList.remove(className);
-     }
-   }
- };
- 
- // === VIRTUALIZATION ===
- // Примечание: для списков >100 элементов рекомендуется виртуализация
- // Текущая реализация подходит для <500 элементов
--// TODO: Добавить виртуализацию при росте данных
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- // ── STATE ──
- // Версия приложения
- const APP_VERSION = '1.1.0';
- 
- // API Configuration
- const API_URL = 'https://telegrambot-shyshariki.ru/tgbot/api';
- const VERSION_KEY = 'app_version';
- const CHANGELOG = {
-   '1.1.0': {
-     title: 'API интеграция! ⚡',
-@@ -1050,395 +1037,440 @@ let APP = {
- // Fetch с timeout
- async function fetchWithTimeout(url, options = {}, timeout = 10000) {
-   const controller = new AbortController();
-   const timeoutId = setTimeout(() => controller.abort(), timeout);
-   
-   try {
-     const response = await fetch(url, {
-       ...options,
-       signal: controller.signal
-     });
-     clearTimeout(timeoutId);
-     return response;
-   } catch (error) {
-     clearTimeout(timeoutId);
-     if (error.name === 'AbortError') {
-       throw new Error('Превышено время ожидания');
-     }
-     throw error;
-   }
- }
- 
- // ========== API MODULE ==========
- 
- async function apiCall(endpoint, method = 'POST', data = {}) {
-   try {
--    console.log('API Call:', method, endpoint, data);
--    const response = await fetch(`${API_URL}${endpoint}`, {
--      method: method,
-+    const response = await fetchWithTimeout(`${API_URL}${endpoint}`, {
-+      method,
-       headers: { 'Content-Type': 'application/json' },
-       body: method !== 'GET' ? JSON.stringify(data) : undefined
--    });
-+    }, DEFAULTS.API_TIMEOUT);
-     
-     if (!response.ok) {
--      const error = await response.json();
--      throw new Error(error.error || 'API Error');
-+      let apiError = 'API Error';
-+      try {
-+        const error = await response.json();
-+        apiError = error.error || apiError;
-+      } catch {
-+        apiError = `HTTP ${response.status}`;
-+      }
-+      throw new Error(apiError);
-     }
--    
++/* NAV */
++.nav {
++  position: sticky; top: 0; z-index: 100;
++  background: var(--bg2);
++  border-bottom: 1px solid var(--border);
++  padding: 10px 16px;
++  display: flex; gap: 6px;
++  overflow-x: auto;
++  scrollbar-width: none;
++}
++.nav::-webkit-scrollbar { display: none; }
++.nav-btn {
++  padding: 7px 14px;
++  border: 1.5px solid var(--border);
++  border-radius: 20px;
++  background: transparent;
++  color: var(--hint);
++  font: 500 13px 'Golos Text', sans-serif;
++  cursor: pointer;
++  white-space: nowrap;
++  transition: all .2s;
++  flex-shrink: 0;
++}
++.nav-btn.active {
++  background: var(--accent);
++  border-color: var(--accent);
++  color: #fff;
++}
 +
-     return await response.json();
-   } catch (error) {
--    console.error('API Call failed:', error);
--    showToast(`❌ ${error.message}`, 'error');
-+    if (error.name === 'TypeError') {
-+      showToast('❌ Ошибка сети. Проверьте интернет-соединение.', 'error');
-+    } else {
-+      showToast(`❌ ${error.message}`, 'error');
-+    }
-     throw error;
-   }
- }
- 
- async function loadDataFromAPI() {
--  console.log('[DEBUG] Loading data from API, user_id:', APP.userId);
--  
-   try {
-     const data = await apiCall('/init', 'POST', { user_id: APP.userId });
--    
--    APP.admin = data.admin;
-+    if (!data || typeof data !== 'object') {
-+      throw new Error('Некорректный ответ сервера');
-+    }
++/* PAGES */
++.page { display: none; padding: 16px; animation: up .25s ease; }
++.page.active { display: block; }
++@keyframes up { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
 +
-+    APP.admin = Boolean(data.admin);
-     APP.username = data.username || 'User';
--    console.log('[DEBUG] Username loaded:', APP.username);
--    console.log('[DEBUG] All users:', data.all_users);
--    APP.projects = data.projects || [];
--    APP.allProjects = data.all_projects || [];
--    APP.allUsers = data.all_users || [];
--    APP.userStats = data.user_stats || {};
--    APP.adminStats = data.admin_stats || null;
--    
--    buildProjectsGrid();
--    renderMyStats();
--    if (APP.admin) renderAdminOverview();
--    
-+    APP.projects = Array.isArray(data.projects) ? data.projects : [];
-+    APP.allProjects = Array.isArray(data.all_projects) ? data.all_projects : [];
-+    APP.allUsers = Array.isArray(data.all_users) ? data.all_users : [];
-+    APP.userStats = data.user_stats && typeof data.user_stats === 'object' ? data.user_stats : {};
-+    APP.adminStats = data.admin_stats && typeof data.admin_stats === 'object' ? data.admin_stats : null;
++/* HEADINGS */
++.page-title {
++  font-size: 22px; font-weight: 700;
++  margin-bottom: 4px; letter-spacing: -.3px;
++}
++.page-sub { font-size: 14px; color: var(--hint); margin-bottom: 20px; }
 +
-     return true;
-   } catch (error) {
--    console.error('Load data failed:', error);
-+    ErrorHandler.handle(error, 'loadDataFromAPI');
-     return false;
-   }
- }
- // ── INIT ──
- async function init() {
-   const params = new URLSearchParams(window.location.search);
-   const raw = params.get('data');
-   
--  // Получаем минимальные данные из URL
-   if (raw) {
-     try {
-       const d = JSON.parse(decodeURIComponent(raw));
-       APP.userId = d.user_id || 0;
-       APP.admin = !!d.admin;
-       APP.username = d.username || 'User';
-     } catch(e) { 
-       console.error('Init error', e);
-       APP.userId = 0;
-     }
-   }
- 
--  // Загружаем полные данные через API
-+  let loaded = false;
-   if (APP.userId) {
--    await loadDataFromAPI();
--  } else {
--    // Demo data для локального тестирования
-+    loaded = await loadDataFromAPI();
++/* CARDS */
++.card {
++  background: var(--bg2);
++  border-radius: var(--radius);
++  padding: 16px;
++  margin-bottom: 12px;
++  box-shadow: var(--shadow);
++}
++.card-row {
++  display: flex; justify-content: space-between; align-items: center;
++}
++.card-label { font-size: 14px; color: var(--hint); }
++.card-value { font-size: 22px; font-weight: 700; color: var(--accent); }
++
++/* MENU GRID */
++.menu-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 4px; }
++.menu-card {
++  background: var(--bg2);
++  border-radius: var(--radius);
++  padding: 20px 16px;
++  text-align: center;
++  cursor: pointer;
++  box-shadow: var(--shadow);
++  transition: transform .15s, box-shadow .15s;
++  border: 1.5px solid transparent;
++  user-select: none;
++}
++.menu-card:active { transform: scale(.96); box-shadow: none; }
++.menu-card:hover { border-color: var(--accent); }
++.menu-icon { font-size: 32px; margin-bottom: 10px; }
++.menu-title { font-weight: 600; font-size: 14px; margin-bottom: 3px; }
++.menu-desc { font-size: 12px; color: var(--hint); }
++
++/* FORM */
++.form-label {
++  font-weight: 600;
++  font-size: 14px;
++  margin-bottom: 10px;
++  display: block;
++  color: var(--text);
++  margin-block-start: 10px;
++}
++.form-group { margin-bottom: 22px; }
++
++/* PROJECT CARDS */
++.projects-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px,1fr)); gap: 10px; }
++.proj-card {
++  padding: 16px 12px;
++  border: 1.5px solid var(--border);
++  border-radius: var(--radius);
++  cursor: pointer;
++  text-align: center;
++  transition: all .2s;
++  background: var(--bg2);
++  user-select: none;
++}
++.proj-card:active { transform: scale(.95); }
++.proj-card.selected {
++  border-color: var(--accent);
++  background: var(--accent);
++  color: #fff;
++}
++.proj-abbr { font-size: 18px; font-weight: 700; margin-bottom: 4px; }
++.proj-name { font-size: 11px; opacity: .8; line-height: 1.3; word-break: break-word; overflow-wrap: break-word; hyphens: auto; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
++
++/* DASHED ADD BTN */
++.dashed-btn {
++  width: 100%; padding: 12px;
++  border: 2px dashed var(--accent);
++  border-radius: var(--radius);
++  background: var(--accent-light);
++  color: var(--accent);
++  font: 600 14px 'Golos Text', sans-serif;
++  cursor: pointer; margin-top: 10px;
++  transition: opacity .2s;
++}
++.dashed-btn:active { opacity: .7; }
++
++/* HOURS */
++.hours-box {
++  background: var(--bg2);
++  border-radius: var(--radius);
++  padding: 16px;
++  margin-bottom: 14px;
++  display: flex; align-items: center; justify-content: space-between;
++  box-shadow: var(--shadow);
++}
++.hours-big { font-size: 40px; font-weight: 700; color: var(--accent); line-height: 1; }
++.hours-big-input {
++  font-size: 40px; font-weight: 700; color: var(--accent);
++  line-height: 1; width: 80px; text-align: center;
++  border: none; background: transparent; outline: none;
++  font-family: inherit; padding: 0;
++  -moz-appearance: textfield;
++}
++.hours-big-input::-webkit-outer-spin-button,
++.hours-big-input::-webkit-inner-spin-button {
++  -webkit-appearance: none; margin: 0;
++}
++.hours-big-input:focus {
++  background: var(--accent-light);
++  border-radius: 8px;
++  padding: 4px 8px;
++}
++.hours-unit { font-size: 14px; color: var(--hint); margin-top: 4px; }
++
++input[type="range"] {
++  width: 100%; height: 6px;
++  border-radius: 3px;
++  background: var(--border);
++  outline: none;
++  -webkit-appearance: none;
++  padding: 0; margin-bottom: 12px;
++}
++input[type="range"]::-webkit-slider-thumb {
++  -webkit-appearance: none;
++  width: 26px; height: 26px;
++  border-radius: 50%;
++  background: var(--accent);
++  cursor: pointer;
++  box-shadow: 0 2px 8px rgba(0,0,0,.2);
++}
++input[type="range"]::-moz-range-thumb {
++  width: 26px; height: 26px;
++  border-radius: 50%;
++  background: var(--accent);
++  border: none;
++  cursor: pointer;
++}
++
++.quick-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 8px; margin-block-end: 10px; }
++.quick-btn {
++  padding: 11px;
++  border: 1.5px solid var(--border);
++  border-radius: 10px;
++  background: var(--bg2);
++  color: var(--text);
++  font: 600 15px 'Golos Text', sans-serif;
++  cursor: pointer; transition: all .2s;
++}
++.quick-btn.active {
++  background: var(--accent);
++  border-color: var(--accent);
++  color: #fff;
++}
++.quick-btn:active { transform: scale(.95); }
++
++/* TEXTAREA */
++textarea, input[type="text"] {
++  width: 100%; padding: 13px;
++  border: 1.5px solid var(--border);
++  border-radius: var(--radius);
++  font: 15px 'Golos Text', sans-serif;
++  background: var(--bg2); color: var(--text);
++  resize: vertical; transition: border-color .2s;
++}
++textarea { min-height: 90px; }
++textarea:focus, input:focus {
++  outline: none; border-color: var(--accent);
++}
++
++.input-hint { font-size: 12px; color: var(--hint); margin-top: 6px; }
++
++/* SUMMARY */
++.summary {
++  background: var(--accent-light);
++  border: 1.5px solid var(--accent);
++  border-radius: var(--radius);
++  padding: 14px;
++  margin-top: 16px;
++}
++.summary-title { font-weight: 700; font-size: 14px; margin-bottom: 10px; }
++.summary-row { display: flex; justify-content: space-between; padding: 7px 0; border-bottom: 1px solid var(--border); font-size: 14px; }
++.summary-row:last-child { border: none; }
++.summary-key { color: var(--hint); }
++.summary-val { font-weight: 600; max-width: 60%; text-align: right; }
++
++/* MULTI-PROJECT LIST */
++.project-list-item {
++  display: flex; justify-content: space-between; align-items: center;
++  padding: 10px 14px;
++  background: var(--bg2);
++  border-radius: 10px;
++  margin-bottom: 8px;
++  box-shadow: var(--shadow);
++  font-size: 14px;
++}
++.proj-list-name { font-weight: 600; }
++.proj-list-hours { color: var(--accent); font-weight: 700; }
++.remove-btn {
++  background: none; border: none;
++  color: var(--danger); font-size: 18px;
++  cursor: pointer; padding: 0 4px;
++}
++
++/* BUTTONS */
++.btn {
++  width: 100%; padding: 15px;
++  border: none; border-radius: var(--radius);
++  font: 600 15px 'Golos Text', sans-serif;
++  cursor: pointer; margin-top: 10px;
++  transition: opacity .2s, transform .15s;
++}
++.btn:active { transform: scale(.98); opacity: .9; }
++.btn-primary { background: var(--accent); color: #fff; }
++.btn-secondary {
++  background: transparent;
++  color: var(--accent);
++  border: 1.5px solid var(--accent);
++}
++.btn-danger {
++  background: transparent;
++  color: var(--danger);
++  border: 1.5px solid var(--danger);
++}
++
++/* ERROR */
++.error-msg { font-size: 13px; color: var(--danger); margin-top: 6px; display: none; }
++.error-msg.show { display: block; }
++
++/* INFO */
++.info-card {
++  background: var(--accent-light);
++  border-left: 4px solid var(--accent);
++  border-radius: 8px;
++  padding: 12px;
++  font-size: 13px;
++  margin-bottom: 16px;
++  line-height: 1.5;
++}
++
++/* STAT TABS */
++.stat-tabs { display: flex; gap: 6px; margin-bottom: 16px; overflow-x: auto; }
++.stat-tab {
++  padding: 7px 14px; border-radius: 20px;
++  border: 1.5px solid var(--border);
++  background: transparent; color: var(--hint);
++  font: 500 13px 'Golos Text', sans-serif;
++  cursor: pointer; white-space: nowrap;
++  flex-shrink: 0; transition: all .2s;
++}
++.stat-tab.active { background: var(--accent); border-color: var(--accent); color: #fff; }
++
++/* EMPLOYEE CARD */
++.emp-card {
++  background: var(--bg2); border-radius: var(--radius);
++  padding: 14px; margin-bottom: 10px;
++  box-shadow: var(--shadow);
++}
++.emp-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
++.emp-name { font-weight: 700; font-size: 15px; }
++.emp-hours { font-size: 20px; font-weight: 700; color: var(--accent); }
++.emp-proj { display: flex; justify-content: space-between; padding: 6px 0; font-size: 13px; border-bottom: 1px solid var(--border); }
++.emp-proj:last-child { border: none; }
++.emp-proj-name { color: var(--hint); }
++
++/* REPORT ITEM */
++.report-item {
++  background: var(--bg2); border-radius: var(--radius);
++  padding: 12px; margin-bottom: 8px;
++  box-shadow: var(--shadow); font-size: 13px;
++}
++.report-header { display: flex; justify-content: space-between; margin-bottom: 6px; }
++.report-emp { font-weight: 700; }
++.report-date { color: var(--hint); font-size: 12px; }
++.report-proj { color: var(--accent); font-weight: 600; }
++.report-comment { color: var(--hint); margin-top: 4px; font-style: italic; }
++
++/* CHART */
++.chart-wrap {
++  background: var(--bg2); border-radius: var(--radius);
++  padding: 14px; margin-bottom: 12px;
++  box-shadow: var(--shadow); height: 220px;
++}
++
++/* ASSIGN */
++.user-select {
++  width: 100%; padding: 12px;
++  border: 1.5px solid var(--border);
++  border-radius: var(--radius);
++  background: var(--bg2); color: var(--text);
++  font: 15px 'Golos Text', sans-serif;
++}
++.user-select:focus { outline: none; border-color: var(--accent); }
++
++.checkbox-list { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
++.checkbox-item {
++  display: flex; align-items: center; gap: 10px;
++  padding: 11px 14px; background: var(--bg2);
++  border-radius: 10px; cursor: pointer;
++  box-shadow: var(--shadow); font-size: 14px;
++}
++.checkbox-item input { width: 18px; height: 18px; accent-color: var(--accent); }
++
++/* PROJECT COMMENT INPUT */
++.project-list-item-wrap { margin-bottom: 12px; }
++.proj-comment-input {
++  width: 100%; padding: 10px 12px; margin-top: 6px;
++  border: 1.5px solid var(--border);
++  border-radius: 10px;
++  font: 13px 'Golos Text', sans-serif;
++  background: var(--bg2); color: var(--text);
++  resize: none; height: 60px;
++  transition: border-color .2s;
++}
++.proj-comment-input:focus { outline: none; border-color: var(--accent); }
++
++/* EMPTY */
++.empty { text-align: center; padding: 40px 20px; color: var(--hint); }
++.empty-icon { font-size: 44px; margin-bottom: 10px; }
++
++/* MODAL */
++.modal-overlay {
++  display: none; position: fixed; inset: 0;
++  background: rgba(0,0,0,.5); z-index: 200;
++  align-items: flex-end; justify-content: center;
++}
++.modal-overlay.open { display: flex; animation: fadeIn .2s; }
++.modal-box {
++  background: var(--bg2); border-radius: 20px 20px 0 0;
++  padding: 20px 16px 32px; width: 100%; max-width: 600px;
++  animation: slideUp .3s ease;
++}
++.modal-header {
++  display: flex; justify-content: space-between; align-items: center;
++  margin-bottom: 16px;
++}
++.modal-title { font-size: 18px; font-weight: 700; }
++.modal-close {
++  background: none; border: none; font-size: 22px;
++  color: var(--hint); cursor: pointer; padding: 4px;
++}
++@keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
++@keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
++
++/* PREVIEW */
++.proj-preview-box {
++  display: inline-block;
++  border: 2px solid var(--accent);
++  border-radius: var(--radius);
++  padding: 18px 20px; text-align: center;
++  min-width: 130px; margin-top: 12px;
++  background: var(--bg2);
++}
++.proj-preview-abbr { font-size: 20px; font-weight: 700; color: var(--accent); margin-bottom: 4px; }
++.proj-preview-name { font-size: 12px; color: var(--hint); }
++
++</style>
++</head>
++<body>
++
++<!-- NAV -->
++<div class="nav" id="nav">
++  <button class="nav-btn active" data-page="home">🏠 Главная</button>
++  <button class="nav-btn" data-page="report">📝 Отчёт</button>
++  <button class="nav-btn" data-page="my-stats">📊 Статистика</button>
++  <button class="nav-btn admin-only" data-page="admin-panel" style="display:none">👑 Админ</button>
++</div>
++
++<!-- HOME -->
++<div class="page active" id="home">
++  <div class="page-title">👋 Учёт времени</div>
++  <div class="page-sub">Выберите действие</div>
++  <div class="menu-grid">
++    <div class="menu-card" onclick="nav('report')">
++      <div class="menu-icon">📝</div>
++      <div class="menu-title">Новый отчёт</div>
++      <div class="menu-desc">Записать рабочее время</div>
++    </div>
++    <div class="menu-card" onclick="nav('my-stats')">
++      <div class="menu-icon">📊</div>
++      <div class="menu-title">Статистика</div>
++      <div class="menu-desc">Моя активность</div>
++    </div>
++    <div class="menu-card admin-only" style="display:none" onclick="nav('admin-panel')">
++      <div class="menu-icon">👑</div>
++      <div class="menu-title">Админ панель</div>
++      <div class="menu-desc">Управление</div>
++    </div>
++  </div>
++</div>
++
++<!-- REPORT -->
++<div class="page" id="report">
++  <div class="page-title">📝 Новый отчёт</div>
++  <div class="page-sub">Заполните информацию о работе</div>
++
++  <div class="form-group">
++    <div class="form-label">📁 Проект</div>
++    <div class="projects-grid" id="projectsGrid"></div>
++    <div class="error-msg" id="projError">Выберите хотя бы один проект</div>
++  </div>
++
++  <!-- Выбранные проекты -->
++  <div id="selectedProjectsWrap" style="display:none">
++    <div class="form-label">✅ Выбранные проекты</div>
++    <div id="selectedProjectsList"></div>
++
++    <!-- Часы для текущего -->
++    <div id="hoursWrap">
++      <div class="form-label" id="hoursLabel">⏱️ Часов для выбранного проекта</div>
++      <div class="hours-box">
++        <div>
++          <input type="number" class="hours-big-input" id="hoursDisplay" value="4" 
++                 min="0.25" max="12" step="0.25" 
++                 onchange="updateHoursFromInput()" 
++                 oninput="updateHoursFromInput()">
++          <div class="hours-unit">часов</div>
++        </div>
++        <div style="font-size:13px;color:var(--hint);text-align:right">
++          Итого: <b id="totalHoursDisplay">0</b> ч
++        </div>
++      </div>
++      <input type="range" id="hoursRange" min="0.25" max="12" step="0.25" value="4">
++      <div class="quick-grid">
++        <button class="quick-btn" data-h="2">2ч</button>
++        <button class="quick-btn" data-h="4">4ч</button>
++        <button class="quick-btn" data-h="6">6ч</button>
++        <button class="quick-btn" data-h="8">8ч</button>
++      </div>
++      <button class="btn btn-secondary" style="margin-top:12px" onclick="addCurrentProject()">➕ Добавить ещё проект</button>
++    </div>
++  </div>
++
++  <!-- Общий комментарий -->
++  <div class="form-group" id="commentWrap" style="display:none">
++    <div class="form-label">💬 Общий комментарий <span style="color:var(--hint);font-weight:400">(необязательно)</span></div>
++    <textarea id="comment" placeholder="Общее описание за день..."></textarea>
++  </div>
++
++  <!-- Сводка -->
++  <div class="summary" id="summary" style="display:none">
++    <div class="summary-title">📋 Сводка отчёта</div>
++    <div id="summaryRows"></div>
++  </div>
++
++  <button class="btn btn-primary" id="submitBtn" style="display:none" onclick="submitReport()">📤 Отправить отчёт</button>
++  <button class="btn btn-secondary" onclick="nav('home')">⬅️ На главную</button>
++</div>
++
++<!-- MY STATS -->
++<div class="page" id="my-stats">
++  <div class="page-title">📊 Моя статистика</div>
++  <div class="page-sub" id="myStatsSubtitle">Загрузка...</div>
++  <div id="myStatsContent"></div>
++  <div class="info-card" style="margin-top:8px;font-size:12px">
++    💡 Данные обновляются при каждом открытии приложения через /start
++  </div>
++  <button class="btn btn-secondary" onclick="nav('home')">⬅️ На главную</button>
++</div>
++
++<!-- ADMIN PANEL -->
++<div class="page" id="admin-panel">
++  <div class="page-title">👑 Админ панель</div>
++  <div class="page-sub">Управление и аналитика</div>
++  <div class="stat-tabs">
++    <button class="stat-tab active" onclick="adminTab('overview',this)">Обзор</button>
++    <button class="stat-tab" onclick="adminTab('employees',this)">Сотрудники</button>
++    <button class="stat-tab" onclick="adminTab('projects-stat',this)">Проекты</button>
++    <button class="stat-tab" onclick="adminTab('reports-list',this)">Отчёты</button>
++    <button class="stat-tab" onclick="adminTab('manage',this)">Управление</button>
++  </div>
++  <div id="adminContent"></div>
++  <button class="btn btn-secondary" onclick="nav('home')">⬅️ На главную</button>
++</div>
++
++<!-- ADD PROJECT -->
++
++<!-- ADMIN CREATE REPORT FOR EMPLOYEE -->
++<div class="page" id="admin-create-report">
++  <div class="page-title">➕ Создать отчёт за сотрудника</div>
++  
++  <div style="background: white; border-radius: 12px; padding: 20px; margin-bottom: 20px;">
++    <div style="margin-bottom: 15px;">
++      <label class="form-label">👤 Сотрудник:</label>
++      <select id="createForUser" class="form-input">
++        <option value="">Выберите сотрудника</option>
++      </select>
++    </div>
++    
++    <div style="margin-bottom: 15px;">
++      <label class="form-label">📅 Дата:</label>
++      <input type="date" id="createReportDate" class="form-input">
++    </div>
++    
++    <div style="margin-bottom: 15px;">
++      <label class="form-label">📋 Проекты и часы:</label>
++      <div id="createReportProjects" style="max-height: 300px; overflow-y: auto; margin-top: 10px;"></div>
++      <button onclick="addProjectToAdminReport()" class="btn" style="margin-top: 10px; width: 100%;">+ Добавить проект</button>
++    </div>
++    
++    <div style="margin-bottom: 15px;">
++      <label class="form-label">💬 Общий комментарий:</label>
++      <textarea id="createReportComment" class="form-input" style="min-height: 80px;" placeholder="Необязательно"></textarea>
++    </div>
++    
++    <button onclick="submitAdminReport()" class="btn btn-primary" style="width: 100%;">💾 Создать отчёт</button>
++  </div>
++  
++  <button class="btn btn-secondary" onclick="nav('admin-panel')">⬅️ Назад</button>
++</div>
++
++<div class="page" id="add-project">
++  <div class="page-title">➕ Добавить проект</div>
++  <div class="page-sub">Создайте новый проект</div>
++  <div class="info-card">💡 Аббревиатура — короткое название (2-5 символов), которое отображается на кнопке</div>
++  <div class="form-group">
++    <div class="form-label">🔤 Аббревиатура</div>
++    <input type="text" id="newAbbr" placeholder="Например: РС" maxlength="5">
++    <div class="input-hint">2-5 символов, автоматически CAPS</div>
++    <div class="error-msg" id="abbrErr">Заполните поле (мин. 2 символа)</div>
++  </div>
++  <div class="form-group">
++    <div class="form-label">📝 Полное название</div>
++    <input type="text" id="newFull" placeholder="Например: Разработка сайта" maxlength="50">
++    <div class="input-hint">До 50 символов</div>
++    <div class="error-msg" id="fullErr">Заполните поле (мин. 3 символа)</div>
++    <div id="projPreview" style="display:none">
++      <div class="proj-preview-box">
++        <div class="proj-preview-abbr" id="previewAbbr">РС</div>
++        <div class="proj-preview-name" id="previewFull">Разработка сайта</div>
++      </div>
++    </div>
++  </div>
++  <button class="btn btn-primary" onclick="submitAddProject()">✅ Добавить проект</button>
++  <button class="btn btn-secondary" onclick="goBack()">⬅️ Назад</button>
++</div>
++
++<!-- ADD PROJECT MODAL -->
++<div class="modal-overlay" id="addProjModal">
++  <div class="modal-box">
++    <div class="modal-header">
++      <div class="modal-title">➕ Добавить проект</div>
++      <button class="modal-close" onclick="closeModal()">✕</button>
++    </div>
++    <div class="info-card">💡 Аббревиатура — 2-5 символов, отображается на кнопке</div>
++    <div class="form-group">
++      <div class="form-label">🔤 Аббревиатура</div>
++      <input type="text" id="newAbbr" placeholder="Например: РС" maxlength="5">
++      <div class="error-msg" id="abbrErr">Заполните поле (мин. 2 символа)</div>
++    </div>
++    <div class="form-group">
++      <div class="form-label">📝 Полное название</div>
++      <input type="text" id="newFull" placeholder="Например: Разработка сайта" maxlength="50">
++      <div class="error-msg" id="fullErr">Заполните поле (мин. 3 символа)</div>
++    </div>
++    <div id="projPreview" style="display:none;margin-bottom:16px">
++      <div class="proj-preview-box">
++        <div class="proj-preview-abbr" id="previewAbbr">РС</div>
++        <div class="proj-preview-name" id="previewFull">Разработка сайта</div>
++      </div>
++    </div>
++    <button class="btn btn-primary" onclick="submitAddProject()">✅ Добавить проект</button>
++  </div>
++</div>
++
++<script>
++const tg = window.Telegram.WebApp;
++tg.expand();
++
++// ── STATE ──
++// Версия приложения
++const APP_VERSION = '1.1.0';
++
++// API Configuration
++const API_URL = 'https://telegrambot-shyshariki.ru/tgbot/api';
++const VERSION_KEY = 'app_version';
++const CHANGELOG = {
++  '1.1.0': {
++    title: 'API интеграция! ⚡',
++    features: [
++      'Приложение больше не закрывается',
++      'Данные обновляются мгновенно',
++      'Статистика всегда актуальная',
++      'Добавление проектов работает'
++    ]
++  },
++  '1.0.0': {
++    title: 'Первый релиз! 🎉',
++    features: [
++      'Создание отчётов с несколькими проектами',
++      'Ручной ввод часов (шаг 0.25)',
++      'Комментарии к каждому проекту',
++      'Админ-панель с графиками'
++    ]
 +  }
++};
 +
-+  if (!loaded) {
-     APP.projects = [{abbr:'DEMO',full:'Demo проект'}];
-+    APP.allProjects = [...APP.projects];
-+    APP.allUsers = [];
-+    APP.userStats = {};
-+    APP.adminStats = null;
-   }
- 
-   if (APP.admin) {
-     document.querySelectorAll('.admin-only').forEach(el => el.classList.remove('hidden'));
-     renderAdminReports();
-     renderAdminAssign();
-     renderCreateReportScreen();
-   }
- 
-   buildProjectsGrid();
-   renderMyStats();
--  renderAdminOverview();
-+  if (APP.admin) {
-+    renderAdminOverview();
-+  }
-   initHoursSlider();
-   initAddProjectForm();
-   initNav();
- 
--  // Back button (с проверкой версии)
--  if (tg.BackButton && tg.BackButton.onClick) {
-+  if (tg?.BackButton?.onClick) {
-     tg.BackButton.onClick(() => goBack());
-   }
- 
--  // Проверка версии и показ уведомления
-   checkVersion();
- }
- 
- // ── NAVIGATION ──
- function nav(pageId, addToHistory = true) {
-   const current = document.querySelector('.page.active');
-   
-   // Защита от повторного клика
-   if (current && current.id === pageId && !addToHistory) {
-     return;
-   }
-   if (current && addToHistory && current.id !== pageId) {
-     APP.navHistory.push(current.id);
-     // Ограничиваем размер истории
-     if (APP.navHistory.length > 20) {
-       APP.navHistory.shift();
-     }
-   }
- 
-   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-   document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
- 
-   const targetPage = document.getElementById(pageId);
-   if (!targetPage) {
-     console.error('[NAV] Page not found:', pageId);
-     return;
-   }
-   targetPage.classList.add('active');
-   const btn = document.querySelector(`[data-page="${pageId}"]`);
-   if (btn) btn.classList.add('active');
- 
-   window.scrollTo(0, 0);
- 
-   // Back button visibility
--  if (APP.navHistory.length > 0) tg.BackButton.show();
--  else tg.BackButton.hide();
-+  if (tg?.BackButton) {
-+    if (APP.navHistory.length > 0) tg.BackButton.show();
-+    else tg.BackButton.hide();
-+  }
- 
-   Haptic.impact('light');
- }
- 
- function goBack() {
-   if (APP.navHistory.length > 0) {
-     const prev = APP.navHistory.pop();
-     nav(prev, false); // Не добавляем в историю при возврате назад
-   } else {
-     // Если истории нет — идём на главную
-     nav('home', false);
-   }
- }
- 
- function initNav() {
-   document.querySelectorAll('.nav-btn').forEach(btn => {
-     btn.addEventListener('click', () => {
-       const p = btn.dataset.page;
-       if (p) { APP.navHistory = []; nav(p); }
-     });
-   });
- }
- 
- // ── PROJECTS GRID ──
- function buildProjectsGrid() {
-   const grid = safeGetElement('projectsGrid');
-   if (!grid) return;
-   if (!APP.projects || APP.projects.length === 0) {
-     grid.innerHTML = '<p style="text-align: center; color: #999;">Нет доступных проектов</p>';
-     return;
-   }
-   grid.innerHTML = '';
-   APP.projects.forEach(proj => {
-     const card = document.createElement('div');
-     card.className = 'proj-card';
-+    card.dataset.projectAbbr = proj.abbr;
-+    card.dataset.projectFull = proj.full;
-     card.innerHTML = `<div class="proj-abbr">${escapeHtml(proj.abbr)}</div><div class="proj-name">${escapeHtml(proj.full)}</div>`;
-     card.onclick = () => selectProject(proj, card);
-     grid.appendChild(card);
-   });
- }
- 
- function selectProject(proj, card) {
--  if (APP.reportItems.find(i => i.project === proj.full)) return;
-+  if (APP.reportItems.find(i => i.abbr === proj.abbr)) return;
- 
-   document.querySelectorAll('.proj-card').forEach(c => c.classList.remove('selected'));
-   card.classList.add('selected');
-   APP.selectedProject = proj;
- 
-   // Сбрасываем часы только для первого проекта, для последующих сохраняем последнее значение
-   if (APP.reportItems.length === 0) {
--    APP.currentHours = 4;
--    safeGetElement('hoursRange').value = 4;
--    safeGetElement('hoursDisplay').value = 4;
--    updateQuickBtns(4);
-+    APP.currentHours = DEFAULTS.HOURS;
-+    const rangeEl = safeGetElement('hoursRange');
-+    const displayEl = safeGetElement('hoursDisplay');
-+    if (rangeEl) rangeEl.value = DEFAULTS.HOURS;
-+    if (displayEl) displayEl.value = DEFAULTS.HOURS;
-+    updateQuickBtns(DEFAULTS.HOURS);
-   } else {
--    safeGetElement('hoursDisplay').value = APP.currentHours;
--    safeGetElement('hoursRange').value = APP.currentHours;
-+    const displayEl = safeGetElement('hoursDisplay');
-+    const rangeEl = safeGetElement('hoursRange');
-+    if (displayEl) displayEl.value = APP.currentHours;
-+    if (rangeEl) rangeEl.value = APP.currentHours;
-     updateQuickBtns(APP.currentHours);
-   }
- 
-   safeGetElement('projError').classList.remove('show');
-   safeGetElement('selectedProjectsWrap').classList.remove('hidden');
--  safeGetElement('hoursWrap').style.display = 'block';
-+  safeGetElement('hoursWrap')?.classList.remove('hidden');
-   safeGetElement('hoursLabel').textContent = `⏱️ Часов для «${proj.full}»`;
-   updateSummary();
- 
-   Haptic.impact('light');
- 
-   // Скроллим к слайдеру
-   setTimeout(() => safeGetElement('hoursWrap').scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 100);
- }
- 
- function addCurrentProject() {
-   if (!APP.selectedProject) return;
-   APP.reportItems.push({ project: APP.selectedProject.full, abbr: APP.selectedProject.abbr, hours: APP.currentHours, comment: '' });
-   APP.selectedProject = null;
- 
-   // Снимаем выделение, разблокируем все карточки для следующего выбора
-   document.querySelectorAll('.proj-card').forEach(c => {
-     c.classList.remove('selected');
-     // Серым отмечаем уже добавленные
--    const alreadyAdded = APP.reportItems.find(i => i.abbr === c.querySelector('.proj-abbr').textContent);
-+    const alreadyAdded = APP.reportItems.find(i => i.abbr === c.dataset.projectAbbr);
-     c.style.opacity = alreadyAdded ? '0.4' : '1';
-     c.style.pointerEvents = alreadyAdded ? 'none' : 'auto';
-   });
- 
-   renderSelectedList();
-   updateSummary();
- 
-   // Прячем слайдер, но оставляем грид — пользователь может выбрать ещё
--  safeGetElement('hoursWrap').style.display = 'none';
-+  safeGetElement('hoursWrap')?.classList.add('hidden');
-   safeGetElement('hoursLabel').textContent = '⏱️ Часов для выбранного проекта';
- 
-   // Показываем кнопки действий
-   safeGetElement('commentWrap').classList.remove('hidden');
-   safeGetElement('submitBtn').classList.remove('hidden');
-   updateTotalHours();
- 
-   showToast(`➕ ${APP.reportItems[APP.reportItems.length-1].project} добавлен`, 'info');
- }
- 
- function removeItem(idx) {
-   const removed = APP.reportItems[idx];
-   APP.reportItems.splice(idx, 1);
- 
-   // Восстанавливаем карточку проекта
-   document.querySelectorAll('.proj-card').forEach(c => {
--    if (c.querySelector('.proj-abbr').textContent === removed.abbr) {
-+    if (c.dataset.projectAbbr === removed.abbr) {
-       c.style.opacity = '1';
-       c.style.pointerEvents = 'auto';
-     }
-   });
- 
-   renderSelectedList();
-   updateSummary();
-   if (!APP.reportItems.length && !APP.selectedProject) {
-     safeGetElement('commentWrap').classList.add('hidden');
-     safeGetElement('submitBtn').classList.add('hidden');
-     safeGetElement('summary').classList.add('hidden');
-   }
- }
- 
- function renderSelectedList() {
-   const list = safeGetElement('selectedProjectsList');
-+  if (!list) return;
++let APP = {
++  admin: false,
++  userId: 0,
++  username: '',
++  projects: [],
++  allProjects: [],
++  allUsers: [],
++  userStats: {},
++  adminStats: null,
++  selectedProject: null,
++  currentHours: 4,
++  reportItems: [],
++  navHistory: [],
++  adminChart: null,
++  projChart: null,
++};
 +
-   list.innerHTML = '';
-   APP.reportItems.forEach((item, idx) => {
-     const el = document.createElement('div');
-     el.style.cssText = 'background:var(--bg2);border-radius:12px;padding:12px 14px;margin-bottom:10px;box-shadow:var(--shadow)';
--    el.innerHTML = `
--      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
--        <span style="font-weight:600;font-size:14px;flex:1;margin-right:8px">${item.abbr} — ${item.project}</span>
--        <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
--          <span style="font-weight:700;color:var(--accent);font-size:15px">${item.hours} ч</span>
--          <button onclick="removeItem(${idx})" style="background:none;border:none;color:var(--danger);font-size:18px;cursor:pointer;padding:0;line-height:1">✕</button>
--        </div>
--      </div>
--      <input type="text"
--        placeholder="Комментарий к ${item.project} (необязательно)"
--        value="${(item.comment || '').replace(/"/g, '&quot;')}"
--        oninput="APP.reportItems[${idx}].comment = this.value; updateSummary()"
--        style="width:100%;padding:8px 10px;border:1.5px solid var(--border);border-radius:8px;font:14px 'Golos Text',sans-serif;background:var(--bg);color:var(--text);box-sizing:border-box;outline:none"
--        onfocus="this.style.borderColor='var(--accent)'"
--        onblur="this.style.borderColor='var(--border)'"
--      >
--    `;
 +
-+    const row = document.createElement('div');
-+    row.style.cssText = 'display:flex;justify-content:space-between;align-items:center;margin-bottom:8px';
 +
-+    const title = document.createElement('span');
-+    title.style.cssText = 'font-weight:600;font-size:14px;flex:1;margin-right:8px';
-+    title.textContent = `${item.abbr} — ${item.project}`;
-+
-+    const right = document.createElement('div');
-+    right.style.cssText = 'display:flex;align-items:center;gap:8px;flex-shrink:0';
-+
-+    const hours = document.createElement('span');
-+    hours.style.cssText = 'font-weight:700;color:var(--accent);font-size:15px';
-+    hours.textContent = `${item.hours} ч`;
-+
-+    const removeBtn = document.createElement('button');
-+    removeBtn.type = 'button';
-+    removeBtn.style.cssText = 'background:none;border:none;color:var(--danger);font-size:18px;cursor:pointer;padding:0;line-height:1';
-+    removeBtn.textContent = '✕';
-+    removeBtn.addEventListener('click', () => removeItem(idx));
-+
-+    right.append(hours, removeBtn);
-+    row.append(title, right);
-+
-+    const input = document.createElement('input');
-+    input.type = 'text';
-+    input.placeholder = `Комментарий к ${item.project} (необязательно)`;
-+    input.value = item.comment || '';
-+    input.style.cssText = "width:100%;padding:8px 10px;border:1.5px solid var(--border);border-radius:8px;font:14px 'Golos Text',sans-serif;background:var(--bg);color:var(--text);box-sizing:border-box;outline:none";
-+    input.addEventListener('input', (event) => {
-+      APP.reportItems[idx].comment = event.target.value;
-+      updateSummary();
++// ══════════════════════════════════════════════════════
++// API FUNCTIONS
++// ══════════════════════════════════════════════════════
++async function apiCall(endpoint, method = 'POST', data = {}) {
++  try {
++    console.log('API Call:', method, endpoint, data);
++    const response = await fetch(`${API_URL}${endpoint}`, {
++      method: method,
++      headers: { 'Content-Type': 'application/json' },
++      body: method !== 'GET' ? JSON.stringify(data) : undefined
 +    });
-+    input.addEventListener('focus', () => { input.style.borderColor = 'var(--accent)'; });
-+    input.addEventListener('blur', () => { input.style.borderColor = 'var(--border)'; });
-+
-+    el.append(row, input);
-     list.appendChild(el);
-   });
-+
-   updateTotalHours();
- }
- 
- function updateTotalHours() {
-   const total = APP.reportItems.reduce((s, i) => s + i.hours, 0) + (APP.selectedProject ? APP.currentHours : 0);
-   safeGetElement('totalHoursDisplay').textContent = total;
- }
- 
- function updateSummary() {
-   const s = safeGetElement('summary');
--  const rows = document.getElementById('summaryRows');
-+  const rows = safeGetElement('summaryRows');
-   const allItems = [...APP.reportItems];
-   if (APP.selectedProject) allItems.push({ project: APP.selectedProject.full, hours: APP.currentHours });
-+  if (!s || !rows) return;
-   if (!allItems.length) { s.classList.add('hidden'); return; }
- 
-   s.classList.remove('hidden');
-   const total = allItems.reduce((s, i) => s + i.hours, 0);
-   rows.innerHTML = allItems.map(i => `
-     <div class="summary-row">
-       <span class="summary-key">${i.project}</span>
-       <span class="summary-val">${i.hours} ч${i.comment ? ' · ' + i.comment : ''}</span>
-     </div>`).join('')
-     + `<div class="summary-row"><span class="summary-key" style="font-weight:700">Итого</span><span class="summary-val" style="color:var(--accent);font-weight:700">${total} ч</span></div>`;
- 
-   safeGetElement('commentWrap').classList.remove('hidden');
-   safeGetElement('submitBtn').classList.remove('hidden');
- }
- 
- // ── HOURS SLIDER ──
- function initHoursSlider() {
-   const range = safeGetElement('hoursRange');
-+  if (!range) return;
-+
-   range.addEventListener('input', e => {
-     APP.currentHours = parseFloat(e.target.value);
-     safeGetElement('hoursDisplay').value = APP.currentHours;
-     updateQuickBtns(APP.currentHours);
-     updateSummary(); updateTotalHours();
-   });
-   document.querySelectorAll('.quick-btn').forEach(btn => {
-     btn.addEventListener('click', () => {
-       APP.currentHours = parseFloat(btn.dataset.h);
-       range.value = APP.currentHours;
-       safeGetElement('hoursDisplay').value = APP.currentHours;
-       updateQuickBtns(APP.currentHours);
-       updateSummary(); updateTotalHours();
-       Haptic.impact('light');
-     });
-   });
--  updateQuickBtns(4);
-+  updateQuickBtns(DEFAULTS.HOURS);
- }
- 
- function updateQuickBtns(val) {
-   document.querySelectorAll('.quick-btn').forEach(b => {
-     b.classList.toggle('active', parseFloat(b.dataset.h) === val);
-   });
- }
- 
- 
- 
- function updateHoursFromInput() {
--  let val = parseFloat(safeGetElement('hoursDisplay').value);
--  if (isNaN(val)) val = 0.25;
--  if (val < 0.25) val = 0.25;
--  if (val > 12) val = 12;
-+  const displayEl = safeGetElement('hoursDisplay');
-+  const rangeEl = safeGetElement('hoursRange');
-+  if (!displayEl || !rangeEl) return;
-+
-+  let val = parseFloat(displayEl.value);
-+  if (isNaN(val)) val = DEFAULTS.MIN_HOURS;
-+  if (val < DEFAULTS.MIN_HOURS) val = DEFAULTS.MIN_HOURS;
-+  if (val > DEFAULTS.MAX_HOURS) val = DEFAULTS.MAX_HOURS;
-   
-   // Округляем до ближайшего 0.25
-   val = Math.round(val * 4) / 4;
-   
-   APP.currentHours = val;
--  safeGetElement('hoursDisplay').value = val;
--  safeGetElement('hoursRange').value = val;
-+  displayEl.value = val;
-+  rangeEl.value = val;
-   updateQuickBtns(val);
-   updateSummary();
-   updateTotalHours();
- }
- 
- // ── CONFIRM DIALOG ──
- function showConfirm(message, onConfirm) {
-   // Удаляем старый если есть
-   const old = safeGetElement('confirmDialog');
-   if (old) old.remove();
-   
-   const dialog = document.createElement('div');
-   dialog.id = 'confirmDialog';
-   dialog.style.cssText = `
-     position:fixed; inset:0; background:rgba(0,0,0,.5);
-     display:flex; align-items:center; justify-content:center;
-     z-index:10000; padding:16px;
-   `;
-   dialog.innerHTML = `
-     <div style="background:var(--bg2);border-radius:16px;padding:20px;max-width:320px;width:100%;box-shadow:0 8px 32px rgba(0,0,0,.2)">
-       <div style="font-weight:600;font-size:16px;margin-bottom:8px">Подтверждение</div>
-       <div style="color:var(--hint);font-size:14px;margin-bottom:20px">${message}</div>
-       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-         <button onclick="safeGetElement('confirmDialog').remove()" 
-           style="padding:12px;border:1.5px solid var(--border);border-radius:10px;background:transparent;color:var(--text);font:600 14px inherit;cursor:pointer">
-@@ -1451,160 +1483,158 @@ function showConfirm(message, onConfirm) {
-       </div>
-     </div>
-   `;
-   document.body.appendChild(dialog);
-   safeGetElement('confirmOkBtn').onclick = () => {
-     dialog.remove();
-     onConfirm();
-   };
- }
- 
- // ── TOAST ──
- function showToast(msg, type = 'success') {
-   const existing = safeGetElement('toast');
-   if (existing) existing.remove();
-   const toast = document.createElement('div');
-   toast.id = 'toast';
-   toast.style.cssText = `position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:${type==='success'?'#22c55e':type==='error'?'#ef4444':'var(--accent)'};color:#fff;padding:12px 20px;border-radius:12px;font-size:14px;font-weight:600;z-index:9999;box-shadow:0 4px 12px rgba(0,0,0,.2);max-width:80vw;text-align:center;`;
-   toast.textContent = msg;
-   document.body.appendChild(toast);
-   setTimeout(() => toast.remove(), 2500);
- }
- 
- // ── SUBMIT REPORT ──
- async function submitReport() {
-   await SubmitGuard.execute(async () => {
--  if (APP.selectedProject) {
--    APP.reportItems.push({ project: APP.selectedProject.full, abbr: APP.selectedProject.abbr, hours: APP.currentHours });
--    APP.selectedProject = null;
--  }
--  if (!APP.reportItems.length) {
--    safeGetElement('projError').classList.add('show');
--    if (tg.HapticFeedback && tg.HapticFeedback.impactOccurred) tg.HapticFeedback.notificationOccurred('error');
--    return;
--  }
--
--  const generalComment = safeGetElement('comment').value || '';
--  )),
--    comments: generalComment || '-'
--  };
--
--  // Добавляем pending actions если есть
--  
--  try {
--    // Отправляем через API
--    await apiCall('/report', 'POST', {
--      user_id: APP.userId,
--      username: APP.username,
--      projects: APP.reportItems.map(i => ({ 
--        project: i.project, 
--        hours: i.hours,
--        comment: i.comment || ''
--      })),
--      comments: generalComment || '-'
--    });
--
--  // Сбрасываем форму БЕЗ закрытия
--  APP.reportItems = [];
--  APP.selectedProject = null;
--  document.querySelectorAll('.proj-card').forEach(c => c.classList.remove('selected'));
--  safeGetElement('selectedProjectsWrap').classList.add('hidden');
--  safeGetElement('commentWrap').classList.add('hidden');
--  safeGetElement('summary').classList.add('hidden');
--  safeGetElement('comment').value = '';
--  safeGetElement('selectedProjectsList').innerHTML = '';
--  safeGetElement('submitBtn').classList.add('hidden');
--
--  // Обновляем локальную статистику сразу (не ждём перезапуска /start)
--  data.projects.forEach(item => {
--    APP.userStats = APP.userStats || { total_hours: 0, total_reports: 0, by_project: {} };
--    APP.userStats.total_hours = (APP.userStats.total_hours || 0) + item.hours;
--    APP.userStats.total_reports = (APP.userStats.total_reports || 0) + 1;
--    APP.userStats.by_project = APP.userStats.by_project || {};
--    APP.userStats.by_project[item.project] = (APP.userStats.by_project[item.project] || 0) + item.hours;
--  });
--  renderMyStats();
-+    if (APP.selectedProject) {
-+      APP.reportItems.push({
-+        project: APP.selectedProject.full,
-+        abbr: APP.selectedProject.abbr,
-+        hours: APP.currentHours,
-+        comment: ''
-+      });
-+      APP.selectedProject = null;
++    
++    if (!response.ok) {
++      const error = await response.json();
++      throw new Error(error.error || 'API Error');
 +    }
- 
--    showToast('✅ Отчёт сохранён!');
--    if (tg.HapticFeedback && tg.HapticFeedback.impactOccurred) tg.HapticFeedback.notificationOccurred('success');
-+    if (!APP.reportItems.length) {
-+      safeGetElement('projError')?.classList.add('show');
-+      if (tg?.HapticFeedback?.notificationOccurred) tg.HapticFeedback.notificationOccurred('error');
-+      return;
-+    }
- 
--    // Обновляем статистику
--    await loadDataFromAPI();
-+    const generalComment = safeGetElement('comment')?.value || '';
- 
--    setTimeout(() => nav('home'), 1500);
--  } catch (error) {
--    console.error('Submit report failed:', error);
--  }
-+    try {
-+      await apiCall('/report', 'POST', {
-+        user_id: APP.userId,
-+        username: APP.username,
-+        projects: APP.reportItems.map(i => ({
-+          project: i.project,
-+          hours: i.hours,
-+          comment: i.comment || ''
-+        })),
-+        comments: generalComment || '-'
-+      });
-+
-+      APP.reportItems = [];
-+      APP.selectedProject = null;
-+      document.querySelectorAll('.proj-card').forEach(c => {
-+        c.classList.remove('selected');
-+        c.style.opacity = '1';
-+        c.style.pointerEvents = 'auto';
-+      });
-+
-+      safeGetElement('selectedProjectsWrap')?.classList.add('hidden');
-+      safeGetElement('commentWrap')?.classList.add('hidden');
-+      safeGetElement('summary')?.classList.add('hidden');
-+      if (safeGetElement('comment')) safeGetElement('comment').value = '';
-+      if (safeGetElement('selectedProjectsList')) safeGetElement('selectedProjectsList').innerHTML = '';
-+      safeGetElement('submitBtn')?.classList.add('hidden');
-+      safeGetElement('hoursWrap')?.classList.add('hidden');
-+
-+      updateTotalHours();
-+      renderMyStats();
-+
-+      showToast('✅ Отчёт сохранён!');
-+      if (tg?.HapticFeedback?.notificationOccurred) tg.HapticFeedback.notificationOccurred('success');
-+
-+      await loadDataFromAPI();
-+      setTimeout(() => nav('home'), 1500);
-+    } catch (error) {
-+      console.error('Submit report failed:', error);
-+    }
-   });
- }
- 
- // ── ADD PROJECT FORM ──
- function initAddProjectForm() {
-   safeGetElement('modalNewAbbr').addEventListener('input', e => {
-     e.target.value = e.target.value.toUpperCase();
-     updateProjPreview();
-   });
-   safeGetElement('modalNewFull').addEventListener('input', updateProjPreview);
- }
- 
- function updateProjPreview() {
-   const a = safeGetElement('modalNewAbbr').value.trim();
-   const f = safeGetElement('modalNewFull').value.trim();
-   const preview = safeGetElement('modalProjPreview');
-   if (a || f) {
-     preview.style.display = 'block';
-     safeGetElement('modalPreviewAbbr').textContent = a || 'АБВ';
-     safeGetElement('modalPreviewFull').textContent = f || 'Название';
-   } else {
-     preview.style.display = 'none';
-   }
- }
- 
- async function submitAddProject() {
-   const abbr = safeGetElement('modalNewAbbr').value.trim().toUpperCase();
-   const full = safeGetElement('modalNewFull').value.trim();
-   let ok = true;
- 
-   if (abbr.length < 2) {
-     safeGetElement('modalAbbrErr').textContent = 'Минимум 2 символа';
-     safeGetElement('modalAbbrErr').classList.add('show'); ok = false;
-   } else safeGetElement('modalAbbrErr').classList.remove('show');
- 
-   if (full.length < 3) {
-     safeGetElement('modalFullErr').textContent = 'Минимум 3 символа';
-     safeGetElement('modalFullErr').classList.add('show'); ok = false;
-   } else safeGetElement('modalFullErr').classList.remove('show');
- 
-   if (APP.allProjects.find(p => p.abbr === abbr)) {
-     safeGetElement('modalAbbrErr').textContent = 'Аббревиатура уже используется';
-     safeGetElement('modalAbbrErr').classList.add('show'); ok = false;
-   }
- 
--  if (!ok) { if (tg.HapticFeedback && tg.HapticFeedback.impactOccurred) tg.HapticFeedback.notificationOccurred('error'); return; }
-+  if (!ok) { if (tg?.HapticFeedback?.notificationOccurred) tg.HapticFeedback.notificationOccurred('error'); return; }
- 
-   // Отправляем боту БЕЗ закрытия (sendData не закрывает если не вызван tg.close)
--  tg.sendData(JSON.stringify({ type: 'add_project', abbr, full }));
-+  if (tg?.sendData) {
-+    tg.sendData(JSON.stringify({ type: 'add_project', abbr, full }));
++    
++    return await response.json();
++  } catch (error) {
++    console.error('API Call failed:', error);
++    showToast(`❌ ${error.message}`, 'error');
++    throw error;
 +  }
- 
-   // Добавляем локально сразу
-   const newProj = { abbr, full };
-   APP.allProjects.push(newProj);
-   APP.projects.push(newProj);
- 
-   // Сбрасываем форму
-   safeGetElement('modalNewAbbr').value = '';
-   safeGetElement('modalNewFull').value = '';
-   safeGetElement('projPreview').style.display = 'none';
-   safeGetElement('modalAbbrErr').classList.remove('show');
-   safeGetElement('modalFullErr').classList.remove('show');
- 
-   // Обновляем UI
-   buildProjectsGrid();
-   renderAdminManage();
- 
-   showToast(`✅ Проект ${abbr} добавлен!`);
-   if (tg.HapticFeedback && tg.HapticFeedback.impactOccurred) tg.HapticFeedback.notificationOccurred('success');
- 
-   // Закрываем модальное окно
-   closeModal();
- }
- 
- // ── MY STATS ──
-@@ -2037,99 +2067,105 @@ function editReport(report) {
-         </select>
-       </div>
-       
-       <div style="margin-bottom: 15px;">
-         <label style="display: block; margin-bottom: 5px; font-weight: 500;">Часы:</label>
-         <input type="number" id="editHours" value="${report.hours}" step="0.25" min="0" max="24" style="width: 100%; padding: 10px; border: 1px solid #e0e0e0; border-radius: 8px;">
-       </div>
-       
-       <div style="margin-bottom: 15px;">
-         <label style="display: block; margin-bottom: 5px; font-weight: 500;">Дата:</label>
-         <input type="date" id="editDate" value="${report.date}" style="width: 100%; padding: 10px; border: 1px solid #e0e0e0; border-radius: 8px;">
-       </div>
-       
-       <div style="margin-bottom: 20px;">
-         <label style="display: block; margin-bottom: 5px; font-weight: 500;">Комментарий:</label>
-         <textarea id="editComments" style="width: 100%; padding: 10px; border: 1px solid #e0e0e0; border-radius: 8px; min-height: 60px;">${report.comments || ''}</textarea>
-       </div>
-       
-       <div style="display: flex; gap: 10px;">
-         <button onclick="saveReportEdit()" style="flex: 1; padding: 12px; background: var(--primary); color: white; border: none; border-radius: 8px; font-weight: 500; cursor: pointer;">💾 Сохранить</button>
-         <button onclick="closeEditModal()" style="flex: 1; padding: 12px; background: #ccc; color: #333; border: none; border-radius: 8px; font-weight: 500; cursor: pointer;">✖ Отмена</button>
-       </div>
-     </div>
-   `;
-   
--  document.body.appendChild(modal);
-+  ModalManager.create('editModal', modalContent);
-   Haptic.impact('medium');
- }
- 
- async function saveReportEdit() {
-   const report = APP.editingReport;
--  const project = safeGetElement('modalEditProject').value;
--  const hours = parseFloat(safeGetElement('modalEditHours').value);
--  const date = document.getElementById('modalEditDate').value;
--  const comments = safeGetElement('modalEditComments').value;
-+  const projectEl = safeGetElement('modalEditProject');
-+  const hoursEl = safeGetElement('modalEditHours');
-+  const dateEl = safeGetElement('modalEditDate');
-+  const commentsEl = safeGetElement('modalEditComments');
-+  if (!projectEl || !hoursEl || !dateEl || !commentsEl) return;
++}
 +
-+  const project = projectEl.value;
-+  const hours = parseFloat(hoursEl.value);
-+  const date = dateEl.value;
-+  const comments = commentsEl.value;
-   
-   if (hours <= 0 || hours > 24) {
-     showToast('⚠️ Часы должны быть от 0.25 до 24', 'error');
-     return;
-   }
-   
-   try {
-     await apiCall(`/report/${report.id}`, 'PUT', {
-       admin_id: APP.userId,
-       project: project,
-       hours: hours,
-       date: date,
-       comments: comments
-     });
-     
-     showToast('✅ Отчёт обновлён!', 'success');
-     closeEditModal();
-     loadReportsTable();
-     await loadDataFromAPI(); // Обновляем статистику
-   } catch (error) {
-     console.error('Save edit failed:', error);
-   }
- }
- 
- function closeEditModal() {
-   ModalManager.close();
-   APP.editingReport = null;
- }
- 
- async function deleteReport(id, username, project) {
-   const displayName = username || 'Unknown';
-   if (!confirm(`Удалить отчёт?
- ${displayName} — ${project}`)) return;
-   
-   try {
-     await apiCall(`/report/${id}`, 'DELETE', { admin_id: APP.userId });
-     
-     showToast('🗑️ Отчёт удалён', 'info');
--    if (tg.HapticFeedback && tg.HapticFeedback.impactOccurred) tg.HapticFeedback.notificationOccurred('success');
-+    if (tg?.HapticFeedback?.notificationOccurred) tg.HapticFeedback.notificationOccurred('success');
-     
-     loadReportsTable();
-     await loadDataFromAPI(); // Обновляем статистику
-   } catch (error) {
-     console.error('Delete failed:', error);
-   }
- }
- 
- function clearFilters() {
-   safeGetElement('filterUser').value = '';
-   safeGetElement('filterProject').value = '';
-   safeGetElement('filterDate').value = '';
-   safeGetElement('reportsTableWrap').innerHTML = '<p style="padding: 20px; text-align: center; color: #999;">Выберите фильтры и нажмите 🔍 Фильтр</p>';
- }
- 
- function renderAdminReports() {
-   // Заполняем фильтры пользователями
-   const userSelect = safeGetElement('filterUser');
-   if (!userSelect) return;
-   
-   userSelect.innerHTML = '<option value="">Все сотрудники</option>';
-   if (APP.allUsers) {
-     APP.allUsers.forEach(u => {
-       userSelect.innerHTML += `<option value="${escapeHtml(u.id)}">${escapeHtml(u.username)}</option>`;
-     });
-@@ -2274,51 +2310,51 @@ async function submitAdminReport() {
-   if (!date) {
-     showToast('⚠️ Укажите дату', 'error');
-     return;
-   }
-   
-   if (APP.adminReportProjects.length === 0) {
-     showToast('⚠️ Добавьте хотя бы один проект', 'error');
-     return;
-   }
-   
-   try {
-     await apiCall('/report', 'POST', {
-       user_id: APP.userId,  // Админ который создаёт
-       on_behalf_of_user_id: parseInt(userId, 10),  // За кого создаём
-       on_behalf_of_username: username,
-       custom_date: date,
-       projects: APP.adminReportProjects.map(p => ({
-         project: p.project,
-         hours: p.hours,
-         comment: p.comment || ''
-       })),
-       comments: generalComment || '-'
-     });
-     
-     showToast(`✅ Отчёт создан для ${username}`, 'success');
--    if (tg.HapticFeedback && tg.HapticFeedback.impactOccurred) tg.HapticFeedback.notificationOccurred('success');
-+    if (tg?.HapticFeedback?.notificationOccurred) tg.HapticFeedback.notificationOccurred('success');
-     
-     // Очищаем форму
-     APP.adminReportProjects = [];
-     renderAdminReportProjects();
-     safeGetElement('createForUser').value = '';
-     safeGetElement('createReportComment').value = '';
-     
-     // Обновляем данные
-     await loadDataFromAPI();
-     
-   } catch (error) {
-     console.error('Create report failed:', error);
-   }
- }
- 
- 
- 
- // ══════════════════════════════════════════════════════
- // ADMIN REPORTS MANAGEMENT
- // ══════════════════════════════════════════════════════
- 
- async function loadReportsTable() {
-   const user = safeGetElement('filterUser').value;
-   const project = safeGetElement('filterProject').value;
-   const date = safeGetElement('filterDate').value;
-@@ -2363,60 +2399,66 @@ function editReport(report) {
-         </select>
-       </div>
-       
-       <div style="margin-bottom: 15px;">
-         <label style="display: block; margin-bottom: 5px; font-weight: 500;">Часы:</label>
-         <input type="number" id="modalEditHours" value="${report.hours}" step="0.25" min="0" max="24" style="width: 100%; padding: 10px; border: 1px solid #e0e0e0; border-radius: 8px;">
-       </div>
-       
-       <div style="margin-bottom: 15px;">
-         <label style="display: block; margin-bottom: 5px; font-weight: 500;">Дата:</label>
-         <input type="date" id="modalEditDate" value="${report.date}" style="width: 100%; padding: 10px; border: 1px solid #e0e0e0; border-radius: 8px;">
-       </div>
-       
-       <div style="margin-bottom: 20px;">
-         <label style="display: block; margin-bottom: 5px; font-weight: 500;">Комментарий:</label>
-         <textarea id="modalEditComments" style="width: 100%; padding: 10px; border: 1px solid #e0e0e0; border-radius: 8px; min-height: 60px;">${report.comments || ''}</textarea>
-       </div>
-       
-       <div style="display: flex; gap: 10px;">
-         <button onclick="saveReportEdit()" style="flex: 1; padding: 12px; background: var(--primary); color: white; border: none; border-radius: 8px; font-weight: 500; cursor: pointer;">💾 Сохранить</button>
-         <button onclick="closeEditModal()" style="flex: 1; padding: 12px; background: #ccc; color: #333; border: none; border-radius: 8px; font-weight: 500; cursor: pointer;">✖ Отмена</button>
-       </div>
-     </div>
-   `;
-   
--  document.body.appendChild(modal);
-+  ModalManager.create('editModal', modalContent);
-   Haptic.impact('medium');
- }
- 
- async function saveReportEdit() {
-   const report = APP.editingReport;
--  const project = safeGetElement('editProject').value;
--  const hours = parseFloat(safeGetElement('editHours').value);
--  const date = safeGetElement('editDate').value;
--  const comments = safeGetElement('editComments').value;
-+  const projectEl = safeGetElement('modalEditProject');
-+  const hoursEl = safeGetElement('modalEditHours');
-+  const dateEl = safeGetElement('modalEditDate');
-+  const commentsEl = safeGetElement('modalEditComments');
-+  if (!projectEl || !hoursEl || !dateEl || !commentsEl) return;
++async function loadDataFromAPI() {
++  console.log('[DEBUG] Loading data from API, user_id:', APP.userId);
++  
++  try {
++    const data = await apiCall('/init', 'POST', { user_id: APP.userId });
++    
++    APP.admin = data.admin;
++    APP.username = data.username || 'User';
++    console.log('[DEBUG] Username loaded:', APP.username);
++    console.log('[DEBUG] All users:', data.all_users);
++    APP.projects = data.projects || [];
++    APP.allProjects = data.all_projects || [];
++    APP.allUsers = data.all_users || [];
++    APP.userStats = data.user_stats || {};
++    APP.adminStats = data.admin_stats || null;
++    
++    buildProjectsGrid();
++    renderMyStats();
++    if (APP.admin) renderAdminOverview();
++    
++    return true;
++  } catch (error) {
++    console.error('Load data failed:', error);
++    return false;
++  }
++}
++// ── INIT ──
++async function init() {
++  const params = new URLSearchParams(window.location.search);
++  const raw = params.get('data');
++  
++  // Получаем минимальные данные из URL
++  if (raw) {
++    try {
++      const d = JSON.parse(decodeURIComponent(raw));
++      APP.userId = d.user_id || 0;
++      APP.admin = !!d.admin;
++      APP.username = d.username || 'User';
++    } catch(e) { 
++      console.error('Init error', e);
++      APP.userId = 0;
++    }
++  }
 +
-+  const project = projectEl.value;
-+  const hours = parseFloat(hoursEl.value);
-+  const date = dateEl.value;
-+  const comments = commentsEl.value;
-   
-   if (hours <= 0 || hours > 24) {
-     showToast('⚠️ Часы должны быть от 0.25 до 24', 'error');
-     return;
-   }
-   
-   try {
-     await apiCall(`/report/${report.id}`, 'PUT', {
-       admin_id: APP.userId,
-       project: project,
-       hours: hours,
-       date: date,
-       comments: comments
-     });
-     
-     showToast('✅ Отчёт обновлён!', 'success');
-     closeEditModal();
-     loadReportsTable();
-     await loadDataFromAPI();
-   } catch (error) {
-     console.error('Save edit failed:', error);
-   }
- }
- 
- function closeEditModal() {
-@@ -2532,52 +2574,54 @@ async function submitAssign() {
-   
-   if (abbrs.length === 0) {
-     showToast('⚠️ Выберите хотя бы один проект', 'error');
-     return;
-   }
-   
-   try {
-     await apiCall('/assign', 'POST', {
-       admin_id: APP.userId,
-       user_id: parseInt(userId, 10),
-       abbrs: abbrs
-     });
-     
-     showToast('✅ Проекты назначены!', 'success');
-     Haptic.notification('success');
-     
-     nav('admin-panel');
-   } catch (error) {
-     console.error('Assign failed:', error);
-   }
- }
- 
- 
- 
- function filterProjects() {
--  const search = document.getElementById('projectSearch').value.toLowerCase();
--  const grid = document.getElementById('projectsGrid');
-+  const searchInput = safeGetElement('projectSearch');
-+  const grid = safeGetElement('projectsGrid');
-+  if (!searchInput || !grid) return;
-+  const search = searchInput.value.toLowerCase();
-   const cards = grid.querySelectorAll('.proj-card');
-   
-   cards.forEach(card => {
-     const text = card.textContent.toLowerCase();
-     card.style.display = text.includes(search) ? '' : 'none';
-   });
- }
- 
- 
- 
- // Проверка синхронизации
- function syncProjectState() {
-   // Убираем selectedProject из reportItems если он там есть
-   if (APP.selectedProject) {
-     const exists = APP.reportItems.find(item => 
-       item.abbr === APP.selectedProject.abbr
-     );
-     if (exists) {
-       console.warn('[SYNC] selectedProject already in reportItems');
-       APP.selectedProject = null;
-     }
-   }
- }
- 
- 
- 
-EOF
-)
++  // Загружаем полные данные через API
++  if (APP.userId) {
++    await loadDataFromAPI();
++  } else {
++    // Demo data для локального тестирования
++    APP.projects = [{abbr:'DEMO',full:'Demo проект'}];
++  }
++
++  if (APP.admin) {
++    document.querySelectorAll('.admin-only').forEach(el => el.style.display = '');
++    renderAdminReports();
++    renderCreateReportScreen();
++  }
++
++  buildProjectsGrid();
++  renderMyStats();
++  renderAdminOverview();
++  initHoursSlider();
++  initAddProjectForm();
++  initNav();
++
++  // Back button (с проверкой версии)
++  if (tg.BackButton && tg.BackButton.onClick) {
++    tg.BackButton.onClick(() => goBack());
++  }
++
++  // Проверка версии и показ уведомления
++  checkVersion();
++}
++
++// ── NAVIGATION ──
++function nav(pageId, addToHistory = true) {
++  const current = document.querySelector('.page.active');
++  if (current && addToHistory && current.id !== pageId) {
++    APP.navHistory.push(current.id);
++  }
++
++  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
++  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
++
++  document.getElementById(pageId).classList.add('active');
++  const btn = document.querySelector(`[data-page="${pageId}"]`);
++  if (btn) btn.classList.add('active');
++
++  window.scrollTo(0, 0);
++
++  // Back button visibility
++  if (APP.navHistory.length > 0) tg.BackButton.show();
++  else tg.BackButton.hide();
++
++  if (tg.HapticFeedback && tg.HapticFeedback.impactOccurred) tg.HapticFeedback.impactOccurred('light');
++}
++
++function goBack() {
++  if (APP.navHistory.length > 0) {
++    const prev = APP.navHistory.pop();
++    nav(prev, false); // Не добавляем в историю при возврате назад
++  } else {
++    // Если истории нет — идём на главную
++    nav('home', false);
++  }
++}
++
++function initNav() {
++  document.querySelectorAll('.nav-btn').forEach(btn => {
++    btn.addEventListener('click', () => {
++      const p = btn.dataset.page;
++      if (p) { APP.navHistory = []; nav(p); }
++    });
++  });
++}
++
++// ── PROJECTS GRID ──
++function buildProjectsGrid() {
++  const grid = document.getElementById('projectsGrid');
++  grid.innerHTML = '';
++  APP.projects.forEach(proj => {
++    const card = document.createElement('div');
++    card.className = 'proj-card';
++    card.innerHTML = `<div class="proj-abbr">${proj.abbr}</div><div class="proj-name">${proj.full}</div>`;
++    card.onclick = () => selectProject(proj, card);
++    grid.appendChild(card);
++  });
++}
++
++function selectProject(proj, card) {
++  if (APP.reportItems.find(i => i.project === proj.full)) return;
++
++  document.querySelectorAll('.proj-card').forEach(c => c.classList.remove('selected'));
++  card.classList.add('selected');
++  APP.selectedProject = proj;
++
++  // Сбрасываем часы только для первого проекта, для последующих сохраняем последнее значение
++  if (APP.reportItems.length === 0) {
++    APP.currentHours = 4;
++    document.getElementById('hoursRange').value = 4;
++    document.getElementById('hoursDisplay').value = 4;
++    updateQuickBtns(4);
++  } else {
++    document.getElementById('hoursDisplay').value = APP.currentHours;
++    document.getElementById('hoursRange').value = APP.currentHours;
++    updateQuickBtns(APP.currentHours);
++  }
++
++  document.getElementById('projError').classList.remove('show');
++  document.getElementById('selectedProjectsWrap').style.display = 'block';
++  document.getElementById('hoursWrap').style.display = 'block';
++  document.getElementById('hoursLabel').textContent = `⏱️ Часов для «${proj.full}»`;
++  updateSummary();
++
++  if (tg.HapticFeedback && tg.HapticFeedback.impactOccurred) tg.HapticFeedback.impactOccurred('light');
++
++  // Скроллим к слайдеру
++  setTimeout(() => document.getElementById('hoursWrap').scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 100);
++}
++
++function addCurrentProject() {
++  if (!APP.selectedProject) return;
++  APP.reportItems.push({ project: APP.selectedProject.full, abbr: APP.selectedProject.abbr, hours: APP.currentHours, comment: '' });
++  APP.selectedProject = null;
++
++  // Снимаем выделение, разблокируем все карточки для следующего выбора
++  document.querySelectorAll('.proj-card').forEach(c => {
++    c.classList.remove('selected');
++    // Серым отмечаем уже добавленные
++    const alreadyAdded = APP.reportItems.find(i => i.abbr === c.querySelector('.proj-abbr').textContent);
++    c.style.opacity = alreadyAdded ? '0.4' : '1';
++    c.style.pointerEvents = alreadyAdded ? 'none' : 'auto';
++  });
++
++  renderSelectedList();
++  updateSummary();
++
++  // Прячем слайдер, но оставляем грид — пользователь может выбрать ещё
++  document.getElementById('hoursWrap').style.display = 'none';
++  document.getElementById('hoursLabel').textContent = '⏱️ Часов для выбранного проекта';
++
++  // Показываем кнопки действий
++  document.getElementById('commentWrap').style.display = 'block';
++  document.getElementById('submitBtn').style.display = 'block';
++  updateTotalHours();
++
++  showToast(`➕ ${APP.reportItems[APP.reportItems.length-1].project} добавлен`, 'info');
++}
++
++function removeItem(idx) {
++  const removed = APP.reportItems[idx];
++  APP.reportItems.splice(idx, 1);
++
++  // Восстанавливаем карточку проекта
++  document.querySelectorAll('.proj-card').forEach(c => {
++    if (c.querySelector('.proj-abbr').textContent === removed.abbr) {
++      c.style.opacity = '1';
++      c.style.pointerEvents = 'auto';
++    }
++  });
++
++  renderSelectedList();
++  updateSummary();
++  if (!APP.reportItems.length && !APP.selectedProject) {
++    document.getElementById('commentWrap').style.display = 'none';
++    document.getElementById('submitBtn').style.display = 'none';
++    document.getElementById('summary').style.display = 'none';
++  }
++}
++
++function renderSelectedList() {
++  const list = document.getElementById('selectedProjectsList');
++  list.innerHTML = '';
++  APP.reportItems.forEach((item, idx) => {
++    const el = document.createElement('div');
++    el.style.cssText = 'background:var(--bg2);border-radius:12px;padding:12px 14px;margin-bottom:10px;box-shadow:var(--shadow)';
++    el.innerHTML = `
++      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
++        <span style="font-weight:600;font-size:14px;flex:1;margin-right:8px">${item.abbr} — ${item.project}</span>
++        <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
++          <span style="font-weight:700;color:var(--accent);font-size:15px">${item.hours} ч</span>
++          <button onclick="removeItem(${idx})" style="background:none;border:none;color:var(--danger);font-size:18px;cursor:pointer;padding:0;line-height:1">✕</button>
++        </div>
++      </div>
++      <input type="text"
++        placeholder="Комментарий к ${item.project} (необязательно)"
++        value="${(item.comment || '').replace(/"/g, '&quot;')}"
++        oninput="APP.reportItems[${idx}].comment = this.value; updateSummary()"
++        style="width:100%;padding:8px 10px;border:1.5px solid var(--border);border-radius:8px;font:14px 'Golos Text',sans-serif;background:var(--bg);color:var(--text);box-sizing:border-box;outline:none"
++        onfocus="this.style.borderColor='var(--accent)'"
++        onblur="this.style.borderColor='var(--border)'"
++      >
++    `;
++    list.appendChild(el);
++  });
++  updateTotalHours();
++}
++
++function updateTotalHours() {
++  const total = APP.reportItems.reduce((s, i) => s + i.hours, 0) + (APP.selectedProject ? APP.currentHours : 0);
++  document.getElementById('totalHoursDisplay').textContent = total;
++}
++
++function updateSummary() {
++  const s = document.getElementById('summary');
++  const rows = document.getElementById('summaryRows');
++  const allItems = [...APP.reportItems];
++  if (APP.selectedProject) allItems.push({ project: APP.selectedProject.full, hours: APP.currentHours });
++  if (!allItems.length) { s.style.display = 'none'; return; }
++
++  s.style.display = 'block';
++  const total = allItems.reduce((s, i) => s + i.hours, 0);
++  rows.innerHTML = allItems.map(i => `
++    <div class="summary-row">
++      <span class="summary-key">${i.project}</span>
++      <span class="summary-val">${i.hours} ч${i.comment ? ' · ' + i.comment : ''}</span>
++    </div>`).join('')
++    + `<div class="summary-row"><span class="summary-key" style="font-weight:700">Итого</span><span class="summary-val" style="color:var(--accent);font-weight:700">${total} ч</span></div>`;
++
++  document.getElementById('commentWrap').style.display = 'block';
++  document.getElementById('submitBtn').style.display = 'block';
++}
++
++// ── HOURS SLIDER ──
++function initHoursSlider() {
++  const range = document.getElementById('hoursRange');
++  range.addEventListener('input', e => {
++    APP.currentHours = parseFloat(e.target.value);
++    document.getElementById('hoursDisplay').value = APP.currentHours;
++    updateQuickBtns(APP.currentHours);
++    updateSummary(); updateTotalHours();
++  });
++  document.querySelectorAll('.quick-btn').forEach(btn => {
++    btn.addEventListener('click', () => {
++      APP.currentHours = parseFloat(btn.dataset.h);
++      range.value = APP.currentHours;
++      document.getElementById('hoursDisplay').value = APP.currentHours;
++      updateQuickBtns(APP.currentHours);
++      updateSummary(); updateTotalHours();
++      if (tg.HapticFeedback && tg.HapticFeedback.impactOccurred) tg.HapticFeedback.impactOccurred('light');
++    });
++  });
++  updateQuickBtns(4);
++}
++
++function updateQuickBtns(val) {
++  document.querySelectorAll('.quick-btn').forEach(b => {
++    b.classList.toggle('active', parseFloat(b.dataset.h) === val);
++  });
++}
++
++
++
++function updateHoursFromInput() {
++  let val = parseFloat(document.getElementById('hoursDisplay').value);
++  if (isNaN(val)) val = 0.25;
++  if (val < 0.25) val = 0.25;
++  if (val > 12) val = 12;
++  
++  // Округляем до ближайшего 0.25
++  val = Math.round(val * 4) / 4;
++  
++  APP.currentHours = val;
++  document.getElementById('hoursDisplay').value = val;
++  document.getElementById('hoursRange').value = val;
++  updateQuickBtns(val);
++  updateSummary();
++  updateTotalHours();
++}
++
++// ── CONFIRM DIALOG ──
++function showConfirm(message, onConfirm) {
++  // Удаляем старый если есть
++  const old = document.getElementById('confirmDialog');
++  if (old) old.remove();
++  
++  const dialog = document.createElement('div');
++  dialog.id = 'confirmDialog';
++  dialog.style.cssText = `
++    position:fixed; inset:0; background:rgba(0,0,0,.5);
++    display:flex; align-items:center; justify-content:center;
++    z-index:10000; padding:16px;
++  `;
++  dialog.innerHTML = `
++    <div style="background:var(--bg2);border-radius:16px;padding:20px;max-width:320px;width:100%;box-shadow:0 8px 32px rgba(0,0,0,.2)">
++      <div style="font-weight:600;font-size:16px;margin-bottom:8px">Подтверждение</div>
++      <div style="color:var(--hint);font-size:14px;margin-bottom:20px">${message}</div>
++      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
++        <button onclick="document.getElementById('confirmDialog').remove()" 
++          style="padding:12px;border:1.5px solid var(--border);border-radius:10px;background:transparent;color:var(--text);font:600 14px inherit;cursor:pointer">
++          Отмена
++        </button>
++        <button id="confirmOkBtn"
++          style="padding:12px;border:none;border-radius:10px;background:var(--danger);color:#fff;font:600 14px inherit;cursor:pointer">
++          Удалить
++        </button>
++      </div>
++    </div>
++  `;
++  document.body.appendChild(dialog);
++  document.getElementById('confirmOkBtn').onclick = () => {
++    dialog.remove();
++    onConfirm();
++  };
++}
++
++// ── TOAST ──
++function showToast(msg, type = 'success') {
++  const existing = document.getElementById('toast');
++  if (existing) existing.remove();
++  const toast = document.createElement('div');
++  toast.id = 'toast';
++  toast.style.cssText = `position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:${type==='success'?'#22c55e':type==='error'?'#ef4444':'var(--accent)'};color:#fff;padding:12px 20px;border-radius:12px;font-size:14px;font-weight:600;z-index:9999;box-shadow:0 4px 12px rgba(0,0,0,.2);max-width:80vw;text-align:center;`;
++  toast.textContent = msg;
++  document.body.appendChild(toast);
++  setTimeout(() => toast.remove(), 2500);
++}
++
++// ── SUBMIT REPORT ──
++async function submitReport() {
++  if (APP.selectedProject) {
++    APP.reportItems.push({ project: APP.selectedProject.full, abbr: APP.selectedProject.abbr, hours: APP.currentHours });
++    APP.selectedProject = null;
++  }
++  if (!APP.reportItems.length) {
++    document.getElementById('projError').classList.add('show');
++    if (tg.HapticFeedback && tg.HapticFeedback.impactOccurred) tg.HapticFeedback.notificationOccurred('error');
++    return;
++  }
++
++  const generalComment = document.getElementById('comment').value || '';
++  const data = {
++    type: 'report',
++    projects: APP.reportItems.map(i => ({ 
++      project: i.project, 
++      hours: i.hours,
++      comment: i.comment || ''
++    })),
++    comments: generalComment || '-'
++  };
++
++  // Добавляем pending actions если есть
++  if (APP.pendingActions && APP.pendingActions.length) {
++    data.pending = APP.pendingActions;
++    APP.pendingActions = [];
++  }
++  try {
++    // Отправляем через API
++    await apiCall('/report', 'POST', {
++      user_id: APP.userId,
++      username: APP.username,
++      projects: APP.reportItems.map(i => ({ 
++        project: i.project, 
++        hours: i.hours,
++        comment: i.comment || ''
++      })),
++      comments: generalComment || '-'
++    });
++
++  // Сбрасываем форму БЕЗ закрытия
++  APP.reportItems = [];
++  APP.selectedProject = null;
++  document.querySelectorAll('.proj-card').forEach(c => c.classList.remove('selected'));
++  document.getElementById('selectedProjectsWrap').style.display = 'none';
++  document.getElementById('commentWrap').style.display = 'none';
++  document.getElementById('summary').style.display = 'none';
++  document.getElementById('comment').value = '';
++  document.getElementById('selectedProjectsList').innerHTML = '';
++  document.getElementById('submitBtn').style.display = 'none';
++
++  // Обновляем локальную статистику сразу (не ждём перезапуска /start)
++  data.projects.forEach(item => {
++    APP.userStats = APP.userStats || { total_hours: 0, total_reports: 0, by_project: {} };
++    APP.userStats.total_hours = (APP.userStats.total_hours || 0) + item.hours;
++    APP.userStats.total_reports = (APP.userStats.total_reports || 0) + 1;
++    APP.userStats.by_project = APP.userStats.by_project || {};
++    APP.userStats.by_project[item.project] = (APP.userStats.by_project[item.project] || 0) + item.hours;
++  });
++  renderMyStats();
++
++    showToast('✅ Отчёт сохранён!');
++    if (tg.HapticFeedback && tg.HapticFeedback.impactOccurred) tg.HapticFeedback.notificationOccurred('success');
++
++    // Обновляем статистику
++    await loadDataFromAPI();
++
++    setTimeout(() => nav('home'), 1500);
++  } catch (error) {
++    console.error('Submit report failed:', error);
++  }
++}
++
++// ── ADD PROJECT FORM ──
++function initAddProjectForm() {
++  document.getElementById('newAbbr').addEventListener('input', e => {
++    e.target.value = e.target.value.toUpperCase();
++    updateProjPreview();
++  });
++  document.getElementById('newFull').addEventListener('input', updateProjPreview);
++}
++
++function updateProjPreview() {
++  const a = document.getElementById('newAbbr').value.trim();
++  const f = document.getElementById('newFull').value.trim();
++  const preview = document.getElementById('projPreview');
++  if (a || f) {
++    preview.style.display = 'block';
++    document.getElementById('previewAbbr').textContent = a || 'АБВ';
++    document.getElementById('previewFull').textContent = f || 'Название';
++  } else {
++    preview.style.display = 'none';
++  }
++}
++
++async function submitAddProject() {
++  const abbr = document.getElementById('newAbbr').value.trim().toUpperCase();
++  const full = document.getElementById('newFull').value.trim();
++  let ok = true;
++
++  if (abbr.length < 2) {
++    document.getElementById('abbrErr').textContent = 'Минимум 2 символа';
++    document.getElementById('abbrErr').classList.add('show'); ok = false;
++  } else document.getElementById('abbrErr').classList.remove('show');
++
++  if (full.length < 3) {
++    document.getElementById('fullErr').textContent = 'Минимум 3 символа';
++    document.getElementById('fullErr').classList.add('show'); ok = false;
++  } else document.getElementById('fullErr').classList.remove('show');
++
++  if (APP.allProjects.find(p => p.abbr === abbr)) {
++    document.getElementById('abbrErr').textContent = 'Аббревиатура уже используется';
++    document.getElementById('abbrErr').classList.add('show'); ok = false;
++  }
++
++  if (!ok) { if (tg.HapticFeedback && tg.HapticFeedback.impactOccurred) tg.HapticFeedback.notificationOccurred('error'); return; }
++
++  // Отправляем боту БЕЗ закрытия (sendData не закрывает если не вызван tg.close)
++  tg.sendData(JSON.stringify({ type: 'add_project', abbr, full }));
++
++  // Добавляем локально сразу
++  const newProj = { abbr, full };
++  APP.allProjects.push(newProj);
++  APP.projects.push(newProj);
++
++  // Сбрасываем форму
++  document.getElementById('newAbbr').value = '';
++  document.getElementById('newFull').value = '';
++  document.getElementById('projPreview').style.display = 'none';
++  document.getElementById('abbrErr').classList.remove('show');
++  document.getElementById('fullErr').classList.remove('show');
++
++  // Обновляем UI
++  buildProjectsGrid();
++  renderAdminManage();
++
++  showToast(`✅ Проект ${abbr} добавлен!`);
++  if (tg.HapticFeedback && tg.HapticFeedback.impactOccurred) tg.HapticFeedback.notificationOccurred('success');
++
++  // Закрываем модальное окно
++  closeModal();
++}
++
++// ── MY STATS ──
++function renderMyStats() {
++  const content = document.getElementById('myStatsContent');
++  const s = APP.userStats;
++  if (!s || !s.total_reports) {
++    document.getElementById('myStatsSubtitle').textContent = 'Ещё нет отчётов';
++    content.innerHTML = `<div class="empty"><div class="empty-icon">📭</div><div>Создайте первый отчёт!</div></div>`;
++    return;
++  }
++  document.getElementById('myStatsSubtitle').textContent = `Всего за всё время`;
++  let html = `
++    <div class="card"><div class="card-row"><div class="card-label">⏱️ Всего часов</div><div class="card-value">${s.total_hours}</div></div></div>
++    <div class="card"><div class="card-row"><div class="card-label">📝 Отчётов</div><div class="card-value">${s.total_reports}</div></div></div>
++    <div class="form-label" style="margin-top:4px">📁 По проектам</div>
++  `;
++  Object.entries(s.by_project || {}).sort((a,b)=>b[1]-a[1]).forEach(([proj, h]) => {
++    html += `<div class="card"><div class="card-row"><span>${proj}</span><span style="font-weight:700;color:var(--accent)">${h} ч</span></div></div>`;
++  });
++  content.innerHTML = html;
++}
++
++// ── ADMIN TABS ──
++let currentAdminTab = 'overview';
++function adminTab(tab, btn) {
++  document.querySelectorAll('.stat-tab').forEach(b => b.classList.remove('active'));
++  btn.classList.add('active');
++  currentAdminTab = tab;
++  renderAdminTab(tab);
++}
++
++function renderAdminTab(tab) {
++  if (tab === 'overview') renderAdminOverview();
++  else if (tab === 'employees') renderAdminEmployees();
++  else if (tab === 'projects-stat') renderAdminProjects();
++  else if (tab === 'reports-list') renderAdminReports();
++  else if (tab === 'manage') renderAdminManage();
++}
++
++function renderAdminOverview() {
++  if (!document.getElementById('admin-panel').classList.contains('active') && currentAdminTab !== 'overview') return;
++  const s = APP.adminStats;
++  const content = document.getElementById('adminContent');
++  if (!s) {
++    content.innerHTML = `<div class="empty"><div class="empty-icon">📊</div><div>Нет данных</div></div>`;
++    return;
++  }
++  content.innerHTML = `
++    <div class="card"><div class="card-row"><div class="card-label">⏱️ Всего часов</div><div class="card-value">${s.total_hours}</div></div></div>
++    <div class="card"><div class="card-row"><div class="card-label">📝 Отчётов</div><div class="card-value">${s.total_reports}</div></div></div>
++    <div class="card"><div class="card-row"><div class="card-label">👥 Сотрудников</div><div class="card-value">${s.employees?.length||0}</div></div></div>
++    <div class="chart-wrap"><canvas id="overviewChart"></canvas></div>
++  `;
++  if (s.employees?.length && typeof Chart !== 'undefined') {
++    if (APP.adminChart) APP.adminChart.destroy();
++    const ctx = document.getElementById('overviewChart');
++    APP.adminChart = new Chart(ctx, {
++      type: 'bar',
++      data: {
++        labels: s.employees.map(e=>e.name),
++        datasets: [{ label:'Часы', data: s.employees.map(e=>e.hours), backgroundColor: 'rgba(37,99,235,0.7)', borderRadius: 6 }]
++      },
++      options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true}} }
++    });
++  }
++}
++
++function renderAdminEmployees() {
++  const s = APP.adminStats;
++  const content = document.getElementById('adminContent');
++  if (!s?.employees?.length) { content.innerHTML = `<div class="empty"><div class="empty-icon">👥</div><div>Нет данных</div></div>`; return; }
++  content.innerHTML = [...s.employees].sort((a,b)=>b.hours-a.hours).map(emp => `
++    <div class="emp-card">
++      <div class="emp-header">
++        <div class="emp-name">👤 ${emp.name}</div>
++        <div class="emp-hours">${emp.hours} ч</div>
++      </div>
++      <div style="font-size:13px;color:var(--hint);margin-bottom:8px">📝 Отчётов: ${emp.reports}</div>
++      ${Object.entries(emp.projects||{}).map(([p,h])=>`<div class="emp-proj"><span class="emp-proj-name">${p}</span><span>${h} ч</span></div>`).join('')}
++    </div>
++  `).join('');
++}
++
++function renderAdminProjects() {
++  const s = APP.adminStats;
++  const content = document.getElementById('adminContent');
++  if (!s?.projects) { content.innerHTML = `<div class="empty"><div class="empty-icon">📁</div><div>Нет данных</div></div>`; return; }
++  const sorted = Object.entries(s.projects).sort((a,b)=>b[1]-a[1]);
++  content.innerHTML = sorted.map(([p,h])=>`<div class="card"><div class="card-row"><span>${p}</span><span style="font-weight:700;color:var(--accent)">${h} ч</span></div></div>`).join('')
++    + `<div class="chart-wrap"><canvas id="projChart"></canvas></div>`;
++  if (sorted.length && typeof Chart !== 'undefined') {
++    if (APP.projChart) APP.projChart.destroy();
++    APP.projChart = new Chart(document.getElementById('projChart'), {
++      type: 'doughnut',
++      data: {
++        labels: sorted.map(([p])=>p),
++        datasets: [{ data: sorted.map(([,h])=>h), backgroundColor: ['#2563eb','#16a34a','#d97706','#9333ea','#ef4444','#0891b2'], borderWidth:0 }]
++      },
++      options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{position:'bottom',labels:{font:{size:12}}}} }
++    });
++  }
++}
++
++function renderAdminReports() {
++  const s = APP.adminStats;
++  const content = document.getElementById('adminContent');
++  if (!s?.recent_reports?.length) { content.innerHTML = `<div class="empty"><div class="empty-icon">📝</div><div>Нет отчётов</div></div>`; return; }
++  content.innerHTML = s.recent_reports.map(r=>`
++    <div class="report-item">
++      <div class="report-header">
++        <span class="report-emp">👤 ${r.employee}</span>
++        <span class="report-date">${r.date} ${r.time}</span>
++      </div>
++      <div class="report-proj">📁 ${r.project} — ${r.hours} ч</div>
++      ${r.comment && r.comment !== '-' ? `<div class="report-comment">💬 ${r.comment}</div>` : ''}
++    </div>
++  `).join('');
++}
++
++function renderAdminManage() {
++  const content = document.getElementById('adminContent');
++  const projs = APP.allProjects;
++  const users = APP.allUsers;
++
++  content.innerHTML = `
++    <div class="form-label">📁 Проекты (${projs.length})</div>
++    ${projs.map(p=>`
++      <div class="project-list-item">
++        <span class="proj-list-name">${p.abbr} — ${p.full}</span>
++        <button class="remove-btn" onclick="removeProject('${p.abbr}')">✕</button>
++      </div>`).join('')}
++    <button class="btn btn-primary" onclick="openModal()">➕ Добавить проект</button>
++
++    <div class="form-label" style="margin-top:24px">👥 Назначить проекты сотруднику</div>
++    <select class="user-select" id="assignUser" onchange="renderAssignProjects()">
++      <option value="">— Выберите сотрудника —</option>
++      ${users.map(u=>`<option value="${u.id}">${u.username}</option>`).join('')}
++    </select>
++    <div id="assignProjectsList" class="checkbox-list"></div>
++    <button class="btn btn-primary" id="assignBtn" style="display:none" onclick="submitAssign()">✅ Сохранить назначение</button>
++  `;
++}
++
++async function removeProject(abbr) {
++  if (confirm(`Удалить проект ${abbr}?`)) {
++    try {
++      await apiCall(`/project/${abbr}`, 'DELETE', { user_id: APP.userId });
++      
++      APP.allProjects = APP.allProjects.filter(p => p.abbr !== abbr);
++      APP.projects = APP.projects.filter(p => p.abbr !== abbr);
++      buildProjectsGrid();
++      renderAdminManage();
++      showToast(`🗑 Проект ${abbr} удалён`, 'info');
++    } catch (error) {
++      console.error('Remove project failed:', error);
++    }
++  }
++}
++
++function renderAssignProjects() {
++  const uid = document.getElementById('assignUser').value;
++  if (!uid) return;
++  const list = document.getElementById('assignProjectsList');
++  list.innerHTML = APP.allProjects.map(p => `
++    <label class="checkbox-item">
++      <input type="checkbox" value="${p.abbr}" checked>
++      <span>${p.abbr} — ${p.full}</span>
++    </label>
++  `).join('');
++  document.getElementById('assignBtn').style.display = 'block';
++}
++
++async function submitAssign() {
++  const uid = parseInt(document.getElementById('assignUser').value);
++  if (!uid) { showToast('Выберите сотрудника', 'error'); return; }
++  const uname = APP.allUsers.find(u=>u.id===uid)?.username || '';
++  const checked = [...document.querySelectorAll('#assignProjectsList input:checked')].map(c=>c.value);
++  if (!checked.length) { showToast('Выберите хотя бы один проект', 'error'); return; }
++  // Сохраняем в очередь pendingActions (не закрываем приложение)
++  APP.pendingActions = APP.pendingActions || [];
++  APP.pendingActions.push({ type: 'assign_projects', user_id: uid, username: uname, abbrs: checked });
++
++  // Запоминаем в pendingActions — отправится боту вместе со следующим отчётом
++  showToast(`✅ Проекты назначены для ${uname}`, 'success');
++  if (tg.HapticFeedback && tg.HapticFeedback.impactOccurred) tg.HapticFeedback.notificationOccurred('success');
++
++  // Сбрасываем форму
++  document.getElementById('assignUser').value = '';
++  document.getElementById('assignProjectsList').innerHTML = '';
++  document.getElementById('assignBtn').style.display = 'none';
++}
++
++// ── MODAL ──
++function openModal() {
++  document.getElementById('newAbbr').value = '';
++  document.getElementById('newFull').value = '';
++  document.getElementById('projPreview').style.display = 'none';
++  document.getElementById('abbrErr').classList.remove('show');
++  document.getElementById('fullErr').classList.remove('show');
++  document.getElementById('addProjModal').classList.add('open');
++}
++
++function closeModal() {
++  document.getElementById('addProjModal').classList.remove('open');
++}
++
++// Закрыть по клику на overlay
++document.getElementById('addProjModal').addEventListener('click', function(e) {
++  if (e.target === this) closeModal();
++});
++
++// ── VERSION CHECK ──
++function checkVersion() {
++  try {
++    const savedVersion = localStorage.getItem(VERSION_KEY);
++    
++    if (!savedVersion) {
++      // Первый запуск
++      localStorage.setItem(VERSION_KEY, APP_VERSION);
++      showVersionToast('welcome');
++    } else if (savedVersion !== APP_VERSION) {
++      // Обновление
++      localStorage.setItem(VERSION_KEY, APP_VERSION);
++      showVersionToast('update', savedVersion);
++    }
++    // Если версия совпадает — ничего не показываем
++  } catch (e) {
++    console.log('localStorage недоступен');
++  }
++}
++
++function showVersionToast(type, oldVersion = null) {
++  const changelog = CHANGELOG[APP_VERSION];
++  if (!changelog) return;
++
++  let message = '';
++  if (type === 'welcome') {
++    message = `🎉 ${changelog.title}`;
++  } else {
++    message = `✨ Обновление v${APP_VERSION}`;
++  }
++
++  // Создаём расширенный тост с деталями
++  const toast = document.createElement('div');
++  toast.style.cssText = `
++    position: fixed; top: 70px; left: 50%; transform: translateX(-50%);
++    background: var(--bg2); color: var(--text);
++    padding: 16px 20px; border-radius: 12px;
++    box-shadow: 0 8px 32px rgba(0,0,0,.3);
++    z-index: 10000; max-width: 90vw; width: 320px;
++    border: 2px solid var(--accent);
++    animation: slideDown .3s ease;
++  `;
++
++  let featuresHtml = '';
++  if (changelog.features && changelog.features.length > 0) {
++    featuresHtml = '<div style="margin-top:8px;font-size:13px;opacity:.9">' +
++      changelog.features.map(f => `• ${f}`).join('<br>') +
++      '</div>';
++  }
++
++  toast.innerHTML = `
++    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
++      <strong style="font-size:15px">${message}</strong>
++      <button onclick="this.parentElement.parentElement.remove()" 
++        style="background:none;border:none;color:var(--hint);font-size:20px;cursor:pointer;padding:0 4px">✕</button>
++    </div>
++    ${featuresHtml}
++  `;
++
++  document.body.appendChild(toast);
++
++  // Автоудаление через 8 секунд
++  setTimeout(() => {
++    if (toast.parentElement) {
++      toast.style.animation = 'fadeOut .3s ease';
++      setTimeout(() => toast.remove(), 300);
++    }
++  }, 8000);
++
++  if (tg.HapticFeedback) {
++    tg.HapticFeedback.notificationOccurred('success');
++  }
++}
++
++// Добавляем анимации
++const style = document.createElement('style');
++style.textContent = `
++  @keyframes slideDown {
++    from { opacity: 0; transform: translate(-50%, -20px); }
++    to { opacity: 1; transform: translate(-50%, 0); }
++  }
++  @keyframes fadeOut {
++    from { opacity: 1; }
++    to { opacity: 0; }
++  }
++`;
++document.head.appendChild(style);
++
++// ── START ──
++init();
++
++
++// ══════════════════════════════════════════════════════
++// REPORTS MANAGEMENT
++// ══════════════════════════════════════════════════════
++
++async function loadReportsTable() {
++  const user = document.getElementById('filterUser').value;
++  const project = document.getElementById('filterProject').value;
++  const date = document.getElementById('filterDate').value;
++  
++  let url = `/reports?admin_id=${APP.userId}`;
++  if (user) url += `&user_id=${user}`;
++  if (project) url += `&project=${encodeURIComponent(project)}`;
++  if (date) url += `&date=${date}`;
++  
++  try {
++    const data = await apiCall(url, 'GET');
++    renderReportsTable(data.reports);
++  } catch (error) {
++    console.error('Load reports failed:', error);
++  }
++}
++
++
++
++function getUsernameById(userId) {
++  if (!APP.allUsers || !userId) return null;
++  const user = APP.allUsers.find(u => u.id == userId);
++  return user ? user.username : null;
++}
++
++function renderReportsTable(reports) {
++  const wrap = document.getElementById('reportsTableWrap');
++  
++  if (!reports || reports.length === 0) {
++    wrap.innerHTML = '<p style="padding: 20px; text-align: center; color: #999;">Отчётов не найдено</p>';
++    return;
++  }
++  
++  // Фикс username для старых отчётов
++  reports = reports.map(r => ({
++    ...r,
++    username: r.username || getUsernameById(r.user_id) || 'Unknown'
++  }));
++  
++  let html = `
++    <table style="width: 100%; border-collapse: collapse;">
++      <thead>
++        <tr style="background: #f5f5f5; border-bottom: 2px solid #e0e0e0;">
++          <th style="padding: 12px; text-align: left;">Дата</th>
++          <th style="padding: 12px; text-align: left;">Сотрудник</th>
++          <th style="padding: 12px; text-align: left;">Проект</th>
++          <th style="padding: 12px; text-align: center;">Часы</th>
++          <th style="padding: 12px; text-align: left;">Комментарий</th>
++          <th style="padding: 12px; text-align: center;">Действия</th>
++        </tr>
++      </thead>
++      <tbody>
++  `;
++  
++  reports.forEach(r => {
++    html += `
++      <tr style="border-bottom: 1px solid #f0f0f0;">
++        <td style="padding: 12px;">${r.date}</td>
++        <td style="padding: 12px;">${r.username || 'Unknown'}</td>
++        <td style="padding: 12px;">${r.project}</td>
++        <td style="padding: 12px; text-align: center;"><b>${r.hours}ч</b></td>
++        <td style="padding: 12px; color: #666;">${r.comments || '-'}</td>
++        <td style="padding: 12px; text-align: center;">
++          <button onclick='editReport(${JSON.stringify(r)})' style="padding: 6px 12px; background: #4CAF50; color: white; border: none; border-radius: 6px; margin-right: 5px; cursor: pointer;">✏️</button>
++          <button onclick='deleteReport("${r.id}", "${r.username}", "${r.project}")' style="padding: 6px 12px; background: #f44336; color: white; border: none; border-radius: 6px; cursor: pointer;">🗑️</button>
++        </td>
++      </tr>
++    `;
++  });
++  
++  html += `
++      </tbody>
++    </table>
++    <p style="padding: 15px; text-align: center; color: #999; border-top: 1px solid #e0e0e0;">
++      Всего отчётов: <b>${reports.length}</b>
++    </p>
++  `;
++  
++  wrap.innerHTML = html;
++}
++
++function editReport(report) {
++  APP.editingReport = report;
++  
++  const modal = document.createElement('div');
++  modal.id = 'editModal';
++  modal.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 10000;';
++  
++  modal.innerHTML = `
++    <div style="background: white; border-radius: 16px; padding: 24px; max-width: 500px; width: 90%; max-height: 80vh; overflow-y: auto;">
++      <h3 style="margin-top: 0;">✏️ Редактировать отчёт</h3>
++      
++      <div style="margin-bottom: 15px;">
++        <label style="display: block; margin-bottom: 5px; font-weight: 500;">Сотрудник:</label>
++        <input type="text" value="${report.username || 'Unknown'}" disabled style="width: 100%; padding: 10px; border: 1px solid #e0e0e0; border-radius: 8px; background: #f5f5f5;">
++      </div>
++      
++      <div style="margin-bottom: 15px;">
++        <label style="display: block; margin-bottom: 5px; font-weight: 500;">Проект:</label>
++        <select id="editProject" style="width: 100%; padding: 10px; border: 1px solid #e0e0e0; border-radius: 8px;">
++          ${APP.allProjects.map(p => `<option value="${p.full}" ${p.full === report.project ? 'selected' : ''}>${p.full}</option>`).join('')}
++        </select>
++      </div>
++      
++      <div style="margin-bottom: 15px;">
++        <label style="display: block; margin-bottom: 5px; font-weight: 500;">Часы:</label>
++        <input type="number" id="editHours" value="${report.hours}" step="0.25" min="0" max="24" style="width: 100%; padding: 10px; border: 1px solid #e0e0e0; border-radius: 8px;">
++      </div>
++      
++      <div style="margin-bottom: 15px;">
++        <label style="display: block; margin-bottom: 5px; font-weight: 500;">Дата:</label>
++        <input type="date" id="editDate" value="${report.date}" style="width: 100%; padding: 10px; border: 1px solid #e0e0e0; border-radius: 8px;">
++      </div>
++      
++      <div style="margin-bottom: 20px;">
++        <label style="display: block; margin-bottom: 5px; font-weight: 500;">Комментарий:</label>
++        <textarea id="editComments" style="width: 100%; padding: 10px; border: 1px solid #e0e0e0; border-radius: 8px; min-height: 60px;">${report.comments || ''}</textarea>
++      </div>
++      
++      <div style="display: flex; gap: 10px;">
++        <button onclick="saveReportEdit()" style="flex: 1; padding: 12px; background: var(--primary); color: white; border: none; border-radius: 8px; font-weight: 500; cursor: pointer;">💾 Сохранить</button>
++        <button onclick="closeEditModal()" style="flex: 1; padding: 12px; background: #ccc; color: #333; border: none; border-radius: 8px; font-weight: 500; cursor: pointer;">✖ Отмена</button>
++      </div>
++    </div>
++  `;
++  
++  document.body.appendChild(modal);
++  if (tg.HapticFeedback && tg.HapticFeedback.impactOccurred) tg.HapticFeedback.impactOccurred('medium');
++}
++
++async function saveReportEdit() {
++  const report = APP.editingReport;
++  const project = document.getElementById('editProject').value;
++  const hours = parseFloat(document.getElementById('editHours').value);
++  const date = document.getElementById('editDate').value;
++  const comments = document.getElementById('editComments').value;
++  
++  if (hours <= 0 || hours > 24) {
++    showToast('⚠️ Часы должны быть от 0.25 до 24', 'error');
++    return;
++  }
++  
++  try {
++    await apiCall(`/report/${report.id}`, 'PUT', {
++      admin_id: APP.userId,
++      project: project,
++      hours: hours,
++      date: date,
++      comments: comments
++    });
++    
++    showToast('✅ Отчёт обновлён!', 'success');
++    closeEditModal();
++    loadReportsTable();
++    await loadDataFromAPI(); // Обновляем статистику
++  } catch (error) {
++    console.error('Save edit failed:', error);
++  }
++}
++
++function closeEditModal() {
++  const modal = document.getElementById('editModal');
++  if (modal) modal.remove();
++  APP.editingReport = null;
++}
++
++async function deleteReport(id, username, project) {
++  const displayName = username || 'Unknown';
++  if (!confirm(`Удалить отчёт?
++${displayName} — ${project}`)) return;
++  
++  try {
++    await apiCall(`/report/${id}`, 'DELETE', { admin_id: APP.userId });
++    
++    showToast('🗑️ Отчёт удалён', 'info');
++    if (tg.HapticFeedback && tg.HapticFeedback.impactOccurred) tg.HapticFeedback.notificationOccurred('success');
++    
++    loadReportsTable();
++    await loadDataFromAPI(); // Обновляем статистику
++  } catch (error) {
++    console.error('Delete failed:', error);
++  }
++}
++
++function clearFilters() {
++  document.getElementById('filterUser').value = '';
++  document.getElementById('filterProject').value = '';
++  document.getElementById('filterDate').value = '';
++  document.getElementById('reportsTableWrap').innerHTML = '<p style="padding: 20px; text-align: center; color: #999;">Выберите фильтры и нажмите 🔍 Фильтр</p>';
++}
++
++function renderAdminReports() {
++  // Заполняем фильтры пользователями
++  const userSelect = document.getElementById('filterUser');
++  if (!userSelect) return;
++  
++  userSelect.innerHTML = '<option value="">Все сотрудники</option>';
++  if (APP.allUsers) {
++    APP.allUsers.forEach(u => {
++      userSelect.innerHTML += `<option value="${u.id}">${u.username}</option>`;
++    });
++  }
++  
++  // Заполняем фильтры проектами
++  const projSelect = document.getElementById('filterProject');
++  projSelect.innerHTML = '<option value="">Все проекты</option>';
++  if (APP.allProjects) {
++    APP.allProjects.forEach(p => {
++      projSelect.innerHTML += `<option value="${p.full}">${p.full}</option>`;
++    });
++  }
++}
++
++
++
++// ══════════════════════════════════════════════════════
++// ADMIN CREATE REPORT FOR EMPLOYEE
++// ══════════════════════════════════════════════════════
++
++APP.adminReportProjects = [];
++
++function renderCreateReportScreen() {
++  // Заполняем список сотрудников
++  const userSelect = document.getElementById('createForUser');
++  if (!userSelect) return;
++  
++  userSelect.innerHTML = '<option value="">Выберите сотрудника</option>';
++  if (APP.allUsers) {
++    APP.allUsers.forEach(u => {
++      userSelect.innerHTML += `<option value="${u.id}" data-username="${u.username}">${u.username}</option>`;
++    });
++  }
++  
++  // Устанавливаем сегодняшнюю дату
++  const dateInput = document.getElementById('createReportDate');
++  if (dateInput) {
++    const today = new Date().toISOString().split('T')[0];
++    dateInput.value = today;
++  }
++  
++  // Очищаем список проектов
++  APP.adminReportProjects = [];
++  renderAdminReportProjects();
++}
++
++function addProjectToAdminReport() {
++  const modal = document.createElement('div');
++  modal.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 10000;';
++  
++  modal.innerHTML = `
++    <div style="background: white; border-radius: 16px; padding: 24px; max-width: 400px; width: 90%;">
++      <h3 style="margin-top: 0;">Добавить проект</h3>
++      
++      <div style="margin-bottom: 15px;">
++        <label style="display: block; margin-bottom: 5px;">Проект:</label>
++        <select id="modalProject" style="width: 100%; padding: 10px; border: 1px solid #e0e0e0; border-radius: 8px;">
++          ${APP.allProjects.map(p => `<option value="${p.full}">${p.full}</option>`).join('')}
++        </select>
++      </div>
++      
++      <div style="margin-bottom: 15px;">
++        <label style="display: block; margin-bottom: 5px;">Часы:</label>
++        <input type="number" id="modalHours" value="8" step="0.25" min="0.25" max="24" style="width: 100%; padding: 10px; border: 1px solid #e0e0e0; border-radius: 8px;">
++      </div>
++      
++      <div style="margin-bottom: 15px;">
++        <label style="display: block; margin-bottom: 5px;">Комментарий (необязательно):</label>
++        <input type="text" id="modalComment" style="width: 100%; padding: 10px; border: 1px solid #e0e0e0; border-radius: 8px;" placeholder="Комментарий к проекту">
++      </div>
++      
++      <div style="display: flex; gap: 10px;">
++        <button onclick="confirmAddProjectToAdmin()" style="flex: 1; padding: 12px; background: var(--primary); color: white; border: none; border-radius: 8px;">Добавить</button>
++        <button onclick="this.closest('[style*=fixed]').remove()" style="flex: 1; padding: 12px; background: #ccc; color: #333; border: none; border-radius: 8px;">Отмена</button>
++      </div>
++    </div>
++  `;
++  
++  document.body.appendChild(modal);
++}
++
++function confirmAddProjectToAdmin() {
++  const project = document.getElementById('modalProject').value;
++  const hours = parseFloat(document.getElementById('modalHours').value);
++  const comment = document.getElementById('modalComment').value;
++  
++  if (hours <= 0 || hours > 24) {
++    showToast('⚠️ Часы должны быть от 0.25 до 24', 'error');
++    return;
++  }
++  
++  APP.adminReportProjects.push({ project, hours, comment });
++  renderAdminReportProjects();
++  
++  document.querySelector('[style*="position: fixed"]').remove();
++  showToast(`✅ Добавлено: ${project} — ${hours}ч`);
++}
++
++function renderAdminReportProjects() {
++  const container = document.getElementById('createReportProjects');
++  if (!container) return;
++  
++  if (APP.adminReportProjects.length === 0) {
++    container.innerHTML = '<p style="text-align: center; color: #999; padding: 20px;">Добавьте проекты</p>';
++    return;
++  }
++  
++  let html = '';
++  APP.adminReportProjects.forEach((item, index) => {
++    html += `
++      <div style="background: #f5f5f5; padding: 12px; border-radius: 8px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;">
++        <div>
++          <div style="font-weight: 500;">${item.project}</div>
++          <div style="color: #666; font-size: 14px;">${item.hours}ч${item.comment ? ' • ' + item.comment : ''}</div>
++        </div>
++        <button onclick="removeAdminReportProject(${index})" style="background: #f44336; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer;">🗑️</button>
++      </div>
++    `;
++  });
++  
++  container.innerHTML = html;
++}
++
++function removeAdminReportProject(index) {
++  APP.adminReportProjects.splice(index, 1);
++  renderAdminReportProjects();
++}
++
++async function submitAdminReport() {
++  const userSelect = document.getElementById('createForUser');
++  const userId = userSelect.value;
++  const username = userSelect.selectedOptions[0]?.getAttribute('data-username');
++  const date = document.getElementById('createReportDate').value;
++  const generalComment = document.getElementById('createReportComment').value;
++  
++  if (!userId) {
++    showToast('⚠️ Выберите сотрудника', 'error');
++    return;
++  }
++  
++  if (!date) {
++    showToast('⚠️ Укажите дату', 'error');
++    return;
++  }
++  
++  if (APP.adminReportProjects.length === 0) {
++    showToast('⚠️ Добавьте хотя бы один проект', 'error');
++    return;
++  }
++  
++  try {
++    await apiCall('/report', 'POST', {
++      user_id: APP.userId,  // Админ который создаёт
++      on_behalf_of_user_id: parseInt(userId),  // За кого создаём
++      on_behalf_of_username: username,
++      custom_date: date,
++      projects: APP.adminReportProjects.map(p => ({
++        project: p.project,
++        hours: p.hours,
++        comment: p.comment || ''
++      })),
++      comments: generalComment || '-'
++    });
++    
++    showToast(`✅ Отчёт создан для ${username}`, 'success');
++    if (tg.HapticFeedback && tg.HapticFeedback.impactOccurred) tg.HapticFeedback.notificationOccurred('success');
++    
++    // Очищаем форму
++    APP.adminReportProjects = [];
++    renderAdminReportProjects();
++    document.getElementById('createForUser').value = '';
++    document.getElementById('createReportComment').value = '';
++    
++    // Обновляем данные
++    await loadDataFromAPI();
++    
++  } catch (error) {
++    console.error('Create report failed:', error);
++  }
++}
++
++</script>
++</body>
++</html>
