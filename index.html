@@ -1,4 +1,4 @@
- (cd "$(git rev-parse --show-toplevel)" && git apply --3way <<'EOF' 
+ /*  (cd "$(git rev-parse --show-toplevel)" && git apply --3way <<'EOF' 
 diff --git a/app.html b/app.html
 index 111e9627b8ebcbc62d554ff1ec1b01667725418c..95acf3d09fb403be78d629e58f83ef26600da08e 100644
 --- a/app.html
@@ -9,8 +9,10 @@ index 111e9627b8ebcbc62d554ff1ec1b01667725418c..95acf3d09fb403be78d629e58f83ef26
 -index 666a990ffbc124f13df781f4c3207f95874e5136..e64fb2c0c2ce897442d4b70bdc506930b220c27d 100644
 ---- a/app.html
 -+++ b/app.html
--@@ -1,38 +1,40 @@
-- <!DOCTYPE html>
+-@@ -1,38 +1,40 @@ */ 
+
+ 
+- <!DOCTYPE html> 
 - <html lang="ru">
 - <head>
 - <meta charset="UTF-8">
