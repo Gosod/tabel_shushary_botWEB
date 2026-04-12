@@ -1,9 +1,9 @@
- (cd "$(git rev-parse --show-toplevel)" && git apply --3way <<'EOF' 
-diff --git a/telegram_bot.py b/telegram_bot.py
+ /* diff --git a/telegram_bot.py b/telegram_bot.py
 index 1962749688920657725ba9358d6d5d490c9c48fb..67d1cfcd5c7dc27d01124628112eb6e0cce010ff 100644
 --- a/telegram_bot.py
 +++ b/telegram_bot.py
-@@ -5,51 +5,51 @@ import csv
+@@ -5,51 +5,51 @@ import csv */
+
  import io
  import urllib.parse
  from datetime import datetime, time, timedelta
@@ -29,7 +29,7 @@ index 1962749688920657725ba9358d6d5d490c9c48fb..67d1cfcd5c7dc27d01124628112eb6e0
  TOKEN = os.environ.get('TELEGRAM_BOT_TOKEN')
  if not TOKEN:
      raise ValueError("TELEGRAM_BOT_TOKEN environment variable must be set!")
--WEBAPP_URL = 'https://gosod.github.io/tabel_shushary_botWEB/index.html'
+-WEBAPP_URL = 'https://gosod.github.io/tabel_shushary_botWEB/app.html'
 +WEBAPP_URL = 'https://gosod.github.io/tabel_shushary_botWEB/'
  
  REPORTS_FILE = 'reports.json'
@@ -56,6 +56,3 @@ index 1962749688920657725ba9358d6d5d490c9c48fb..67d1cfcd5c7dc27d01124628112eb6e0
  
      @staticmethod
      def load_json(filename, default=None):
- 
-EOF
-)
