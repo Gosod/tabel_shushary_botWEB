@@ -27,7 +27,7 @@ logger = logging.getLogger(__name__)
 TOKEN = os.environ.get('TELEGRAM_BOT_TOKEN')
 if not TOKEN:
     raise ValueError("TELEGRAM_BOT_TOKEN environment variable must be set!")
-WEBAPP_URL = 'https://your-username.github.io/telegram-bot-webapp/'  # UPDATE THIS!
+WEBAPP_URL = 'https://gosod.github.io/tabel_shushary_botWEB/app.html'
 
 REPORTS_FILE = 'reports.json'
 USERS_FILE = 'users.json'
@@ -39,9 +39,10 @@ ADMIN_IDS = [
     699229724,   # mchsman
     924261386,   # eugeneoldyard
 ]
-REMINDER_HOUR = 16
-REMINDER_MINUTE = 50
-REMINDER_DAYS = (0, 1, 2, 3, 4)
+# Два напоминания — 18:00 и 20:00 МСК
+REMINDER_1_HOUR = 18
+REMINDER_2_HOUR = 20
+SCHEDULE_FILE = 'schedule_2026.json'
 
 
 def is_admin(user_id):
@@ -282,9 +283,75 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
             except Exception as e:
                 logger.error(f"Уведомление админу {admin_id}: {e}")
 
-    payload = DataManager.build_webapp_payload(user.id)
-    encoded = urllib.parse.quote(json.dumps(payload, ensure_ascii=False))
-    url = f"{WEBAPP_URL}?data={encoded}"
+    # Передаём данные для Web App
+    user_projects = DataManager.get_user_projects(user.id)
+    all_projects = DataManager.get_projects()
+    all_users = DataManager.get_all_users()
+    
+    # Статистика пользователя
+    user_reports = [r for r in DataManager.get_all_reports() if r.get('user_id') == user.id]
+    user_total_hours = sum(r.get('hours', 0) for r in user_reports)
+    user_by_project = {}
+    for r in user_reports:
+        proj = r.get('project', 'Unknown')
+        user_by_project[proj] = user_by_project.get(proj, 0) + r.get('hours', 0)
+    
+    # Админ-статистика
+    admin_stats = None
+    if user.id in ADMIN_IDS:
+        all_reports = DataManager.get_all_reports()
+        employees = {}
+        proj_stats = {}
+        
+        for r in all_reports:
+            uid = r.get('user_id')
+            uname = r.get('username', '?')
+            proj = r.get('project', 'Unknown')
+            hours = r.get('hours', 0)
+            
+            if uid not in employees:
+                employees[uid] = {'username': uname, 'hours': 0, 'reports': 0, 'projects': {}}
+            employees[uid]['hours'] += hours
+            employees[uid]['reports'] += 1
+            employees[uid]['projects'][proj] = employees[uid]['projects'].get(proj, 0) + hours
+            
+            proj_stats[proj] = proj_stats.get(proj, 0) + hours
+        
+        recent = sorted(all_reports, key=lambda x: x.get('datetime', ''), reverse=True)[:30]
+        recent_fmt = [{
+            'username': r.get('username', '?'),
+            'project': r.get('project', '?'),
+            'hours': r.get('hours', 0),
+            'date': r.get('date', '?'),
+            'comments': r.get('comments', '-')
+        } for r in recent]
+        
+        admin_stats = {
+            'total_hours': sum(r.get('hours', 0) for r in all_reports),
+            'total_reports': len(all_reports),
+            'employees': list(employees.values()),
+            'projects': proj_stats,
+            'recent_reports': recent_fmt
+        }
+    
+    payload = {
+        'user_id': user.id,
+        'admin': user.id in ADMIN_IDS,
+        'username': user.username or user.first_name,
+        'projects': user_projects[:20],  # Только первые 20 проектов
+        'user_stats': {
+            'total_hours': user_total_hours,
+            'total_reports': len(user_reports),
+            'by_project': dict(list(user_by_project.items())[:10])  # Только топ-10 проектов
+        }
+    }
+    minimal_payload = {'user_id': payload.get('user_id', 0)}
+    encoded = urllib.parse.quote(json.dumps(minimal_payload, ensure_ascii=False))
+    # v= параметр ломает кэш Telegram при каждом /start
+    import time
+    cache_bust = int(time.time())
+    url = f"{WEBAPP_URL}?v={cache_bust}&data={encoded}"
+    logger.info(f"WebApp URL length: {len(url)}, user_id: {minimal_payload.get('user_id')}")
 
     keyboard = [[KeyboardButton("📱 Открыть приложение", web_app=WebAppInfo(url=url))]]
     reply_markup = ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
@@ -437,24 +504,82 @@ async def manual_notify(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(f"✅ Отправлено {sent} пользователям.")
 
 
+def load_schedule():
+    """Загружает расписание рабочих дней"""
+    try:
+        if os.path.exists(SCHEDULE_FILE):
+            with open(SCHEDULE_FILE, 'r', encoding='utf-8') as f:
+                return json.load(f)
+    except Exception as e:
+        logger.error(f"Ошибка загрузки расписания: {e}")
+    return None
+
+def is_working_day_for_user(today_iso, user_data, schedule_data):
+    """Проверяет является ли сегодня рабочим днём для сотрудника"""
+    if schedule_data is None:
+        # Fallback: только пн-пт
+        d = datetime.strptime(today_iso, '%Y-%m-%d')
+        return d.weekday() < 5
+
+    user_schedule = user_data.get('schedule', '5/2')
+    schedules = schedule_data.get('schedules', {})
+
+    if user_schedule not in schedules:
+        # Неизвестный тип — используем 5/2
+        user_schedule = '5/2'
+
+    working_days = schedules[user_schedule].get('working_days', [])
+    return today_iso in working_days
+
 async def send_reminder(context: ContextTypes.DEFAULT_TYPE):
-    users = DataManager.get_all_users()
-    today = datetime.now().strftime('%Y-%m-%d')
-    reported = {r['user_id'] for r in DataManager.get_all_reports() if r.get('date') == today}
-    sent = 0
+    """Отправляет напоминания сотрудникам у которых нет отчёта за сегодня"""
+    msk = pytz.timezone('Europe/Moscow')
+    today = datetime.now(msk).strftime('%Y-%m-%d')
+    hour  = datetime.now(msk).hour
+
+    users    = DataManager.get_all_users()
+    reports  = DataManager.get_all_reports()
+    reported = {r['user_id'] for r in reports if r.get('date') == today}
+    schedule = load_schedule()
+
+    # Текст зависит от времени: первое или второе напоминание
+    if hour >= 20:
+        text = (
+            "🔔 <b>Последнее напоминание!</b>\n\n"
+            "Рабочий день заканчивается — не забудьте внести отчёт 👇"
+        )
+    else:
+        text = (
+            "⏰ <b>Напоминание!</b>\n\n"
+            "Не забудьте заполнить отчёт за сегодня 👇"
+        )
+
+    sent = skipped = 0
     for uid_str, udata in users.items():
         try:
             uid = int(uid_str)
-            if uid not in reported:
-                await context.bot.send_message(
-                    chat_id=uid,
-                    text="⏰ <b>Напоминание!</b>\n\nНе забудьте заполнить отчёт за сегодня 👇",
-                    parse_mode='HTML'
-                )
-                sent += 1
-        except:
-            pass
-    logger.info(f"Напоминания отправлены: {sent}")
+
+            # Проверяем рабочий ли день по графику сотрудника
+            if not is_working_day_for_user(today, udata, schedule):
+                skipped += 1
+                logger.info(f"Пропускаем {udata.get('username','?')} — выходной по графику {udata.get('schedule','5/2')}")
+                continue
+
+            # Уже сдал отчёт — не беспокоим
+            if uid in reported:
+                skipped += 1
+                continue
+
+            await context.bot.send_message(
+                chat_id=uid,
+                text=text,
+                parse_mode='HTML'
+            )
+            sent += 1
+        except Exception as e:
+            logger.warning(f"Не удалось отправить напоминание {uid_str}: {e}")
+
+    logger.info(f"Напоминания отправлены: {sent}, пропущено: {skipped}")
 
 
 # ==================== MAIN ====================
@@ -468,15 +593,20 @@ def main():
     app.add_handler(MessageHandler(filters.StatusUpdate.WEB_APP_DATA, handle_webapp_data))
 
     moscow_tz = pytz.timezone('Europe/Moscow')
+    # Первое напоминание — 18:00 МСК
     app.job_queue.run_daily(
         send_reminder,
-        time=time(hour=REMINDER_HOUR, minute=REMINDER_MINUTE, tzinfo=moscow_tz),
-        days=REMINDER_DAYS
+        time=time(hour=REMINDER_1_HOUR, minute=0, tzinfo=moscow_tz)
+    )
+    # Второе напоминание — 20:00 МСК
+    app.job_queue.run_daily(
+        send_reminder,
+        time=time(hour=REMINDER_2_HOUR, minute=0, tzinfo=moscow_tz)
     )
 
-    logger.info("🤖 Production бот запущен!")
+    logger.info("🤖 Бот запущен!")
     logger.info(f"📱 Web App: {WEBAPP_URL}")
-    logger.info(f"⏰ Напоминания: {REMINDER_HOUR}:{REMINDER_MINUTE:02d} МСК (пн-пт)")
+    logger.info(f"⏰ Напоминания: {REMINDER_1_HOUR}:00 и {REMINDER_2_HOUR}:00 МСК")
 
     app.run_polling(allowed_updates=Update.ALL_TYPES)
 
