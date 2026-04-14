@@ -1019,9 +1019,10 @@ function showToast(msg, type = 'success') {
 
 // ── SUBMIT REPORT ──
 async function submitReport() {
-  if (APP.selectedProject) {
-    APP.reportItems.push({ project: APP.selectedProject.full, abbr: APP.selectedProject.abbr, hours: APP.currentHours });
-    APP.selectedProject = null;
+ const btn = document.getElementById('submitBtn');
+  if (btn.disabled) return;
+  btn.disabled = true;
+  btn.textContent = '⏳ Отправка...';
   }
   if (!APP.reportItems.length) {
     document.getElementById('projError').classList.add('show');
@@ -1065,6 +1066,8 @@ async function submitReport() {
     setTimeout(() => nav('home'), 1500);
   } catch (error) {
     console.error('Submit report failed:', error);
+    btn.disabled = false;
+    btn.textContent = '📤 Отправить отчёт';
   }
 }
 
