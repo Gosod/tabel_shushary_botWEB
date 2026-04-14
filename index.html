@@ -1019,14 +1019,20 @@ function showToast(msg, type = 'success') {
 
 // ── SUBMIT REPORT ──
 async function submitReport() {
- const btn = document.getElementById('submitBtn');
+  const btn = document.getElementById('submitBtn');
   if (btn.disabled) return;
   btn.disabled = true;
   btn.textContent = '⏳ Отправка...';
+
+  if (APP.selectedProject) {
+    APP.reportItems.push({ project: APP.selectedProject.full, abbr: APP.selectedProject.abbr, hours: APP.currentHours });
+    APP.selectedProject = null;
   }
   if (!APP.reportItems.length) {
     document.getElementById('projError').classList.add('show');
     if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('error');
+    btn.disabled = false;
+    btn.textContent = '📤 Отправить отчёт';
     return;
   }
 
