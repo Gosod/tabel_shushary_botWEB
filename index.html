@@ -464,6 +464,9 @@ textarea:focus, input:focus {
 
   <div class="form-group">
     <div class="form-label">📁 Проект</div>
+    <input type="text" id="projectSearch" placeholder="🔍 Поиск проекта..." 
+      oninput="filterProjects(this.value)"
+      style="margin-bottom:10px">
     <div class="projects-grid" id="projectsGrid"></div>
     <div class="error-msg" id="projError">Выберите хотя бы один проект</div>
   </div>
@@ -795,9 +798,19 @@ function buildProjectsGrid() {
   APP.projects.forEach(proj => {
     const card = document.createElement('div');
     card.className = 'proj-card';
+    card.dataset.abbr = proj.abbr;
+    card.dataset.full = proj.full.toLowerCase();
     card.innerHTML = `<div class="proj-abbr">${proj.abbr}</div><div class="proj-name">${proj.full}</div>`;
     card.onclick = () => selectProject(proj, card);
     grid.appendChild(card);
+  });
+}
+
+function filterProjects(query) {
+  const q = query.toLowerCase().trim();
+  document.querySelectorAll('#projectsGrid .proj-card').forEach(card => {
+    const match = !q || card.dataset.full.includes(q) || card.dataset.abbr.toLowerCase().includes(q);
+    card.style.display = match ? '' : 'none';
   });
 }
 
@@ -834,6 +847,10 @@ function addCurrentProject() {
   if (!APP.selectedProject) return;
   APP.reportItems.push({ project: APP.selectedProject.full, abbr: APP.selectedProject.abbr, hours: APP.currentHours, comment: '' });
   APP.selectedProject = null;
+
+  // Сбрасываем поиск
+  const searchInput = document.getElementById('projectSearch');
+  if (searchInput) { searchInput.value = ''; filterProjects(''); }
 
   document.querySelectorAll('.proj-card').forEach(c => {
     c.classList.remove('selected');
@@ -1264,11 +1281,11 @@ function renderAdminReports() {
       <input type="date" id="filterDate" class="user-select" style="flex:1;min-width:120px">
     </div>
     <div style="display:flex;gap:8px;margin-bottom:16px">
-      <button class="btn btn-primary" style="margin:0;flex:1" onclick="loadReportsTable()">🔍 Поиск</button>
+      <button class="btn btn-primary" style="margin:0;flex:1" onclick="loadReportsTable()">🔍 Фильтр</button>
       <button class="btn btn-secondary" style="margin:0;flex:1" onclick="clearFilters()">✕ Сброс</button>
     </div>
     <div id="reportsTableWrap" style="overflow-x:auto">
-      <p style="padding:20px;text-align:center;color:var(--hint)">Выберите фильтры и нажмите 🔍 Поиск</p>
+      <p style="padding:20px;text-align:center;color:var(--hint)">Выберите фильтры и нажмите 🔍 Фильтр</p>
     </div>
   `;
 }
