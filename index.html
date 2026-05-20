@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
@@ -464,9 +464,6 @@ textarea:focus, input:focus {
 
   <div class="form-group">
     <div class="form-label">📁 Проект</div>
-    <input type="text" id="projectSearch" placeholder="🔍 Поиск проекта..." 
-      oninput="filterProjects(this.value)"
-      style="margin-bottom:10px">
     <div class="projects-grid" id="projectsGrid"></div>
     <div class="error-msg" id="projError">Выберите хотя бы один проект</div>
   </div>
@@ -544,6 +541,8 @@ textarea:focus, input:focus {
   <button class="btn btn-secondary" onclick="nav('home')">⬅️ На главную</button>
 </div>
 
+<!-- ADD PROJECT -->
+
 <!-- ADMIN CREATE REPORT FOR EMPLOYEE -->
 <div class="page" id="admin-create-report">
   <div class="page-title">➕ Создать отчёт за сотрудника</div>
@@ -578,11 +577,29 @@ textarea:focus, input:focus {
   <button class="btn btn-secondary" onclick="nav('admin-panel')">⬅️ Назад</button>
 </div>
 
-<!-- ADD PROJECT PAGE (не используется, но оставлена) -->
 <div class="page" id="add-project">
   <div class="page-title">➕ Добавить проект</div>
   <div class="page-sub">Создайте новый проект</div>
-  <div class="info-card">💡 Используйте кнопку в разделе Управление</div>
+  <div class="info-card">💡 Аббревиатура — короткое название (2-5 символов), которое отображается на кнопке</div>
+  <div class="form-group">
+    <div class="form-label">🔤 Аббревиатура</div>
+    <input type="text" id="newAbbr" placeholder="Например: РС" maxlength="5">
+    <div class="input-hint">2-5 символов, автоматически CAPS</div>
+    <div class="error-msg" id="abbrErr">Заполните поле (мин. 2 символа)</div>
+  </div>
+  <div class="form-group">
+    <div class="form-label">📝 Полное название</div>
+    <input type="text" id="newFull" placeholder="Например: Разработка сайта" maxlength="50">
+    <div class="input-hint">До 50 символов</div>
+    <div class="error-msg" id="fullErr">Заполните поле (мин. 3 символа)</div>
+    <div id="projPreview" style="display:none">
+      <div class="proj-preview-box">
+        <div class="proj-preview-abbr" id="previewAbbr">РС</div>
+        <div class="proj-preview-name" id="previewFull">Разработка сайта</div>
+      </div>
+    </div>
+  </div>
+  <button class="btn btn-primary" onclick="submitAddProject()">✅ Добавить проект</button>
   <button class="btn btn-secondary" onclick="goBack()">⬅️ Назад</button>
 </div>
 
@@ -598,7 +615,7 @@ textarea:focus, input:focus {
       <div class="form-label">🔤 Аббревиатура</div>
       <input type="text" id="newAbbr" placeholder="Например: РС" maxlength="5">
       <div class="error-msg" id="abbrErr">Заполните поле (мин. 2 символа)</div>
-    </div>
+</div>
     <div class="form-group">
       <div class="form-label">📝 Полное название</div>
       <input type="text" id="newFull" placeholder="Например: Разработка сайта" maxlength="50">
@@ -619,25 +636,29 @@ const tg = window.Telegram.WebApp;
 tg.expand();
 
 // ── STATE ──
-const APP_VERSION = '1.2.0';
+// Версия приложения
+const APP_VERSION = '1.1.0';
 
+// API Configuration
 const API_URL = 'https://telegrambot-shyshariki.ru/tgbot/api';
 const VERSION_KEY = 'app_version';
 const CHANGELOG = {
-  '1.2.0': {
-    title: 'Фиксы багов ⚙️',
-    features: [
-      'Вкладка Отчёты в админке теперь работает',
-      'Назначение проектов сохраняется на сервере',
-      'Добавление проекта больше не закрывает приложение'
-    ]
-  },
   '1.1.0': {
     title: 'API интеграция! ⚡',
     features: [
       'Приложение больше не закрывается',
       'Данные обновляются мгновенно',
-      'Статистика всегда актуальная'
+      'Статистика всегда актуальная',
+      'Добавление проектов работает'
+    ]
+  },
+  '1.0.0': {
+    title: 'Первый релиз! 🎉',
+    features: [
+      'Создание отчётов с несколькими проектами',
+      'Ручной ввод часов (шаг 0.25)',
+      'Комментарии к каждому проекту',
+      'Админ-панель с графиками'
     ]
   }
 };
@@ -658,6 +679,8 @@ let APP = {
   adminChart: null,
   projChart: null,
 };
+
+
 
 // ══════════════════════════════════════════════════════
 // API FUNCTIONS
@@ -692,6 +715,8 @@ async function loadDataFromAPI() {
     
     APP.admin = data.admin;
     APP.username = data.username || 'User';
+    console.log('[DEBUG] Username loaded:', APP.username);
+    console.log('[DEBUG] All users:', data.all_users);
     APP.projects = data.projects || [];
     APP.allProjects = data.all_projects || [];
     APP.allUsers = data.all_users || [];
@@ -708,12 +733,12 @@ async function loadDataFromAPI() {
     return false;
   }
 }
-
 // ── INIT ──
 async function init() {
   const params = new URLSearchParams(window.location.search);
   const raw = params.get('data');
   
+  // Получаем минимальные данные из URL
   if (raw) {
     try {
       const d = JSON.parse(decodeURIComponent(raw));
@@ -726,14 +751,17 @@ async function init() {
     }
   }
 
+  // Загружаем полные данные через API
   if (APP.userId) {
     await loadDataFromAPI();
   } else {
+    // Demo data для локального тестирования
     APP.projects = [{abbr:'DEMO',full:'Demo проект'}];
   }
 
   if (APP.admin) {
     document.querySelectorAll('.admin-only').forEach(el => el.style.display = '');
+    renderAdminReports();
     renderCreateReportScreen();
   }
 
@@ -744,10 +772,12 @@ async function init() {
   initAddProjectForm();
   initNav();
 
+  // Back button (с проверкой версии)
   if (tg.BackButton && tg.BackButton.onClick) {
     tg.BackButton.onClick(() => goBack());
   }
 
+  // Проверка версии и показ уведомления
   checkVersion();
 }
 
@@ -767,6 +797,7 @@ function nav(pageId, addToHistory = true) {
 
   window.scrollTo(0, 0);
 
+  // Back button visibility
   if (APP.navHistory.length > 0) tg.BackButton.show();
   else tg.BackButton.hide();
 
@@ -776,8 +807,9 @@ function nav(pageId, addToHistory = true) {
 function goBack() {
   if (APP.navHistory.length > 0) {
     const prev = APP.navHistory.pop();
-    nav(prev, false);
+    nav(prev, false); // Не добавляем в историю при возврате назад
   } else {
+    // Если истории нет — идём на главную
     nav('home', false);
   }
 }
@@ -798,19 +830,9 @@ function buildProjectsGrid() {
   APP.projects.forEach(proj => {
     const card = document.createElement('div');
     card.className = 'proj-card';
-    card.dataset.abbr = proj.abbr;
-    card.dataset.full = proj.full.toLowerCase();
     card.innerHTML = `<div class="proj-abbr">${proj.abbr}</div><div class="proj-name">${proj.full}</div>`;
     card.onclick = () => selectProject(proj, card);
     grid.appendChild(card);
-  });
-}
-
-function filterProjects(query) {
-  const q = query.toLowerCase().trim();
-  document.querySelectorAll('#projectsGrid .proj-card').forEach(card => {
-    const match = !q || card.dataset.full.includes(q) || card.dataset.abbr.toLowerCase().includes(q);
-    card.style.display = match ? '' : 'none';
   });
 }
 
@@ -821,6 +843,7 @@ function selectProject(proj, card) {
   card.classList.add('selected');
   APP.selectedProject = proj;
 
+  // Сбрасываем часы только для первого проекта, для последующих сохраняем последнее значение
   if (APP.reportItems.length === 0) {
     APP.currentHours = 4;
     document.getElementById('hoursRange').value = 4;
@@ -840,6 +863,7 @@ function selectProject(proj, card) {
 
   if (tg.HapticFeedback && tg.HapticFeedback.impactOccurred) tg.HapticFeedback.impactOccurred('light');
 
+  // Скроллим к слайдеру
   setTimeout(() => document.getElementById('hoursWrap').scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 100);
 }
 
@@ -848,12 +872,10 @@ function addCurrentProject() {
   APP.reportItems.push({ project: APP.selectedProject.full, abbr: APP.selectedProject.abbr, hours: APP.currentHours, comment: '' });
   APP.selectedProject = null;
 
-  // Сбрасываем поиск
-  const searchInput = document.getElementById('projectSearch');
-  if (searchInput) { searchInput.value = ''; filterProjects(''); }
-
+  // Снимаем выделение, разблокируем все карточки для следующего выбора
   document.querySelectorAll('.proj-card').forEach(c => {
     c.classList.remove('selected');
+    // Серым отмечаем уже добавленные
     const alreadyAdded = APP.reportItems.find(i => i.abbr === c.querySelector('.proj-abbr').textContent);
     c.style.opacity = alreadyAdded ? '0.4' : '1';
     c.style.pointerEvents = alreadyAdded ? 'none' : 'auto';
@@ -862,9 +884,11 @@ function addCurrentProject() {
   renderSelectedList();
   updateSummary();
 
+  // Прячем слайдер, но оставляем грид — пользователь может выбрать ещё
   document.getElementById('hoursWrap').style.display = 'none';
   document.getElementById('hoursLabel').textContent = '⏱️ Часов для выбранного проекта';
 
+  // Показываем кнопки действий
   document.getElementById('commentWrap').style.display = 'block';
   document.getElementById('submitBtn').style.display = 'block';
   updateTotalHours();
@@ -876,6 +900,7 @@ function removeItem(idx) {
   const removed = APP.reportItems[idx];
   APP.reportItems.splice(idx, 1);
 
+  // Восстанавливаем карточку проекта
   document.querySelectorAll('.proj-card').forEach(c => {
     if (c.querySelector('.proj-abbr').textContent === removed.abbr) {
       c.style.opacity = '1';
@@ -973,12 +998,17 @@ function updateQuickBtns(val) {
   });
 }
 
+
+
 function updateHoursFromInput() {
   let val = parseFloat(document.getElementById('hoursDisplay').value);
   if (isNaN(val)) val = 0.25;
   if (val < 0.25) val = 0.25;
   if (val > 12) val = 12;
+  
+  // Округляем до ближайшего 0.25
   val = Math.round(val * 4) / 4;
+  
   APP.currentHours = val;
   document.getElementById('hoursDisplay').value = val;
   document.getElementById('hoursRange').value = val;
@@ -989,6 +1019,7 @@ function updateHoursFromInput() {
 
 // ── CONFIRM DIALOG ──
 function showConfirm(message, onConfirm) {
+  // Удаляем старый если есть
   const old = document.getElementById('confirmDialog');
   if (old) old.remove();
   
@@ -1036,26 +1067,34 @@ function showToast(msg, type = 'success') {
 
 // ── SUBMIT REPORT ──
 async function submitReport() {
-  const btn = document.getElementById('submitBtn');
-  if (btn.disabled) return;
-  btn.disabled = true;
-  btn.textContent = '⏳ Отправка...';
-
   if (APP.selectedProject) {
     APP.reportItems.push({ project: APP.selectedProject.full, abbr: APP.selectedProject.abbr, hours: APP.currentHours });
     APP.selectedProject = null;
   }
   if (!APP.reportItems.length) {
     document.getElementById('projError').classList.add('show');
-    if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('error');
-    btn.disabled = false;
-    btn.textContent = '📤 Отправить отчёт';
+    if (tg.HapticFeedback && tg.HapticFeedback.impactOccurred) tg.HapticFeedback.notificationOccurred('error');
     return;
   }
 
   const generalComment = document.getElementById('comment').value || '';
+  const data = {
+    type: 'report',
+    projects: APP.reportItems.map(i => ({ 
+      project: i.project, 
+      hours: i.hours,
+      comment: i.comment || ''
+    })),
+    comments: generalComment || '-'
+  };
 
+  // Добавляем pending actions если есть
+  if (APP.pendingActions && APP.pendingActions.length) {
+    data.pending = APP.pendingActions;
+    APP.pendingActions = [];
+  }
   try {
+    // Отправляем через API
     await apiCall('/report', 'POST', {
       user_id: APP.userId,
       username: APP.username,
@@ -1067,30 +1106,36 @@ async function submitReport() {
       comments: generalComment || '-'
     });
 
-    // Сбрасываем форму
-    APP.reportItems = [];
-    APP.selectedProject = null;
-    document.querySelectorAll('.proj-card').forEach(c => {
-      c.classList.remove('selected');
-      c.style.opacity = '1';
-      c.style.pointerEvents = 'auto';
-    });
-    document.getElementById('selectedProjectsWrap').style.display = 'none';
-    document.getElementById('commentWrap').style.display = 'none';
-    document.getElementById('summary').style.display = 'none';
-    document.getElementById('comment').value = '';
-    document.getElementById('selectedProjectsList').innerHTML = '';
-    document.getElementById('submitBtn').style.display = 'none';
+  // Сбрасываем форму БЕЗ закрытия
+  APP.reportItems = [];
+  APP.selectedProject = null;
+  document.querySelectorAll('.proj-card').forEach(c => c.classList.remove('selected'));
+  document.getElementById('selectedProjectsWrap').style.display = 'none';
+  document.getElementById('commentWrap').style.display = 'none';
+  document.getElementById('summary').style.display = 'none';
+  document.getElementById('comment').value = '';
+  document.getElementById('selectedProjectsList').innerHTML = '';
+  document.getElementById('submitBtn').style.display = 'none';
+
+  // Обновляем локальную статистику сразу (не ждём перезапуска /start)
+  data.projects.forEach(item => {
+    APP.userStats = APP.userStats || { total_hours: 0, total_reports: 0, by_project: {} };
+    APP.userStats.total_hours = (APP.userStats.total_hours || 0) + item.hours;
+    APP.userStats.total_reports = (APP.userStats.total_reports || 0) + 1;
+    APP.userStats.by_project = APP.userStats.by_project || {};
+    APP.userStats.by_project[item.project] = (APP.userStats.by_project[item.project] || 0) + item.hours;
+  });
+  renderMyStats();
 
     showToast('✅ Отчёт сохранён!');
-    if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
+    if (tg.HapticFeedback && tg.HapticFeedback.impactOccurred) tg.HapticFeedback.notificationOccurred('success');
 
+    // Обновляем статистику
     await loadDataFromAPI();
+
     setTimeout(() => nav('home'), 1500);
   } catch (error) {
     console.error('Submit report failed:', error);
-    btn.disabled = false;
-    btn.textContent = '📤 Отправить отчёт';
   }
 }
 
@@ -1116,7 +1161,6 @@ function updateProjPreview() {
   }
 }
 
-// ── FIX 4: submitAddProject через API, без tg.sendData ──
 async function submitAddProject() {
   const abbr = document.getElementById('newAbbr').value.trim().toUpperCase();
   const full = document.getElementById('newFull').value.trim();
@@ -1137,30 +1181,32 @@ async function submitAddProject() {
     document.getElementById('abbrErr').classList.add('show'); ok = false;
   }
 
-  if (!ok) { if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('error'); return; }
+  if (!ok) { if (tg.HapticFeedback && tg.HapticFeedback.impactOccurred) tg.HapticFeedback.notificationOccurred('error'); return; }
 
-  try {
-    await apiCall('/project', 'POST', { user_id: APP.userId, abbr, full });
+  // Отправляем боту БЕЗ закрытия (sendData не закрывает если не вызван tg.close)
+  tg.sendData(JSON.stringify({ type: 'add_project', abbr, full }));
 
-    const newProj = { abbr, full };
-    APP.allProjects.push(newProj);
-    APP.projects.push(newProj);
+  // Добавляем локально сразу
+  const newProj = { abbr, full };
+  APP.allProjects.push(newProj);
+  APP.projects.push(newProj);
 
-    document.getElementById('newAbbr').value = '';
-    document.getElementById('newFull').value = '';
-    document.getElementById('projPreview').style.display = 'none';
-    document.getElementById('abbrErr').classList.remove('show');
-    document.getElementById('fullErr').classList.remove('show');
+  // Сбрасываем форму
+  document.getElementById('newAbbr').value = '';
+  document.getElementById('newFull').value = '';
+  document.getElementById('projPreview').style.display = 'none';
+  document.getElementById('abbrErr').classList.remove('show');
+  document.getElementById('fullErr').classList.remove('show');
 
-    buildProjectsGrid();
-    renderAdminManage();
+  // Обновляем UI
+  buildProjectsGrid();
+  renderAdminManage();
 
-    showToast(`✅ Проект ${abbr} добавлен!`);
-    if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
-    closeModal();
-  } catch (error) {
-    console.error('Add project failed:', error);
-  }
+  showToast(`✅ Проект ${abbr} добавлен!`);
+  if (tg.HapticFeedback && tg.HapticFeedback.impactOccurred) tg.HapticFeedback.notificationOccurred('success');
+
+  // Закрываем модальное окно
+  closeModal();
 }
 
 // ── MY STATS ──
@@ -1236,7 +1282,7 @@ function renderAdminEmployees() {
   content.innerHTML = [...s.employees].sort((a,b)=>b.hours-a.hours).map(emp => `
     <div class="emp-card">
       <div class="emp-header">
-        <div class="emp-name">👤 ${emp.name || emp.username}</div>
+        <div class="emp-name">👤 ${emp.name}</div>
         <div class="emp-hours">${emp.hours} ч</div>
       </div>
       <div style="font-size:13px;color:var(--hint);margin-bottom:8px">📝 Отчётов: ${emp.reports}</div>
@@ -1265,29 +1311,20 @@ function renderAdminProjects() {
   }
 }
 
-// ── FIX 2: renderAdminReports рендерит HTML с фильтрами в adminContent ──
 function renderAdminReports() {
+  const s = APP.adminStats;
   const content = document.getElementById('adminContent');
-  content.innerHTML = `
-    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
-      <select id="filterUser" class="user-select" style="flex:1;min-width:120px">
-        <option value="">Все сотрудники</option>
-        ${(APP.allUsers||[]).map(u=>`<option value="${u.id}">${u.username}</option>`).join('')}
-      </select>
-      <select id="filterProject" class="user-select" style="flex:1;min-width:120px">
-        <option value="">Все проекты</option>
-        ${(APP.allProjects||[]).map(p=>`<option value="${p.full}">${p.full}</option>`).join('')}
-      </select>
-      <input type="date" id="filterDate" class="user-select" style="flex:1;min-width:120px">
+  if (!s?.recent_reports?.length) { content.innerHTML = `<div class="empty"><div class="empty-icon">📝</div><div>Нет отчётов</div></div>`; return; }
+  content.innerHTML = s.recent_reports.map(r=>`
+    <div class="report-item">
+      <div class="report-header">
+        <span class="report-emp">👤 ${r.employee}</span>
+        <span class="report-date">${r.date} ${r.time}</span>
+      </div>
+      <div class="report-proj">📁 ${r.project} — ${r.hours} ч</div>
+      ${r.comment && r.comment !== '-' ? `<div class="report-comment">💬 ${r.comment}</div>` : ''}
     </div>
-    <div style="display:flex;gap:8px;margin-bottom:16px">
-      <button class="btn btn-primary" style="margin:0;flex:1" onclick="loadReportsTable()">🔍 Фильтр</button>
-      <button class="btn btn-secondary" style="margin:0;flex:1" onclick="clearFilters()">✕ Сброс</button>
-    </div>
-    <div id="reportsTableWrap" style="overflow-x:auto">
-      <p style="padding:20px;text-align:center;color:var(--hint)">Выберите фильтры и нажмите 🔍 Фильтр</p>
-    </div>
-  `;
+  `).join('');
 }
 
 function renderAdminManage() {
@@ -1318,6 +1355,7 @@ async function removeProject(abbr) {
   if (confirm(`Удалить проект ${abbr}?`)) {
     try {
       await apiCall(`/project/${abbr}`, 'DELETE', { user_id: APP.userId });
+      
       APP.allProjects = APP.allProjects.filter(p => p.abbr !== abbr);
       APP.projects = APP.projects.filter(p => p.abbr !== abbr);
       buildProjectsGrid();
@@ -1342,31 +1380,24 @@ function renderAssignProjects() {
   document.getElementById('assignBtn').style.display = 'block';
 }
 
-// ── FIX 3: submitAssign отправляет на /api/assign сразу ──
 async function submitAssign() {
   const uid = parseInt(document.getElementById('assignUser').value);
   if (!uid) { showToast('Выберите сотрудника', 'error'); return; }
-  const uname = APP.allUsers.find(u => u.id === uid)?.username || '';
-  const checked = [...document.querySelectorAll('#assignProjectsList input:checked')].map(c => c.value);
+  const uname = APP.allUsers.find(u=>u.id===uid)?.username || '';
+  const checked = [...document.querySelectorAll('#assignProjectsList input:checked')].map(c=>c.value);
   if (!checked.length) { showToast('Выберите хотя бы один проект', 'error'); return; }
+  // Сохраняем в очередь pendingActions (не закрываем приложение)
+  APP.pendingActions = APP.pendingActions || [];
+  APP.pendingActions.push({ type: 'assign_projects', user_id: uid, username: uname, abbrs: checked });
 
-  try {
-    await apiCall('/assign', 'POST', {
-      admin_id: APP.userId,
-      user_id: uid,
-      username: uname,
-      abbrs: checked
-    });
+  // Запоминаем в pendingActions — отправится боту вместе со следующим отчётом
+  showToast(`✅ Проекты назначены для ${uname}`, 'success');
+  if (tg.HapticFeedback && tg.HapticFeedback.impactOccurred) tg.HapticFeedback.notificationOccurred('success');
 
-    showToast(`✅ Проекты назначены для ${uname}`, 'success');
-    if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
-
-    document.getElementById('assignUser').value = '';
-    document.getElementById('assignProjectsList').innerHTML = '';
-    document.getElementById('assignBtn').style.display = 'none';
-  } catch (error) {
-    console.error('Assign failed:', error);
-  }
+  // Сбрасываем форму
+  document.getElementById('assignUser').value = '';
+  document.getElementById('assignProjectsList').innerHTML = '';
+  document.getElementById('assignBtn').style.display = 'none';
 }
 
 // ── MODAL ──
@@ -1383,6 +1414,7 @@ function closeModal() {
   document.getElementById('addProjModal').classList.remove('open');
 }
 
+// Закрыть по клику на overlay
 document.getElementById('addProjModal').addEventListener('click', function(e) {
   if (e.target === this) closeModal();
 });
@@ -1391,13 +1423,17 @@ document.getElementById('addProjModal').addEventListener('click', function(e) {
 function checkVersion() {
   try {
     const savedVersion = localStorage.getItem(VERSION_KEY);
+    
     if (!savedVersion) {
+      // Первый запуск
       localStorage.setItem(VERSION_KEY, APP_VERSION);
       showVersionToast('welcome');
     } else if (savedVersion !== APP_VERSION) {
+      // Обновление
       localStorage.setItem(VERSION_KEY, APP_VERSION);
       showVersionToast('update', savedVersion);
     }
+    // Если версия совпадает — ничего не показываем
   } catch (e) {
     console.log('localStorage недоступен');
   }
@@ -1407,8 +1443,14 @@ function showVersionToast(type, oldVersion = null) {
   const changelog = CHANGELOG[APP_VERSION];
   if (!changelog) return;
 
-  const message = type === 'welcome' ? `🎉 ${changelog.title}` : `✨ Обновление v${APP_VERSION}`;
+  let message = '';
+  if (type === 'welcome') {
+    message = `🎉 ${changelog.title}`;
+  } else {
+    message = `✨ Обновление v${APP_VERSION}`;
+  }
 
+  // Создаём расширенный тост с деталями
   const toast = document.createElement('div');
   toast.style.cssText = `
     position: fixed; top: 70px; left: 50%; transform: translateX(-50%);
@@ -1437,6 +1479,8 @@ function showVersionToast(type, oldVersion = null) {
   `;
 
   document.body.appendChild(toast);
+
+  // Автоудаление через 8 секунд
   setTimeout(() => {
     if (toast.parentElement) {
       toast.style.animation = 'fadeOut .3s ease';
@@ -1444,9 +1488,12 @@ function showVersionToast(type, oldVersion = null) {
     }
   }, 8000);
 
-  if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
+  if (tg.HapticFeedback) {
+    tg.HapticFeedback.notificationOccurred('success');
+  }
 }
 
+// Добавляем анимации
 const style = document.createElement('style');
 style.textContent = `
   @keyframes slideDown {
@@ -1462,6 +1509,7 @@ document.head.appendChild(style);
 
 // ── START ──
 init();
+
 
 // ══════════════════════════════════════════════════════
 // REPORTS MANAGEMENT
@@ -1485,6 +1533,8 @@ async function loadReportsTable() {
   }
 }
 
+
+
 function getUsernameById(userId) {
   if (!APP.allUsers || !userId) return null;
   const user = APP.allUsers.find(u => u.id == userId);
@@ -1495,24 +1545,26 @@ function renderReportsTable(reports) {
   const wrap = document.getElementById('reportsTableWrap');
   
   if (!reports || reports.length === 0) {
-    wrap.innerHTML = '<p style="padding: 20px; text-align: center; color: var(--hint);">Отчётов не найдено</p>';
+    wrap.innerHTML = '<p style="padding: 20px; text-align: center; color: #999;">Отчётов не найдено</p>';
     return;
   }
   
+  // Фикс username для старых отчётов
   reports = reports.map(r => ({
     ...r,
     username: r.username || getUsernameById(r.user_id) || 'Unknown'
   }));
   
   let html = `
-    <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+    <table style="width: 100%; border-collapse: collapse;">
       <thead>
-        <tr style="background: var(--bg); border-bottom: 2px solid var(--border);">
-          <th style="padding: 10px 8px; text-align: left;">Дата</th>
-          <th style="padding: 10px 8px; text-align: left;">Сотрудник</th>
-          <th style="padding: 10px 8px; text-align: left;">Проект</th>
-          <th style="padding: 10px 8px; text-align: center;">Ч</th>
-          <th style="padding: 10px 8px; text-align: center;">⚙️</th>
+        <tr style="background: #f5f5f5; border-bottom: 2px solid #e0e0e0;">
+          <th style="padding: 12px; text-align: left;">Дата</th>
+          <th style="padding: 12px; text-align: left;">Сотрудник</th>
+          <th style="padding: 12px; text-align: left;">Проект</th>
+          <th style="padding: 12px; text-align: center;">Часы</th>
+          <th style="padding: 12px; text-align: left;">Комментарий</th>
+          <th style="padding: 12px; text-align: center;">Действия</th>
         </tr>
       </thead>
       <tbody>
@@ -1520,25 +1572,25 @@ function renderReportsTable(reports) {
   
   reports.forEach(r => {
     html += `
-      <tr style="border-bottom: 1px solid var(--border);">
-        <td style="padding: 10px 8px;">${r.date}</td>
-        <td style="padding: 10px 8px;">${r.username}</td>
-        <td style="padding: 10px 8px; color: var(--accent); font-weight: 600;">${r.project}</td>
-        <td style="padding: 10px 8px; text-align: center; font-weight: 700;">${r.hours}</td>
-        <td style="padding: 10px 8px; text-align: center; white-space: nowrap;">
-          <button onclick='editReport(${JSON.stringify(r)})' style="padding: 5px 8px; background: var(--accent); color: white; border: none; border-radius: 6px; margin-right: 4px; cursor: pointer; font-size: 13px;">✏️</button>
-          <button onclick='deleteReport("${r.id}", "${r.username}", "${r.project}")' style="padding: 5px 8px; background: var(--danger); color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 13px;">🗑️</button>
+      <tr style="border-bottom: 1px solid #f0f0f0;">
+        <td style="padding: 12px;">${r.date}</td>
+        <td style="padding: 12px;">${r.username || 'Unknown'}</td>
+        <td style="padding: 12px;">${r.project}</td>
+        <td style="padding: 12px; text-align: center;"><b>${r.hours}ч</b></td>
+        <td style="padding: 12px; color: #666;">${r.comments || '-'}</td>
+        <td style="padding: 12px; text-align: center;">
+          <button onclick='editReport(${JSON.stringify(r)})' style="padding: 6px 12px; background: #4CAF50; color: white; border: none; border-radius: 6px; margin-right: 5px; cursor: pointer;">✏️</button>Развернуть комментарийКомментарий к строке R 1582 Решено
+          <button onclick='deleteReport("${r.id}", "${r.username}", "${r.project}")' style="padding: 6px 12px; background: #f44336; color: white; border: none; border-radius: 6px; cursor: pointer;">🗑️</button>
         </td>
       </tr>
-      ${r.comments && r.comments !== '-' ? `<tr style="border-bottom: 1px solid var(--border);"><td colspan="5" style="padding: 0 8px 8px; color: var(--hint); font-style: italic; font-size: 12px;">💬 ${r.comments}</td></tr>` : ''}
     `;
   });
   
   html += `
       </tbody>
     </table>
-    <p style="padding: 12px; text-align: center; color: var(--hint); font-size: 13px; border-top: 1px solid var(--border);">
-      Всего: <b>${reports.length}</b>
+    <p style="padding: 15px; text-align: center; color: #999; border-top: 1px solid #e0e0e0;">
+      Всего отчётов: <b>${reports.length}</b>
     </p>
   `;
   
@@ -1553,39 +1605,39 @@ function editReport(report) {
   modal.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 10000;';
   
   modal.innerHTML = `
-    <div style="background: var(--bg2); border-radius: 16px; padding: 24px; max-width: 500px; width: 90%; max-height: 80vh; overflow-y: auto;">
-      <h3 style="margin-top: 0; margin-bottom: 16px;">✏️ Редактировать отчёт</h3>
+    <div style="background: white; border-radius: 16px; padding: 24px; max-width: 500px; width: 90%; max-height: 80vh; overflow-y: auto;">
+      <h3 style="margin-top: 0;">✏️ Редактировать отчёт</h3>
       
       <div style="margin-bottom: 15px;">
-        <label class="form-label">Сотрудник:</label>
-        <input type="text" value="${report.username || 'Unknown'}" disabled style="width: 100%; padding: 10px; border: 1.5px solid var(--border); border-radius: 8px; background: var(--bg); color: var(--hint); font: 14px 'Golos Text', sans-serif;">
+        <label style="display: block; margin-bottom: 5px; font-weight: 500;">Сотрудник:</label>
+        <input type="text" value="${report.username || 'Unknown'}" disabled style="width: 100%; padding: 10px; border: 1px solid #e0e0e0; border-radius: 8px; background: #f5f5f5;">
       </div>
       
       <div style="margin-bottom: 15px;">
-        <label class="form-label">Проект:</label>
-        <select id="editProject" class="user-select">
+        <label style="display: block; margin-bottom: 5px; font-weight: 500;">Проект:</label>
+        <select id="editProject" style="width: 100%; padding: 10px; border: 1px solid #e0e0e0; border-radius: 8px;">
           ${APP.allProjects.map(p => `<option value="${p.full}" ${p.full === report.project ? 'selected' : ''}>${p.full}</option>`).join('')}
         </select>
       </div>
       
       <div style="margin-bottom: 15px;">
-        <label class="form-label">Часы:</label>
-        <input type="number" id="editHours" value="${report.hours}" step="0.25" min="0" max="24" style="width: 100%; padding: 10px; border: 1.5px solid var(--border); border-radius: 8px; font: 14px 'Golos Text', sans-serif; background: var(--bg2); color: var(--text);">
+        <label style="display: block; margin-bottom: 5px; font-weight: 500;">Часы:</label>
+        <input type="number" id="editHours" value="${report.hours}" step="0.25" min="0" max="24" style="width: 100%; padding: 10px; border: 1px solid #e0e0e0; border-radius: 8px;">
       </div>
       
       <div style="margin-bottom: 15px;">
-        <label class="form-label">Дата:</label>
-        <input type="date" id="editDate" value="${report.date}" style="width: 100%; padding: 10px; border: 1.5px solid var(--border); border-radius: 8px; font: 14px 'Golos Text', sans-serif; background: var(--bg2); color: var(--text);">
+        <label style="display: block; margin-bottom: 5px; font-weight: 500;">Дата:</label>
+        <input type="date" id="editDate" value="${report.date}" style="width: 100%; padding: 10px; border: 1px solid #e0e0e0; border-radius: 8px;">
       </div>
       
       <div style="margin-bottom: 20px;">
-        <label class="form-label">Комментарий:</label>
-        <textarea id="editComments" style="width: 100%; padding: 10px; border: 1.5px solid var(--border); border-radius: 8px; min-height: 60px; font: 14px 'Golos Text', sans-serif; background: var(--bg2); color: var(--text);">${report.comments || ''}</textarea>
+        <label style="display: block; margin-bottom: 5px; font-weight: 500;">Комментарий:</label>
+        <textarea id="editComments" style="width: 100%; padding: 10px; border: 1px solid #e0e0e0; border-radius: 8px; min-height: 60px;">${report.comments || ''}</textarea>
       </div>
       
       <div style="display: flex; gap: 10px;">
-        <button onclick="saveReportEdit()" style="flex: 1; padding: 12px; background: var(--accent); color: white; border: none; border-radius: 8px; font: 600 14px 'Golos Text', sans-serif; cursor: pointer;">💾 Сохранить</button>
-        <button onclick="closeEditModal()" style="flex: 1; padding: 12px; background: transparent; color: var(--hint); border: 1.5px solid var(--border); border-radius: 8px; font: 600 14px 'Golos Text', sans-serif; cursor: pointer;">✖ Отмена</button>
+        <button onclick="saveReportEdit()" style="flex: 1; padding: 12px; background: var(--primary); color: white; border: none; border-radius: 8px; font-weight: 500; cursor: pointer;">💾 Сохранить</button>
+        <button onclick="closeEditModal()" style="flex: 1; padding: 12px; background: #ccc; color: #333; border: none; border-radius: 8px; font-weight: 500; cursor: pointer;">✖ Отмена</button>
       </div>
     </div>
   `;
@@ -1609,13 +1661,16 @@ async function saveReportEdit() {
   try {
     await apiCall(`/report/${report.id}`, 'PUT', {
       admin_id: APP.userId,
-      project, hours, date, comments
+      project: project,
+      hours: hours,
+      date: date,
+      comments: comments
     });
     
     showToast('✅ Отчёт обновлён!', 'success');
     closeEditModal();
     loadReportsTable();
-    await loadDataFromAPI();
+    await loadDataFromAPI(); // Обновляем статистику
   } catch (error) {
     console.error('Save edit failed:', error);
   }
@@ -1628,22 +1683,52 @@ function closeEditModal() {
 }
 
 async function deleteReport(id, username, project) {
-  if (!confirm(`Удалить отчёт?\n${username} — ${project}`)) return;
+  const displayName = username || 'Unknown';
+  if (!confirm(`Удалить отчёт?
+${displayName} — ${project}`)) return;
   
   try {
     await apiCall(`/report/${id}`, 'DELETE', { admin_id: APP.userId });
+    
     showToast('🗑️ Отчёт удалён', 'info');
-    if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
+    if (tg.HapticFeedback && tg.HapticFeedback.impactOccurred) tg.HapticFeedback.notificationOccurred('success');
+    
     loadReportsTable();
-    await loadDataFromAPI();
+    await loadDataFromAPI(); // Обновляем статистику
   } catch (error) {
     console.error('Delete failed:', error);
   }
 }
 
 function clearFilters() {
-  renderAdminReports(); // Полный ресет — перерисовываем вкладку
+  document.getElementById('filterUser').value = '';
+  document.getElementById('filterProject').value = '';
+  document.getElementById('filterDate').value = '';
+  document.getElementById('reportsTableWrap').innerHTML = '<p style="padding: 20px; text-align: center; color: #999;">Выберите фильтры и нажмите 🔍 Фильтр</p>';
 }
+
+function renderAdminReports() {
+  // Заполняем фильтры пользователями
+  const userSelect = document.getElementById('filterUser');
+  if (!userSelect) return;
+userSelect.innerHTML = '<option value="">Все сотрудники</option>';
+  if (APP.allUsers) {
+    APP.allUsers.forEach(u => {
+      userSelect.innerHTML += `<option value="${u.id}">${u.username}</option>`;
+    });
+  }
+  
+  // Заполняем фильтры проектами
+  const projSelect = document.getElementById('filterProject');
+  projSelect.innerHTML = '<option value="">Все проекты</option>';
+  if (APP.allProjects) {
+    APP.allProjects.forEach(p => {
+      projSelect.innerHTML += `<option value="${p.full}">${p.full}</option>`;
+    });
+  }
+}
+
+
 
 // ══════════════════════════════════════════════════════
 // ADMIN CREATE REPORT FOR EMPLOYEE
@@ -1652,6 +1737,7 @@ function clearFilters() {
 APP.adminReportProjects = [];
 
 function renderCreateReportScreen() {
+  // Заполняем список сотрудников
   const userSelect = document.getElementById('createForUser');
   if (!userSelect) return;
   
@@ -1662,11 +1748,14 @@ function renderCreateReportScreen() {
     });
   }
   
+  // Устанавливаем сегодняшнюю дату
   const dateInput = document.getElementById('createReportDate');
   if (dateInput) {
-    dateInput.value = new Date().toISOString().split('T')[0];
+    const today = new Date().toISOString().split('T')[0];
+    dateInput.value = today;
   }
   
+  // Очищаем список проектов
   APP.adminReportProjects = [];
   renderAdminReportProjects();
 }
@@ -1676,29 +1765,29 @@ function addProjectToAdminReport() {
   modal.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 10000;';
   
   modal.innerHTML = `
-    <div style="background: var(--bg2); border-radius: 16px; padding: 24px; max-width: 400px; width: 90%;">
-      <h3 style="margin-top: 0; margin-bottom: 16px;">Добавить проект</h3>
+    <div style="background: white; border-radius: 16px; padding: 24px; max-width: 400px; width: 90%;">
+      <h3 style="margin-top: 0;">Добавить проект</h3>
       
       <div style="margin-bottom: 15px;">
-        <label class="form-label">Проект:</label>
-        <select id="modalProject" class="user-select">
+        <label style="display: block; margin-bottom: 5px;">Проект:</label>
+        <select id="modalProject" style="width: 100%; padding: 10px; border: 1px solid #e0e0e0; border-radius: 8px;">
           ${APP.allProjects.map(p => `<option value="${p.full}">${p.full}</option>`).join('')}
         </select>
       </div>
       
       <div style="margin-bottom: 15px;">
-        <label class="form-label">Часы:</label>
-        <input type="number" id="modalHours" value="8" step="0.25" min="0.25" max="24" style="width: 100%; padding: 10px; border: 1.5px solid var(--border); border-radius: 8px; font: 14px 'Golos Text', sans-serif; background: var(--bg2); color: var(--text);">
+        <label style="display: block; margin-bottom: 5px;">Часы:</label>
+        <input type="number" id="modalHours" value="8" step="0.25" min="0.25" max="24" style="width: 100%; padding: 10px; border: 1px solid #e0e0e0; border-radius: 8px;">
       </div>
       
-      <div style="margin-bottom: 20px;">
-        <label class="form-label">Комментарий (необязательно):</label>
-        <input type="text" id="modalComment" class="user-select" placeholder="Комментарий к проекту">
+      <div style="margin-bottom: 15px;">
+        <label style="display: block; margin-bottom: 5px;">Комментарий (необязательно):</label>
+        <input type="text" id="modalComment" style="width: 100%; padding: 10px; border: 1px solid #e0e0e0; border-radius: 8px;" placeholder="Комментарий к проекту">
       </div>
       
       <div style="display: flex; gap: 10px;">
-        <button onclick="confirmAddProjectToAdmin()" style="flex: 1; padding: 12px; background: var(--accent); color: white; border: none; border-radius: 8px; font: 600 14px 'Golos Text', sans-serif; cursor: pointer;">Добавить</button>
-        <button onclick="this.closest('[style*=fixed]').remove()" style="flex: 1; padding: 12px; background: transparent; color: var(--hint); border: 1.5px solid var(--border); border-radius: 8px; font: 600 14px 'Golos Text', sans-serif; cursor: pointer;">Отмена</button>
+        <button onclick="confirmAddProjectToAdmin()" style="flex: 1; padding: 12px; background: var(--primary); color: white; border: none; border-radius: 8px;">Добавить</button>
+        <button onclick="this.closest('[style*=fixed]').remove()" style="flex: 1; padding: 12px; background: #ccc; color: #333; border: none; border-radius: 8px;">Отмена</button>
       </div>
     </div>
   `;
@@ -1719,7 +1808,7 @@ function confirmAddProjectToAdmin() {
   APP.adminReportProjects.push({ project, hours, comment });
   renderAdminReportProjects();
   
-  document.querySelector('[style*="position: fixed"][style*="z-index: 10000"]').remove();
+  document.querySelector('[style*="position: fixed"]').remove();
   showToast(`✅ Добавлено: ${project} — ${hours}ч`);
 }
 
@@ -1728,19 +1817,24 @@ function renderAdminReportProjects() {
   if (!container) return;
   
   if (APP.adminReportProjects.length === 0) {
-    container.innerHTML = '<p style="text-align: center; color: var(--hint); padding: 20px;">Добавьте проекты</p>';
+    container.innerHTML = '<p style="text-align: center; color: #999; padding: 20px;">Добавьте проекты</p>';
     return;
   }
   
-  container.innerHTML = APP.adminReportProjects.map((item, index) => `
-    <div style="background: var(--bg); padding: 12px; border-radius: 8px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;">
-      <div>
-        <div style="font-weight: 600; font-size: 14px;">${item.project}</div>
-        <div style="color: var(--hint); font-size: 13px;">${item.hours}ч${item.comment ? ' · ' + item.comment : ''}</div>
+  let html = '';
+  APP.adminReportProjects.forEach((item, index) => {
+    html += `
+      <div style="background: #f5f5f5; padding: 12px; border-radius: 8px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;">
+        <div>
+          <div style="font-weight: 500;">${item.project}</div>
+          <div style="color: #666; font-size: 14px;">${item.hours}ч${item.comment ? ' • ' + item.comment : ''}</div>
+        </div>
+        <button onclick="removeAdminReportProject(${index})" style="background: #f44336; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer;">🗑️</button>
       </div>
-      <button onclick="removeAdminReportProject(${index})" style="background: var(--danger); color: white; border: none; padding: 6px 10px; border-radius: 6px; cursor: pointer;">✕</button>
-    </div>
-  `).join('');
+    `;
+  });
+  
+  container.innerHTML = html;
 }
 
 function removeAdminReportProject(index) {
@@ -1755,14 +1849,25 @@ async function submitAdminReport() {
   const date = document.getElementById('createReportDate').value;
   const generalComment = document.getElementById('createReportComment').value;
   
-  if (!userId) { showToast('⚠️ Выберите сотрудника', 'error'); return; }
-  if (!date) { showToast('⚠️ Укажите дату', 'error'); return; }
-  if (APP.adminReportProjects.length === 0) { showToast('⚠️ Добавьте хотя бы один проект', 'error'); return; }
+  if (!userId) {
+    showToast('⚠️ Выберите сотрудника', 'error');
+    return;
+  }
+  
+  if (!date) {
+    showToast('⚠️ Укажите дату', 'error');
+    return;
+  }
+  
+  if (APP.adminReportProjects.length === 0) {
+    showToast('⚠️ Добавьте хотя бы один проект', 'error');
+    return;
+  }
   
   try {
     await apiCall('/report', 'POST', {
-      user_id: APP.userId,
-      on_behalf_of_user_id: parseInt(userId),
+      user_id: APP.userId,  // Админ который создаёт
+      on_behalf_of_user_id: parseInt(userId),  // За кого создаём
       on_behalf_of_username: username,
       custom_date: date,
       projects: APP.adminReportProjects.map(p => ({
@@ -1774,14 +1879,17 @@ async function submitAdminReport() {
     });
     
     showToast(`✅ Отчёт создан для ${username}`, 'success');
-    if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
+    if (tg.HapticFeedback && tg.HapticFeedback.impactOccurred) tg.HapticFeedback.notificationOccurred('success');
     
+    // Очищаем форму
     APP.adminReportProjects = [];
     renderAdminReportProjects();
     document.getElementById('createForUser').value = '';
     document.getElementById('createReportComment').value = '';
     
+    // Обновляем данные
     await loadDataFromAPI();
+    
   } catch (error) {
     console.error('Create report failed:', error);
   }
