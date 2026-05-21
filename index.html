@@ -1,4 +1,3 @@
-
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
@@ -1267,7 +1266,7 @@ function renderAdminOverview() {
     APP.adminChart = new Chart(ctx, {
       type: 'bar',
       data: {
-        labels: s.employees.map(e=>e.name),
+        labels: s.employees.map(e=>e.username||e.name||'?'),
         datasets: [{ label:'Часы', data: s.employees.map(e=>e.hours), backgroundColor: 'rgba(37,99,235,0.7)', borderRadius: 6 }]
       },
       options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true}} }
@@ -1282,7 +1281,7 @@ function renderAdminEmployees() {
   content.innerHTML = [...s.employees].sort((a,b)=>b.hours-a.hours).map(emp => `
     <div class="emp-card">
       <div class="emp-header">
-        <div class="emp-name">👤 ${emp.name}</div>
+        <div class="emp-name">👤 ${emp.username||emp.name||'?'}</div>
         <div class="emp-hours">${emp.hours} ч</div>
       </div>
       <div style="font-size:13px;color:var(--hint);margin-bottom:8px">📝 Отчётов: ${emp.reports}</div>
@@ -1311,20 +1310,25 @@ function renderAdminProjects() {
   }
 }
 
-function renderAdminReports() {
+function renderAdminRecentReports() {
   const s = APP.adminStats;
   const content = document.getElementById('adminContent');
   if (!s?.recent_reports?.length) { content.innerHTML = `<div class="empty"><div class="empty-icon">📝</div><div>Нет отчётов</div></div>`; return; }
-  content.innerHTML = s.recent_reports.map(r=>`
+  content.innerHTML = s.recent_reports.map(r => {
+    const name = r.username || r.employee || '?';
+    const dt = r.datetime || '';
+    const timePart = dt.includes(' ') ? dt.split(' ')[1].substring(0,5) : (r.time || '');
+    const comment = r.comment || r.comments || '';
+    return `
     <div class="report-item">
       <div class="report-header">
-        <span class="report-emp">👤 ${r.employee}</span>
-        <span class="report-date">${r.date} ${r.time}</span>
+        <span class="report-emp">👤 ${name}</span>
+        <span class="report-date">${r.date}${timePart ? ' ' + timePart : ''}</span>
       </div>
       <div class="report-proj">📁 ${r.project} — ${r.hours} ч</div>
-      ${r.comment && r.comment !== '-' ? `<div class="report-comment">💬 ${r.comment}</div>` : ''}
-    </div>
-  `).join('');
+      ${comment && comment !== '-' ? `<div class="report-comment">💬 ${comment}</div>` : ''}
+    </div>`;
+  }).join('');
 }
 
 function renderAdminManage() {
@@ -1701,31 +1705,56 @@ ${displayName} — ${project}`)) return;
 }
 
 function clearFilters() {
-  document.getElementById('filterUser').value = '';
-  document.getElementById('filterProject').value = '';
-  document.getElementById('filterDate').value = '';
-  document.getElementById('reportsTableWrap').innerHTML = '<p style="padding: 20px; text-align: center; color: #999;">Выберите фильтры и нажмите 🔍 Фильтр</p>';
+  const u = document.getElementById('filterUser');
+  const p = document.getElementById('filterProject');
+  const d = document.getElementById('filterDate');
+  const w = document.getElementById('reportsTableWrap');
+  if (u) u.value = '';
+  if (p) p.value = '';
+  if (d) d.value = '';
+  if (w) w.innerHTML = '<p style="padding:20px;text-align:center;color:var(--hint)">Выберите фильтры и нажмите 🔍 Применить</p>';
 }
 
 function renderAdminReports() {
-  // Заполняем фильтры пользователями
-  const userSelect = document.getElementById('filterUser');
-  if (!userSelect) return;
-userSelect.innerHTML = '<option value="">Все сотрудники</option>';
-  if (APP.allUsers) {
-    APP.allUsers.forEach(u => {
-      userSelect.innerHTML += `<option value="${u.id}">${u.username}</option>`;
-    });
-  }
+  const content = document.getElementById('adminContent');
   
-  // Заполняем фильтры проектами
-  const projSelect = document.getElementById('filterProject');
-  projSelect.innerHTML = '<option value="">Все проекты</option>';
-  if (APP.allProjects) {
-    APP.allProjects.forEach(p => {
-      projSelect.innerHTML += `<option value="${p.full}">${p.full}</option>`;
-    });
-  }
+  // Собираем уникальные проекты из отчётов (приоритет) + текущих проектов
+  const reportProjects = APP.adminStats?.unique_report_projects || [];
+  const currentProjects = (APP.allProjects || []).map(p => p.full);
+  const allProjectNames = [...new Set([...reportProjects, ...currentProjects])].sort((a,b) => a.localeCompare(b, 'ru'));
+
+  // Рендерим HTML фильтров + таблицы в adminContent
+  content.innerHTML = `
+    <div style="background:var(--bg2);border-radius:var(--radius);padding:16px;margin-bottom:12px;box-shadow:var(--shadow)">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+        <div>
+          <label style="font-size:12px;color:var(--hint);display:block;margin-bottom:4px">Сотрудник</label>
+          <select id="filterUser" style="width:100%;padding:8px;border:1.5px solid var(--border);border-radius:10px;background:var(--bg);color:var(--text);font-size:13px">
+            <option value="">Все</option>
+            ${(APP.allUsers||[]).map(u=>`<option value="${u.id}">${u.username}</option>`).join('')}
+          </select>
+        </div>
+        <div>
+          <label style="font-size:12px;color:var(--hint);display:block;margin-bottom:4px">Дата</label>
+          <input type="date" id="filterDate" style="width:100%;padding:8px;border:1.5px solid var(--border);border-radius:10px;background:var(--bg);color:var(--text);font-size:13px">
+        </div>
+      </div>
+      <div style="margin-bottom:10px">
+        <label style="font-size:12px;color:var(--hint);display:block;margin-bottom:4px">Проект</label>
+        <select id="filterProject" style="width:100%;padding:8px;border:1.5px solid var(--border);border-radius:10px;background:var(--bg);color:var(--text);font-size:13px">
+          <option value="">Все проекты</option>
+          ${allProjectNames.map(p=>`<option value="${p}">${p}</option>`).join('')}
+        </select>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button onclick="loadReportsTable()" style="flex:1;padding:10px;background:var(--accent);color:#fff;border:none;border-radius:10px;font-weight:600;cursor:pointer">🔍 Применить</button>
+        <button onclick="clearFilters()" style="padding:10px 14px;background:var(--bg);border:1.5px solid var(--border);border-radius:10px;cursor:pointer">✕</button>
+      </div>
+    </div>
+    <div id="reportsTableWrap" style="overflow-x:auto">
+      <p style="padding:20px;text-align:center;color:var(--hint)">Выберите фильтры и нажмите 🔍 Применить</p>
+    </div>
+  `;
 }
 
 
