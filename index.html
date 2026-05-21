@@ -541,7 +541,8 @@ textarea:focus, input:focus {
     <button class="stat-tab" onclick="adminTab('employees',this)">Сотрудники</button>
     <button class="stat-tab" onclick="adminTab('projects-stat',this)">Проекты</button>
     <button class="stat-tab" onclick="adminTab('reports-list',this)">Отчёты</button>
-    <button class="stat-tab" onclick="adminTab('manage',this)">Управление</button>
+    <button class="stat-tab" onclick="adminTab('manage-projects',this)">Проекты</button>
+    <button class="stat-tab" onclick="adminTab('manage-actions',this)">Действия</button>
   </div>
   <div id="adminContent"></div>
   <button class="btn btn-secondary" onclick="nav('home')">⬅️ На главную</button>
@@ -1284,7 +1285,8 @@ function renderAdminTab(tab) {
   else if (tab === 'employees') renderAdminEmployees();
   else if (tab === 'projects-stat') renderAdminProjects();
   else if (tab === 'reports-list') renderAdminReports();
-  else if (tab === 'manage') renderAdminManage();
+  else if (tab === 'manage-projects') renderAdminManageProjects();
+  else if (tab === 'manage-actions') renderAdminManageActions();
 }
 
 function renderAdminOverview() {
@@ -1461,30 +1463,48 @@ function addAdminProject() {
   showToast(`✅ Добавлено`);
 }
 
-function renderAdminManage() {
+function renderAdminManage() { renderAdminManageProjects(); }
+
+function renderAdminManageProjects() {
   const content = document.getElementById('adminContent');
   const projs = APP.allProjects;
+
+  content.innerHTML = `
+    <div style="margin-bottom:12px">
+      ${projs.map(p=>`
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 14px;background:var(--bg2);border:1.5px solid var(--border);border-radius:var(--radius);margin-bottom:8px">
+          <div>
+            <span style="font-weight:600">${p.abbr}</span>
+            <span style="color:var(--hint);font-size:13px;margin-left:8px">${p.full}</span>
+          </div>
+          <button onclick="removeProject('${p.abbr}')" style="background:var(--danger);color:#fff;border:none;padding:6px 12px;border-radius:8px;cursor:pointer;font-size:13px">✕</button>
+        </div>`).join('')}
+    </div>
+    <button class="btn btn-primary" onclick="openModal()">➕ Добавить проект</button>
+  `;
+}
+
+function renderAdminManageActions() {
+  const content = document.getElementById('adminContent');
   const users = APP.allUsers;
 
   content.innerHTML = `
-    <div class="form-label">📁 Проекты (${projs.length})</div>
-    ${projs.map(p=>`
-      <div class="project-list-item">
-        <span class="proj-list-name">${p.abbr} — ${p.full}</span>
-        <button class="remove-btn" onclick="removeProject('${p.abbr}')">✕</button>
-      </div>`).join('')}
-    <button class="btn btn-primary" onclick="openModal()">➕ Добавить проект</button>
+    <div style="background:var(--bg2);border:1.5px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:12px">
+      <div style="font-weight:600;margin-bottom:4px">📝 Создать отчёт за сотрудника</div>
+      <div style="font-size:13px;color:var(--hint);margin-bottom:12px">Заполнить отчёт от имени любого сотрудника за любую дату</div>
+      <button class="btn btn-primary" style="margin-top:0" onclick="openAdminCreateReport()">➕ Создать отчёт</button>
+    </div>
 
-    <div class="form-label" style="margin-top:24px">📝 Отчёты за сотрудника</div>
-    <button class="btn btn-primary" style="width:100%;margin-bottom:16px" onclick="openAdminCreateReport()">➕ Создать отчёт за сотрудника</button>
-
-    <div class="form-label" style="margin-top:8px">👥 Назначить проекты сотруднику</div>
-    <select class="user-select" id="assignUser" onchange="renderAssignProjects()">
-      <option value="">— Выберите сотрудника —</option>
-      ${users.map(u=>`<option value="${u.id}">${u.username}</option>`).join('')}
-    </select>
-    <div id="assignProjectsList" class="checkbox-list"></div>
-    <button class="btn btn-primary" id="assignBtn" style="display:none" onclick="submitAssign()">✅ Сохранить назначение</button>
+    <div style="background:var(--bg2);border:1.5px solid var(--border);border-radius:var(--radius);padding:16px">
+      <div style="font-weight:600;margin-bottom:4px">👥 Назначить проекты сотруднику</div>
+      <div style="font-size:13px;color:var(--hint);margin-bottom:12px">Выберите сотрудника и отметьте доступные проекты</div>
+      <select class="user-select" id="assignUser" onchange="renderAssignProjects()">
+        <option value="">— Выберите сотрудника —</option>
+        ${users.map(u=>`<option value="${u.id}">${u.username}</option>`).join('')}
+      </select>
+      <div id="assignProjectsList" class="checkbox-list"></div>
+      <button class="btn btn-primary" id="assignBtn" style="display:none" onclick="submitAssign()">✅ Сохранить назначение</button>
+    </div>
   `;
 }
 
@@ -1496,7 +1516,7 @@ async function removeProject(abbr) {
       APP.allProjects = APP.allProjects.filter(p => p.abbr !== abbr);
       APP.projects = APP.projects.filter(p => p.abbr !== abbr);
       buildProjectsGrid();
-      renderAdminManage();
+      renderAdminManageProjects();
       showToast(`🗑 Проект ${abbr} удалён`, 'info');
     } catch (error) {
       console.error('Remove project failed:', error);
