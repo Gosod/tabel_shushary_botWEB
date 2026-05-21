@@ -463,6 +463,7 @@ textarea:focus, input:focus {
 
   <div class="form-group">
     <div class="form-label">📁 Проект</div>
+    <input id="projectSearch" type="text" placeholder="🔍 Поиск проекта..." oninput="buildProjectsGrid()" style="width:100%;padding:10px 14px;margin-bottom:10px;border:1.5px solid var(--border);border-radius:12px;background:var(--bg);color:var(--text);font-size:14px;box-sizing:border-box">
     <div class="projects-grid" id="projectsGrid"></div>
     <div class="error-msg" id="projError">Выберите хотя бы один проект</div>
   </div>
@@ -826,7 +827,11 @@ function initNav() {
 function buildProjectsGrid() {
   const grid = document.getElementById('projectsGrid');
   grid.innerHTML = '';
-  APP.projects.forEach(proj => {
+  const query = (document.getElementById('projectSearch')?.value || '').toLowerCase();
+  const filtered = query
+    ? APP.projects.filter(p => p.full.toLowerCase().includes(query) || p.abbr.toLowerCase().includes(query))
+    : APP.projects;
+  filtered.forEach(proj => {
     const card = document.createElement('div');
     card.className = 'proj-card';
     card.innerHTML = `<div class="proj-abbr">${proj.abbr}</div><div class="proj-name">${proj.full}</div>`;
@@ -1331,6 +1336,21 @@ function renderAdminRecentReports() {
   }).join('');
 }
 
+function openAdminCreateReport() {
+  const userSelect = document.getElementById('createForUser');
+  if (userSelect) {
+    userSelect.innerHTML = '<option value="">Выберите сотрудника</option>';
+    (APP.allUsers || []).forEach(u => {
+      userSelect.innerHTML += `<option value="${u.id}" data-username="${u.username}">${u.username}</option>`;
+    });
+  }
+  const dateInput = document.getElementById('createReportDate');
+  if (dateInput) dateInput.value = new Date().toISOString().split('T')[0];
+  APP.adminReportProjects = [];
+  renderAdminReportProjects();
+  nav('admin-create-report');
+}
+
 function renderAdminManage() {
   const content = document.getElementById('adminContent');
   const projs = APP.allProjects;
@@ -1345,7 +1365,10 @@ function renderAdminManage() {
       </div>`).join('')}
     <button class="btn btn-primary" onclick="openModal()">➕ Добавить проект</button>
 
-    <div class="form-label" style="margin-top:24px">👥 Назначить проекты сотруднику</div>
+    <div class="form-label" style="margin-top:24px">📝 Отчёты за сотрудника</div>
+    <button class="btn btn-primary" style="width:100%;margin-bottom:16px" onclick="openAdminCreateReport()">➕ Создать отчёт за сотрудника</button>
+
+    <div class="form-label" style="margin-top:8px">👥 Назначить проекты сотруднику</div>
     <select class="user-select" id="assignUser" onchange="renderAssignProjects()">
       <option value="">— Выберите сотрудника —</option>
       ${users.map(u=>`<option value="${u.id}">${u.username}</option>`).join('')}
@@ -1560,14 +1583,20 @@ function renderReportsTable(reports) {
   }));
   
   let html = `
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 4px;margin-bottom:6px">
+      <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer">
+        <input type="checkbox" id="selectAllReports" onchange="toggleSelectAllReports(this)"> Выбрать все
+      </label>
+      <button id="bulkDeleteBtn" onclick="bulkDeleteReports()" style="display:none;padding:7px 14px;background:#f44336;color:#fff;border:none;border-radius:8px;font-size:13px;cursor:pointer">🗑️ Удалить выбранные</button>
+    </div>
     <table style="width: 100%; border-collapse: collapse;">
       <thead>
         <tr style="background: #f5f5f5; border-bottom: 2px solid #e0e0e0;">
+          <th style="padding: 8px;"></th>
           <th style="padding: 12px; text-align: left;">Дата</th>
           <th style="padding: 12px; text-align: left;">Сотрудник</th>
           <th style="padding: 12px; text-align: left;">Проект</th>
           <th style="padding: 12px; text-align: center;">Часы</th>
-          <th style="padding: 12px; text-align: left;">Комментарий</th>
           <th style="padding: 12px; text-align: center;">Действия</th>
         </tr>
       </thead>
@@ -1577,14 +1606,14 @@ function renderReportsTable(reports) {
   reports.forEach(r => {
     html += `
       <tr style="border-bottom: 1px solid #f0f0f0;">
+        <td style="padding: 8px; text-align:center;"><input type="checkbox" class="report-cb" data-id="${r.id}" data-username="${r.username||''}" data-project="${r.project}" onchange="updateBulkBtn()"></td>
         <td style="padding: 12px;">${r.date}</td>
         <td style="padding: 12px;">${r.username || 'Unknown'}</td>
         <td style="padding: 12px;">${r.project}</td>
         <td style="padding: 12px; text-align: center;"><b>${r.hours}ч</b></td>
-        <td style="padding: 12px; color: #666;">${r.comments || '-'}</td>
         <td style="padding: 12px; text-align: center;">
-          <button onclick='editReport(${JSON.stringify(r)})' style="padding: 6px 12px; background: #4CAF50; color: white; border: none; border-radius: 6px; margin-right: 5px; cursor: pointer;">✏️</button>Развернуть комментарийКомментарий к строке R 1582 Решено
-          <button onclick='deleteReport("${r.id}", "${r.username}", "${r.project}")' style="padding: 6px 12px; background: #f44336; color: white; border: none; border-radius: 6px; cursor: pointer;">🗑️</button>
+          <button onclick='editReport(${JSON.stringify(r)})' style="padding: 6px 10px; background: #4CAF50; color: white; border: none; border-radius: 6px; margin-right: 4px; cursor: pointer;">✏️</button>
+          <button onclick='deleteReport("${r.id}", "${r.username}", "${r.project}")' style="padding: 6px 10px; background: #f44336; color: white; border: none; border-radius: 6px; cursor: pointer;">🗑️</button>
         </td>
       </tr>
     `;
@@ -1684,6 +1713,36 @@ function closeEditModal() {
   const modal = document.getElementById('editModal');
   if (modal) modal.remove();
   APP.editingReport = null;
+}
+
+function updateBulkBtn() {
+  const checked = document.querySelectorAll('.report-cb:checked').length;
+  const btn = document.getElementById('bulkDeleteBtn');
+  if (btn) btn.style.display = checked > 0 ? 'block' : 'none';
+  if (btn && checked > 0) btn.textContent = `🗑️ Удалить выбранные (${checked})`;
+}
+
+function toggleSelectAllReports(el) {
+  document.querySelectorAll('.report-cb').forEach(cb => cb.checked = el.checked);
+  updateBulkBtn();
+}
+
+async function bulkDeleteReports() {
+  const checked = [...document.querySelectorAll('.report-cb:checked')];
+  if (!checked.length) return;
+  if (!confirm(`Удалить ${checked.length} отчётов?`)) return;
+  
+  let done = 0;
+  for (const cb of checked) {
+    try {
+      await apiCall(`/report/${cb.dataset.id}`, 'DELETE', { admin_id: APP.userId });
+      done++;
+    } catch(e) { /* пропускаем ошибочные */ }
+  }
+  
+  showToast(`🗑️ Удалено ${done} отчётов`, 'info');
+  loadReportsTable();
+  await loadDataFromAPI();
 }
 
 async function deleteReport(id, username, project) {
