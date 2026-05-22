@@ -1,0 +1,19 @@
+[Unit]
+Description=Telegram Bot API Service (Production)
+After=network.target
+
+
+[Service]
+Environment=PYTHONUNBUFFERED=1
+Type=simple
+User=kostik
+WorkingDirectory=/home/kostik/tabel
+Environment="PATH=/home/kostik/tabel/venv/bin"
+ExecStart=/home/kostik/tabel/venv/bin/gunicorn --workers 4 --bind 127.0.0.1:5000 --timeout 30 --log-level info api_v3:app
+Restart=always
+RestartSec=3
+StandardOutput=append:/var/log/telegram_api.log
+StandardError=append:/var/log/telegram_api_error.log
+
+[Install]
+WantedBy=multi-user.target
